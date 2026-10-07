@@ -1,0 +1,57 @@
+name: Test and deploy GetToken
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript and deployment scripts
+        run: |
+          for file in assets/gettoken/*.mjs; do node --check "$file"; done
+          bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh
+      - name: Test catalog
+        run: node --test tests/*.test.mjs
+      - name: Package website
+        run: tar -czf site.tar.gz index.html assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gettoken-${{ github.sha }}
+          path: |
+            site.tar.gz
+            scripts/server-deploy.sh
+            scripts/deploy-ssh.sh
+          retention-days: 7
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: gettoken-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: gettoken-${{ github.sha }}
+      - name: Deploy and verify
+        env:
+          DEPLOY_HOST: ${{ vars.GETTOKEN_HOST || '39.97.40.89' }}
+          DEPLOY_USER: ${{ vars.GETTOKEN_USER || 'root' }}
+          DEPLOY_PORT: ${{ vars.GETTOKEN_PORT || '22' }}
+          DEPLOY_REVISION: ${{ github.sha }}
+          DEPLOY_SSH_KEY: ${{ secrets.GETTOKEN_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.GETTOKEN_KNOWN_HOSTS }}
+        run: bash scripts/deploy-ssh.sh

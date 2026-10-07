@@ -40,6 +40,8 @@ tests/
 
 ## 本地预览
 
+云服务器和 GitHub Actions 自动部署见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+
 ```bash
 python -m http.server 8899 --bind 127.0.0.1
 ```

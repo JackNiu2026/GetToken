@@ -3,250 +3,514 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#080a11">
-  <title>gettoken · Codex、Claude 与住宅 IP，一站选购</title>
-  <meta name="description" content="在 gettoken 选择适合你的 Codex、Claude 与住宅 IP 方案。把时间留给创造，让好工具与你的工作流同行。">
+  <meta name="theme-color" content="#08080d">
+  <title>GetToken · Codex、Claude 与住宅 IP，一站选购</title>
+  <meta name="description" content="在 GetToken 一站选购 Codex、Claude 与住宅 IP。按工作方式选方案，扫码即付，人工核对交付，售后有人跟进。">
   <link rel="canonical" href="https://gettoken.cc/">
-  <meta property="og:title" content="gettoken · 让创造，没有边界。">
-  <meta property="og:description" content="Codex、Claude、住宅 IP，一处选择，按你的工作方式配置。">
+  <meta property="og:title" content="GetToken · 让创造，没有边界。">
+  <meta property="og:description" content="Codex、Claude、住宅 IP，一处选择，按你的工作方式配置。扫码即付，人工交付。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="GetToken">
   <link rel="icon" href="./assets/gettoken/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./assets/gettoken/home.css">
+  <script>
+    // Hide-until-animated styles apply only while scripts run; fall back to static content if they never start.
+    document.documentElement.classList.add('js');
+    setTimeout(function () { if (!document.documentElement.classList.contains('motion-ready')) document.documentElement.classList.remove('js'); }, 2500);
+  </script>
 </head>
-<body id="top" data-reference-layout="resip-inspired">
+<body id="top">
   <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
   <header class="site-header">
     <div class="shell header-inner">
-      <a class="brand" href="#top" aria-label="gettoken 首页">
-        <span class="brand-mark" aria-hidden="true"><img class="brand-logo" src="./assets/gettoken/logo.png" alt=""></span>
-        <span class="brand-word">gettoken</span>
+      <a class="brand" href="#top" aria-label="GetToken 首页">
+        <img class="brand-logo" src="./assets/gettoken/logo.png" alt="" width="28" height="28">
+        <span class="brand-word">GetToken</span>
       </a>
       <nav class="desktop-nav" aria-label="主导航">
-        <details class="nav-products"><summary>产品服务 <span aria-hidden="true">⌄</span></summary><div class="nav-dropdown"><a href="#codex"><span>&gt;_</span><div><strong>Codex</strong><small>开发者的下一份生产力</small></div></a><a href="#claude"><span>✦</span><div><strong>Claude</strong><small>把灵感展开更多</small></div></a><a href="#ip"><span>◎</span><div><strong>住宅 IP</strong><small>给连接一个独立身份</small></div></a></div></details>
-        <a href="#products">套餐价格</a>
-        <a href="#features">产品优势</a>
-        <a href="#guide">使用指南</a>
+        <details class="nav-products">
+          <summary>产品服务 <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg></summary>
+          <div class="nav-dropdown">
+            <a href="#product-codex"><span class="glyph glyph--codex">&gt;_</span><span><strong>Codex</strong><small>开发者的下一份生产力</small></span></a>
+            <a href="#product-claude"><span class="glyph glyph--claude">✦</span><span><strong>Claude</strong><small>把灵感展开更多</small></span></a>
+            <a href="#product-ip"><span class="glyph glyph--ip">◎</span><span><strong>住宅 IP</strong><small>给连接一个独立身份</small></span></a>
+          </div>
+        </details>
+        <a href="#pricing">套餐价格</a>
+        <a href="#tiers">方案对比</a>
+        <a href="#how">购买流程</a>
         <a href="#faq">常见问题</a>
       </nav>
       <div class="header-actions">
-        <button class="text-button" type="button" data-open-query>订单查询</button>
-        <a class="header-cta" href="#products">开始选购 <span aria-hidden="true">↗</span></a>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单">
-          <span></span><span></span>
-        </button>
+        <button class="ghost-button" type="button" data-open-query>订单查询</button>
+        <a class="pill-button" href="#pricing" data-magnetic>立即选购</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单"><span></span><span></span></button>
       </div>
     </div>
     <nav class="mobile-nav" id="mobile-nav" aria-label="移动端主导航" hidden>
       <a href="#products">产品服务</a>
-      <a href="#products">套餐价格</a>
-      <a href="#features">产品优势</a>
-      <a href="#guide">使用指南</a>
+      <a href="#pricing">套餐价格</a>
+      <a href="#tiers">方案对比</a>
+      <a href="#how">购买流程</a>
       <a href="#faq">常见问题</a>
-      <button type="button" data-open-query>订单查询预览</button>
+      <button type="button" data-open-query>订单查询</button>
     </nav>
   </header>
 
   <main id="main">
+    <!-- HERO -->
     <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-noise" aria-hidden="true"></div>
-      <div class="hero-grid" aria-hidden="true"></div>
-      <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div>
-      <div class="hero-orbit hero-orbit-two" aria-hidden="true"></div>
+      <canvas class="hero-canvas" data-horizon aria-hidden="true"></canvas>
       <div class="shell hero-inner">
-        <div class="status-pill"><span class="pulse-dot"></span> 好工具与好连接，在这里相遇 <span aria-hidden="true">↗</span></div>
-        <p class="hero-kicker">Your next level starts here</p>
-        <h1 id="hero-title"><span>让创造，没有边界。</span><em>Codex · Claude · 住宅 IP</em></h1>
-        <p class="hero-copy">从第一行代码，到下一个灵感。<br>在 gettoken，找到适合你的 AI 工具与网络方案，把时间留给真正重要的事。</p>
-        <div class="hero-actions">
-          <a class="button button-light" href="#products">立即探索产品 <span aria-hidden="true">→</span></a>
-          <a class="button button-outline" href="#guide">找到适合我的方案 <span aria-hidden="true">↗</span></a>
+        <a class="status-pill" href="#pricing" data-reveal>
+          <span class="live-dot" aria-hidden="true"></span>
+          Codex · Claude · 住宅 IP 现已开放选购
+          <span aria-hidden="true">→</span>
+        </a>
+        <h1 id="hero-title" class="hero-title">
+          <span class="line" data-split>让创造，没有边界</span>
+          <span class="line line--grad" data-split>Codex · Claude · 住宅 IP</span>
+        </h1>
+        <p class="hero-copy" data-reveal>从第一行代码，到下一个灵感，再到每一次跨境连接。<br>在 GetToken 按工作方式挑选 AI 工具与网络方案，扫码即付，把时间留给真正重要的事。</p>
+        <div class="hero-actions" data-reveal>
+          <a class="button button--light" href="#pricing" data-magnetic>立即选购 <span aria-hidden="true">→</span></a>
+          <a class="button button--ghost" href="#tiers">查看方案 <span aria-hidden="true">↗</span></a>
         </div>
-        <div class="hero-proof" aria-label="产品矩阵概览">
-          <div><strong>Codex</strong><span>代码，向前一步</span></div>
-          <div><strong>Claude</strong><span>灵感，展开更多</span></div>
-          <div><strong>住宅 IP</strong><span>连接，保持独立</span></div>
-          <div><strong>一站</strong><span>把选择变得简单</span></div>
+        <div class="hero-stats" data-horizon-anchor data-reveal>
+          <div><strong><span data-count="3">3</span></strong><span>核心产品</span></div>
+          <div><strong><span data-count="8">8</span></strong><span>档可选方案</span></div>
+          <div><strong><span data-count="3">3</span></strong><span>种服务周期</span></div>
+          <div><strong>1<small>站</small></strong><span>选好即付清</span></div>
+        </div>
+        <div class="hero-chips" data-reveal>
+          <span><b>产品矩阵</b>Codex · Claude · 住宅 IP</span>
+          <span><b>购买方式</b>扫码支付 · 人工核对 · 售后跟进</span>
         </div>
       </div>
-      <svg class="hero-waves" viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="horizon-blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2563eb" stop-opacity=".16"/><stop offset=".7" stop-color="#101014" stop-opacity="0"/></linearGradient>
-          <linearGradient id="horizon-purple" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f46e5" stop-opacity=".28"/><stop offset=".32" stop-color="#5b21b6" stop-opacity=".17"/><stop offset=".9" stop-color="#101014" stop-opacity="0"/></linearGradient>
-          <linearGradient id="horizon-edge" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#3b82f6" stop-opacity=".06"/><stop offset=".5" stop-color="#a78bfa" stop-opacity=".23"/><stop offset="1" stop-color="#3b82f6" stop-opacity=".08"/></linearGradient>
-        </defs>
-        <path class="horizon-back" d="M0 64 C250 110 510 61 756 95 S1190 50 1440 14 L1440 360 L0 360Z" fill="url(#horizon-blue)"/>
-        <path class="horizon-mid" d="M0 103 C265 125 438 83 680 95 S1095 148 1440 85 L1440 360 L0 360Z" fill="url(#horizon-purple)"/>
-        <path class="horizon-front" d="M0 125 C270 170 445 91 730 120 S1160 124 1440 128 L1440 360 L0 360Z" fill="url(#horizon-purple)"/>
-        <path class="horizon-edge" d="M0 103 C265 125 438 83 680 95 S1095 148 1440 85" fill="none" stroke="url(#horizon-edge)" stroke-width="1"/>
-      </svg>
     </section>
 
-    <section class="section products-section" id="products" aria-labelledby="products-title">
+    <!-- WHY -->
+    <section class="section" id="why" aria-labelledby="why-title">
       <div class="shell">
-        <div class="section-intro split-intro">
-          <div>
-            <p class="eyebrow">Find your edge</p>
-            <h2 id="products-title">下一份生产力，<br><span>从这里开始。</span></h2>
-          </div>
-          <p class="section-lead">为开发者、创作者和跨境业务而准备。<br>三款产品，按需选择，不必为用不到的复杂度买单。</p>
+        <header class="section-head">
+          <p class="eyebrow" data-reveal>Why GetToken</p>
+          <h2 id="why-title" data-reveal>少一点折腾，多一点真正的创造</h2>
+          <p class="lead" data-reveal>从选工具到配网络，少一次来回，多一份专注。</p>
+        </header>
+        <div class="feature-grid">
+          <article class="feature" data-reveal data-spot>
+            <span class="icon icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M17 13.5v7M13.5 17h7"/></svg></span>
+            <h3>一站式购齐</h3>
+            <p>Codex、Claude、住宅 IP 同处选购，不必在多个平台之间来回切换、反复比较。</p>
+          </article>
+          <article class="feature" data-reveal data-spot>
+            <span class="icon icon--green" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/></svg></span>
+            <h3>按场景推荐</h3>
+            <p>写代码、做研究、跨境运营，先说清楚目标，再给出合适的档位与周期。</p>
+          </article>
+          <article class="feature" data-reveal data-spot>
+            <span class="icon icon--violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6"/></svg></span>
+            <h3>选择清晰透明</h3>
+            <p>档位、周期、使用方向在卡片上一目了然，确认前清楚知道自己买的是什么。</p>
+          </article>
+          <article class="feature" data-reveal data-spot>
+            <span class="icon icon--cyan" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M4 12h16"/></svg></span>
+            <h3>扫码即付</h3>
+            <p>无需注册、无需绑卡。选好方案，打开微信或支付宝扫一扫即可完成付款。</p>
+          </article>
+          <article class="feature" data-reveal data-spot>
+            <span class="icon icon--orange" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 19.5 6.5v5c0 4.5-3.2 8-7.5 9-4.3-1-7.5-4.5-7.5-9v-5z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg></span>
+            <h3>人工核对交付</h3>
+            <p>每一笔订单都由人工核对，确保方案、周期与付款信息一致后再交付。</p>
+          </article>
+          <article class="feature" data-reveal data-spot>
+            <span class="icon icon--pink" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5v-3.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01"/></svg></span>
+            <h3>真人售后</h3>
+            <p>付款、交付、使用中遇到的问题，都有人跟进到底，不会石沉大海。</p>
+          </article>
         </div>
+      </div>
+    </section>
 
+    <!-- PRODUCTS -->
+    <section class="section section--tint" id="products" aria-labelledby="products-title">
+      <div class="shell">
+        <header class="section-head">
+          <p class="eyebrow" data-reveal>Three products, one door</p>
+          <h2 id="products-title" data-reveal>三大产品，一站直达</h2>
+          <p class="lead" data-reveal>为开发者、创作者和跨境业务而准备，按需选择，不为用不到的复杂度买单。</p>
+        </header>
         <div class="product-grid">
-          <article class="product-card card-codex" id="codex" data-product="codex">
-            <div class="card-glow" aria-hidden="true"></div>
-            <div class="card-topline"><span class="product-index">01 / BUILD</span><span class="product-status">可选方案</span></div>
-            <div class="product-heading">
-              <div class="product-icon icon-codex" aria-hidden="true">&gt;_</div>
-              <div><h3>Codex</h3><p>给每一行代码，一个更顺的起点。</p></div>
+          <article class="product product--codex" id="product-codex" data-reveal data-spot>
+            <div class="product__head">
+              <span class="product__mark"><span class="glyph glyph--codex glyph--lg">&gt;_</span>Codex</span>
+              <span class="product__meta"><b>01 / BUILD</b><small>开发者的下一份生产力</small></span>
             </div>
-            <p class="product-description">适合个人开发、原型搭建与团队协作，把想法变成可以运行的东西。</p>
-            <div class="price-row"><span class="price-label">方案展示价</span><strong class="price-value">¥89</strong><span class="price-period">/ 月</span><small class="price-total" aria-live="polite">3 个月合计 ¥267</small></div>
-            <ul class="feature-list"><li>独立账号方案</li><li>适合连续工作流</li><li>清晰的升级路径</li></ul>
-            <div class="control-group">
-              <label for="codex-tier">选择方案</label>
-              <select id="codex-tier" class="tier-select">
-                <option value="starter">体验版 · 个人尝鲜</option>
-                <option value="standard" selected>标准版 · 日常主力</option>
-                <option value="flagship">旗舰版 · 团队 / 重度</option>
-              </select>
-            </div>
-            <div class="control-group usage-group"><label for="codex-usage">使用方向</label><select id="codex-usage" class="usage-select"><option>个人开发</option><option>原型与项目开发</option><option>团队协作</option></select></div>
-            <div class="period-row" role="group" aria-label="Codex 服务周期">
-              <button type="button" data-months="1">月付</button>
-              <button type="button" data-months="3" class="is-active">季付 <small>更从容</small></button>
-              <button type="button" data-months="12">年付 <small>长期选</small></button>
-            </div>
-            <button class="card-cta" type="button" data-order>选购 Codex <span aria-hidden="true">→</span></button>
-            <p class="card-note">界面预览 · 未接入支付</p>
+            <p>给每一行代码一个更顺的起点。从读懂陌生仓库，到改完细节再跑通检查，把想法变成可以运行的东西。</p>
+            <ul class="product__tags"><li>个人开发</li><li>原型搭建</li><li>团队协作</li></ul>
           </article>
-
-          <article class="product-card card-claude" id="claude" data-product="claude">
-            <div class="card-glow" aria-hidden="true"></div>
-            <div class="card-topline"><span class="product-index">02 / CREATE</span><span class="product-status">灵感搭档</span></div>
-            <div class="product-heading">
-              <div class="product-icon icon-claude" aria-hidden="true">✦</div>
-              <div><h3>Claude</h3><p>让复杂内容，保持清晰和连续。</p></div>
+          <article class="product product--claude" id="product-claude" data-reveal data-spot>
+            <div class="product__head">
+              <span class="product__mark"><span class="glyph glyph--claude glyph--lg">✦</span>Claude</span>
+              <span class="product__meta"><b>02 / CREATE</b><small>把灵感展开更多</small></span>
             </div>
-            <p class="product-description">适合研究、长文档、内容创作和需要更多上下文的深度工作。</p>
-            <div class="price-row"><span class="price-label">方案展示价</span><strong class="price-value">¥109</strong><span class="price-period">/ 月</span><small class="price-total" aria-live="polite">3 个月合计 ¥327</small></div>
-            <ul class="feature-list"><li>长文本工作取向</li><li>适合研究与创作</li><li>按阶段选择强度</li></ul>
-            <div class="control-group">
-              <label for="claude-tier">选择方案</label>
-              <select id="claude-tier" class="tier-select">
-                <option value="starter">体验版 · 个人尝鲜</option>
-                <option value="standard" selected>标准版 · 日常主力</option>
-                <option value="flagship">旗舰版 · 团队 / 重度</option>
-              </select>
-            </div>
-            <div class="control-group usage-group"><label for="claude-usage">使用方向</label><select id="claude-usage" class="usage-select"><option>写作与创作</option><option>研究与文档阅读</option><option>代码与综合工作</option></select></div>
-            <div class="period-row" role="group" aria-label="Claude 服务周期">
-              <button type="button" data-months="1">月付</button>
-              <button type="button" data-months="3" class="is-active">季付 <small>更从容</small></button>
-              <button type="button" data-months="12">年付 <small>长期选</small></button>
-            </div>
-            <button class="card-cta" type="button" data-order>选购 Claude <span aria-hidden="true">→</span></button>
-            <p class="card-note">界面预览 · 未接入支付</p>
+            <p>让复杂内容保持清晰和连续。适合研究、长文档与内容创作，把几十页资料变成能直接使用的结论。</p>
+            <ul class="product__tags"><li>长文写作</li><li>研究阅读</li><li>深度工作</li></ul>
           </article>
-
-          <article class="product-card card-ip" id="ip" data-product="ip">
-            <div class="card-glow" aria-hidden="true"></div>
-            <div class="card-topline"><span class="product-index">03 / CONNECT</span><span class="product-status">可选方案</span></div>
-            <div class="product-heading">
-              <div class="product-icon icon-ip" aria-hidden="true">◎</div>
-              <div><h3>住宅 IP</h3><p>给每个业务，一个更清晰的网络身份。</p></div>
+          <article class="product product--ip" id="product-ip" data-reveal data-spot>
+            <div class="product__head">
+              <span class="product__mark"><span class="glyph glyph--ip glyph--lg">◎</span>住宅 IP</span>
+              <span class="product__meta"><b>03 / CONNECT</b><small>给连接一个独立身份</small></span>
             </div>
-            <p class="product-description">适合跨境电商、AI 工具和多环境运营，按需求选择线路层级。</p>
-            <div class="price-row"><span class="price-label">方案展示价</span><strong class="price-value">$7.90</strong><span class="price-period">/ 月</span><small class="price-total" aria-live="polite">3 个月合计 $23.70</small></div>
-            <ul class="feature-list"><li>按场景选择线路</li><li>适合多环境隔离</li><li>协议与方案可扩展</li></ul>
-            <div class="control-group">
-              <label for="ip-tier">选择方案</label>
-              <select id="ip-tier" class="tier-select">
-                <option value="standard" selected>生产线路 · 日常使用</option>
-                <option value="premium">旗舰线路 · 高要求场景</option>
-              </select>
-            </div>
-            <div class="control-group usage-group"><label for="ip-usage">示例节点地区</label><select id="ip-usage" class="usage-select"><option>美国 · United States</option><option>英国 · United Kingdom</option><option>德国 · Germany</option></select></div>
-            <div class="period-row" role="group" aria-label="住宅 IP 服务周期">
-              <button type="button" data-months="1">月付</button>
-              <button type="button" data-months="3" class="is-active">季付 <small>更从容</small></button>
-              <button type="button" data-months="12">年付 <small>长期选</small></button>
-            </div>
-            <button class="card-cta" type="button" data-order>选购住宅 IP <span aria-hidden="true">→</span></button>
-            <p class="card-note">界面预览 · 未接入支付</p>
+            <p>给每个业务一个更清晰的网络身份。适合跨境电商、AI 工具与多环境运营，店铺与账号各有独立环境。</p>
+            <ul class="product__tags"><li>跨境电商</li><li>AI 工具</li><li>多账号隔离</li></ul>
           </article>
         </div>
-        <div class="section-footnote"><span class="tiny-dot"></span> 价格为界面设计示例，正式购买流程将在支付接入后开放。<a href="#faq">了解更多 →</a></div>
-      </div>
-    </section>
 
-    <section class="section feature-section" id="features" aria-labelledby="features-title">
-      <div class="shell">
-        <div class="section-intro centered-intro">
-          <p class="eyebrow">Why gettoken</p>
-          <h2 id="features-title">少一点折腾，<br><span>多一点真正的创造。</span></h2>
-          <p class="section-lead">从选工具到配网络，少一次来回，多一份专注。<br>每一个入口，都围绕你真正想完成的事。</p>
-        </div>
-        <div class="feature-layout">
-          <div class="feature-panel feature-panel-large">
-            <div class="feature-panel-art art-orbit" aria-hidden="true"><span></span><span></span><span></span><i></i></div>
-            <div class="feature-panel-content"><span class="feature-number">01</span><h3>按工作状态选择</h3><p>写代码、深度思考、跨境连接，不同目标对应不同入口。先说清楚要做什么，再决定买什么。</p></div>
-          </div>
-          <div class="feature-panel">
-            <div class="feature-panel-art art-lines" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-            <div class="feature-panel-content"><span class="feature-number">02</span><h3>选择，不用靠猜</h3><p>档位、周期与费用，一眼看清。把时间花在判断哪款适合你，而不是寻找藏起来的条件。</p></div>
-          </div>
-          <div class="feature-panel feature-panel-accent">
-            <div class="feature-panel-art art-cross" aria-hidden="true"><span></span><span></span><span></span></div>
-            <div class="feature-panel-content"><span class="feature-number">03</span><h3>从单品走向组合</h3><p>今天从一个产品开始，之后可以按真实工作流逐步增加，而不是一次买下所有复杂度。</p></div>
+        <div class="stage" data-stage>
+          <div class="console" data-console>
+            <div class="console__bar">
+              <span class="console__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <div class="console__tabs" role="tablist" aria-label="产品演示">
+                <button role="tab" type="button" id="demo-tab-codex" aria-controls="demo-codex" aria-selected="true">Codex</button>
+                <button role="tab" type="button" id="demo-tab-claude" aria-controls="demo-claude" aria-selected="false" tabindex="-1">Claude</button>
+                <button role="tab" type="button" id="demo-tab-ip" aria-controls="demo-ip" aria-selected="false" tabindex="-1">住宅 IP</button>
+              </div>
+              <span class="console__tag">界面示意</span>
+            </div>
+            <div class="console__body">
+              <div class="demo is-active" id="demo-codex" role="tabpanel" aria-labelledby="demo-tab-codex">
+                <ol class="code" data-typer>
+                  <li><span class="c-mute">~/shop</span> <span class="c-blue">›</span> codex "给价格卡片加一个扫码支付弹窗"</li>
+                  <li class="c-mute">◌ 读取 index.html · home.mjs · catalog.mjs</li>
+                  <li><span class="c-green">+</span> &lt;dialog id="pay-dialog"&gt;</li>
+                  <li><span class="c-green">+</span>   renderQR(method, quote)</li>
+                  <li><span class="c-green">+</span>   copyReference(ref)</li>
+                  <li><span class="c-red">−</span> alert('暂未开放')</li>
+                  <li><span class="c-green">✓</span> 3 个文件已修改 · 检查全部通过</li>
+                </ol>
+              </div>
+              <div class="demo" id="demo-claude" role="tabpanel" aria-labelledby="demo-tab-claude" hidden>
+                <div class="chat" data-typer>
+                  <p class="chat__me">帮我把这份 40 页的调研报告，整理成三条能直接汇报的结论。</p>
+                  <p class="chat__ai"><b>结论一</b>　用户最在意的不是价格，而是“不用折腾”。</p>
+                  <p class="chat__ai"><b>结论二</b>　决策链路越短，转化越高：从选择到付款不超过三步。</p>
+                  <p class="chat__ai"><b>结论三</b>　售后响应是复购的关键变量，建议单独设立指标。</p>
+                </div>
+              </div>
+              <div class="demo" id="demo-ip" role="tabpanel" aria-labelledby="demo-tab-ip" hidden>
+                <div class="node" data-typer>
+                  <div class="node__row"><span>线路类型</span><b>住宅 · 生产线路</b></div>
+                  <div class="node__row"><span>示例地区</span><b>美国 · United States</b></div>
+                  <div class="node__row"><span>使用环境</span><b>店铺后台 / AI 工具</b></div>
+                  <div class="node__row"><span>状态</span><b class="c-green"><i class="live-dot"></i> 已就绪</b></div>
+                  <svg class="node__spark" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40 C20 38 30 22 50 26 S80 44 100 36 S140 18 160 24 S200 40 220 30 S260 14 300 22"/></svg>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section guide-section" id="guide" aria-labelledby="guide-title">
+    <!-- HOW -->
+    <section class="section" id="how" aria-labelledby="how-title">
       <div class="shell">
-        <div class="guide-heading"><div><p class="eyebrow">A calmer way to start</p><h2 id="guide-title">把想开始，<br><span>变成下一步。</span></h2></div><p>不必一次弄懂所有参数。<br>先找到方向，再选择适合你的方案。</p></div>
-        <ol class="steps-list">
-          <li><span class="step-index">01</span><div><h3>先选择你要解决的问题</h3><p>代码、内容，还是跨境网络环境？从目标开始，而不是从参数开始。</p></div><span class="step-arrow" aria-hidden="true">↗</span></li>
-          <li><span class="step-index">02</span><div><h3>在方案窗口里比较</h3><p>切换档位和周期，实时看到对应的展示金额与适用方向。</p></div><span class="step-arrow" aria-hidden="true">↗</span></li>
-          <li><span class="step-index">03</span><div><h3>确认后进入正式流程</h3><p>当前页面只展示设计稿。支付、订单和交付功能将在后续接入。</p></div><span class="step-arrow" aria-hidden="true">↗</span></li>
+        <header class="section-head">
+          <p class="eyebrow" data-reveal>How it works</p>
+          <h2 id="how-title" data-reveal>3 步获取你的专属方案</h2>
+          <p class="lead" data-reveal>无需注册账号，跟着三步走就好。</p>
+        </header>
+        <ol class="steps" data-steps>
+          <li data-reveal><span class="steps__no">1</span><h3>选择方案</h3><p>选好产品、档位、使用方向与服务周期。</p></li>
+          <li data-reveal><span class="steps__no">2</span><h3>扫码付款</h3><p>微信或支付宝扫码，备注填写付款备注码。</p></li>
+          <li data-reveal><span class="steps__no">3</span><h3>核对交付</h3><p>把付款凭证发给客服，人工核对后交付。</p></li>
         </ol>
       </div>
     </section>
 
-    <section class="section faq-section" id="faq" aria-labelledby="faq-title">
-      <div class="shell faq-layout">
-        <div><p class="eyebrow">Questions, answered</p><h2 id="faq-title">在你决定之前，<br><span>先把疑问说清楚。</span></h2><p class="section-lead">这里先回答界面预览阶段最重要的几件事。正式服务规则会在支付接入后同步更新。</p></div>
-        <div class="faq-list">
-          <details open><summary>现在可以直接下单吗？<span>＋</span></summary><p>还不可以。本页是 GetToken 的全新首页与购买窗口设计，按钮只会打开方案预览，不创建订单、不扣款，也不会收集你的联系方式。</p></details>
-          <details><summary>三个产品有什么区别？<span>＋</span></summary><p>Codex 更适合代码工作，Claude 更适合长文档与深度内容，住宅 IP 面向跨境电商、AI 工具和多环境网络访问。你可以按当前工作目标选择。</p></details>
-          <details><summary>价格为什么有人民币和美元？<span>＋</span></summary><p>账号类方案沿用人民币展示，住宅 IP 沿用美元展示。正式支付时会在订单确认页明确金额、币种与支付方式。</p></details>
-          <details><summary>之后会接入真实支付吗？<span>＋</span></summary><p>会。当前先把信息架构、视觉层次和转化路径设计清楚；支付、订单查询、自动发货会作为后续产品能力接入。</p></details>
+    <!-- PRICING -->
+    <section class="section section--tint" id="pricing" aria-labelledby="pricing-title">
+      <div class="shell">
+        <header class="section-head">
+          <p class="eyebrow" data-reveal>Pricing</p>
+          <h2 id="pricing-title" data-reveal>简单透明的定价</h2>
+          <p class="lead" data-reveal>Codex、Claude、住宅 IP 三款产品，按档位与周期自由组合。</p>
+        </header>
+
+        <div class="plans">
+          <article class="plan plan--codex" id="codex" data-product="codex" data-tilt>
+            <div class="plan__spot" aria-hidden="true"></div>
+            <div class="plan__head">
+              <h3><span class="glyph glyph--codex">&gt;_</span>Codex <em>/ 编程开发</em></h3>
+              <span class="plan__badge">开发者首选</span>
+            </div>
+            <p class="plan__desc">适合个人开发、原型搭建与团队协作，把想法变成可以运行的东西。</p>
+            <div class="plan__price">
+              <strong data-price>¥XX</strong><span>/ 月</span>
+              <ul class="plan__tags" data-features><li>独立账号方案</li><li>适合连续开发工作流</li><li>清晰的升级路径</li></ul>
+            </div>
+            <p class="plan__total" data-total>季付 · 3 个月合计 ¥XX</p>
+            <fieldset class="choice choice--tier">
+              <legend>1. 选择方案</legend>
+              <div class="choice__options">
+                <label><input type="radio" name="codex-tier" value="starter"><span><b>体验版</b><small>个人尝鲜</small></span></label>
+                <label><input type="radio" name="codex-tier" value="standard" checked><span><b>标准版</b><small>日常主力</small></span></label>
+                <label><input type="radio" name="codex-tier" value="flagship"><span><b>旗舰版</b><small>团队 / 重度</small></span></label>
+              </div>
+            </fieldset>
+            <label class="plan__select"><span>2. 使用方向</span><select data-usage><option>个人开发</option><option>原型与项目开发</option><option>团队协作</option></select></label>
+            <fieldset class="choice choice--period">
+              <legend>3. 服务周期</legend>
+              <div class="choice__options">
+                <label><input type="radio" name="codex-period" value="1"><span>月付</span></label>
+                <label><input type="radio" name="codex-period" value="3" checked><span>季付</span></label>
+                <label><input type="radio" name="codex-period" value="12"><span>年付</span></label>
+              </div>
+            </fieldset>
+            <button class="plan__cta" type="button" data-buy>扫码购买</button>
+            <p class="plan__note">扫码付款 · 人工核对 · 售后跟进</p>
+          </article>
+
+          <article class="plan plan--claude is-featured" id="claude" data-product="claude" data-tilt>
+            <span class="plan__flag">推荐</span>
+            <div class="plan__spot" aria-hidden="true"></div>
+            <div class="plan__head">
+              <h3><span class="glyph glyph--claude">✦</span>Claude <em>/ 研究创作</em></h3>
+              <span class="plan__badge">灵感搭档</span>
+            </div>
+            <p class="plan__desc">适合研究、长文档、内容创作和需要更多上下文的深度工作。</p>
+            <div class="plan__price">
+              <strong data-price>¥XX</strong><span>/ 月</span>
+              <ul class="plan__tags" data-features><li>长文本工作取向</li><li>适合研究与创作</li><li>按阶段选择强度</li></ul>
+            </div>
+            <p class="plan__total" data-total>季付 · 3 个月合计 ¥XX</p>
+            <fieldset class="choice choice--tier">
+              <legend>1. 选择方案</legend>
+              <div class="choice__options">
+                <label><input type="radio" name="claude-tier" value="starter"><span><b>体验版</b><small>个人尝鲜</small></span></label>
+                <label><input type="radio" name="claude-tier" value="standard" checked><span><b>标准版</b><small>日常主力</small></span></label>
+                <label><input type="radio" name="claude-tier" value="flagship"><span><b>旗舰版</b><small>团队 / 重度</small></span></label>
+              </div>
+            </fieldset>
+            <label class="plan__select"><span>2. 使用方向</span><select data-usage><option>写作与创作</option><option>研究与文档阅读</option><option>代码与综合工作</option></select></label>
+            <fieldset class="choice choice--period">
+              <legend>3. 服务周期</legend>
+              <div class="choice__options">
+                <label><input type="radio" name="claude-period" value="1"><span>月付</span></label>
+                <label><input type="radio" name="claude-period" value="3" checked><span>季付</span></label>
+                <label><input type="radio" name="claude-period" value="12"><span>年付</span></label>
+              </div>
+            </fieldset>
+            <button class="plan__cta" type="button" data-buy>扫码购买</button>
+            <p class="plan__note">扫码付款 · 人工核对 · 售后跟进</p>
+          </article>
+
+          <article class="plan plan--ip" id="ip" data-product="ip" data-tilt>
+            <div class="plan__spot" aria-hidden="true"></div>
+            <div class="plan__head">
+              <h3><span class="glyph glyph--ip">◎</span>住宅 IP <em>/ 跨境网络</em></h3>
+              <span class="plan__badge">跨境必备</span>
+            </div>
+            <p class="plan__desc">适合跨境电商、AI 工具和多环境运营，按需求选择线路层级。</p>
+            <div class="plan__price">
+              <strong data-price>$XX</strong><span>/ 月</span>
+              <ul class="plan__tags" data-features><li>按场景选择线路</li><li>适合多环境隔离</li><li>协议与方案可扩展</li></ul>
+            </div>
+            <p class="plan__total" data-total>季付 · 3 个月合计 $XX</p>
+            <fieldset class="choice choice--tier choice--two">
+              <legend>1. 选择线路</legend>
+              <div class="choice__options">
+                <label><input type="radio" name="ip-tier" value="standard" checked><span><b>生产线路</b><small>日常使用</small></span></label>
+                <label><input type="radio" name="ip-tier" value="premium"><span><b>旗舰线路</b><small>高要求场景</small></span></label>
+              </div>
+            </fieldset>
+            <label class="plan__select"><span>2. 示例节点地区</span><select data-usage><option>美国 · United States</option><option>英国 · United Kingdom</option><option>德国 · Germany</option></select></label>
+            <fieldset class="choice choice--period">
+              <legend>3. 服务周期</legend>
+              <div class="choice__options">
+                <label><input type="radio" name="ip-period" value="1"><span>月付</span></label>
+                <label><input type="radio" name="ip-period" value="3" checked><span>季付</span></label>
+                <label><input type="radio" name="ip-period" value="12"><span>年付</span></label>
+              </div>
+            </fieldset>
+            <button class="plan__cta" type="button" data-buy>扫码购买</button>
+            <p class="plan__note">扫码付款 · 人工核对 · 售后跟进</p>
+          </article>
+        </div>
+        <p class="footnote" data-reveal><span class="live-dot" aria-hidden="true"></span>价格即将公布，下单金额以付款页与客服确认为准。<a href="#faq">了解购买规则 →</a></p>
+      </div>
+    </section>
+
+    <!-- TIERS -->
+    <section class="section" id="tiers" aria-labelledby="tiers-title">
+      <div class="shell">
+        <header class="section-head">
+          <p class="eyebrow" data-reveal>Pick the right tier</p>
+          <h2 id="tiers-title" data-reveal>3 档方案一次看清，别再花冤枉钱</h2>
+          <p class="lead" data-reveal>从尝鲜到团队重度，按真实使用强度选择。</p>
+        </header>
+        <div class="tier-grid">
+          <article class="tier tier--blue" data-reveal data-spot>
+            <div class="tier__head"><span class="icon icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg></span><div><h3>体验版</h3><small>个人尝鲜 · 轻量使用</small></div></div>
+            <dl class="tier__rows">
+              <div><dt>Codex</dt><dd>轻量编码、学习与小工具</dd></div>
+              <div><dt>Claude</dt><dd>日常写作与问答</dd></div>
+              <div><dt>住宅 IP</dt><dd>生产线路 · 单一环境</dd></div>
+            </dl>
+            <ul class="tier__points"><li>先用起来，再决定是否升级</li><li>建议从月付开始体验</li></ul>
+            <button class="tier__cta" type="button" data-preset="codex:starter:1,claude:starter:1">按体验版配置 <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="tier tier--violet" data-reveal data-spot>
+            <div class="tier__head"><span class="icon icon--violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3.5 2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.4l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z"/></svg></span><div><h3>标准版</h3><small>日常主力 · 连续工作流</small></div></div>
+            <dl class="tier__rows">
+              <div><dt>Codex</dt><dd>连续开发与项目迭代</dd></div>
+              <div><dt>Claude</dt><dd>研究阅读与长文创作</dd></div>
+              <div><dt>住宅 IP</dt><dd>生产线路 · 多环境隔离</dd></div>
+            </dl>
+            <ul class="tier__points"><li>大多数个人用户的最佳平衡</li><li>建议季付，节奏更从容</li></ul>
+            <button class="tier__cta" type="button" data-preset="codex:standard:3,claude:standard:3">按标准版配置 <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="tier tier--orange" data-reveal data-spot>
+            <div class="tier__head"><span class="icon icon--orange" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 3.5 5 13.5h6l-1 7 8-10h-6z"/></svg></span><div><h3>旗舰版</h3><small>团队 / 重度 · 高频使用</small></div></div>
+            <dl class="tier__rows">
+              <div><dt>Codex</dt><dd>高频、多项目并行</dd></div>
+              <div><dt>Claude</dt><dd>长文档与大型项目</dd></div>
+              <div><dt>住宅 IP</dt><dd>旗舰线路 · 高要求场景</dd></div>
+            </dl>
+            <ul class="tier__points"><li>团队协作取向，优先售后响应</li><li>建议年付，长期稳定使用</li></ul>
+            <button class="tier__cta" type="button" data-preset="codex:flagship:12,claude:flagship:12,ip:premium:12">按旗舰版配置 <span aria-hidden="true">→</span></button>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="final-cta" id="order" aria-labelledby="final-title">
-      <div class="shell final-cta-inner"><p class="eyebrow">Start with one clear decision</p><h2 id="final-title">准备好把工作流<br><em>放到更好的状态了吗？</em></h2><p>先选择一个方向。好的工具，不需要你先学会所有复杂度。</p><a class="button button-light" href="#products">回到产品选择 <span aria-hidden="true">↗</span></a></div>
+    <!-- SCENES -->
+    <section class="section section--tint" id="scenes" aria-labelledby="scenes-title">
+      <div class="shell">
+        <header class="section-head">
+          <p class="eyebrow" data-reveal>Built for your workflow</p>
+          <h2 id="scenes-title" data-reveal>为你的工作流而设计</h2>
+          <p class="lead" data-reveal>选一个最像你的场景，一键预配好方案。</p>
+        </header>
+        <div class="scene-grid">
+          <article class="scene" data-reveal data-spot>
+            <span class="icon icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg></span>
+            <div><h3>独立开发者</h3><p>一个人写前端、搭后端、修 Bug，把重复劳动交出去。</p></div>
+            <button type="button" data-preset="codex:standard:3">Codex 标准版 <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="scene" data-reveal data-spot>
+            <span class="icon icon--violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h9l5 5v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z"/><path d="M14 4.5v5h5M8 13h8M8 16.5h5"/></svg></span>
+            <div><h3>研究者与创作者</h3><p>每天读大量资料、写长文，需要能跟上思路的搭档。</p></div>
+            <button type="button" data-preset="claude:standard:3">Claude 标准版 <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="scene" data-reveal data-spot>
+            <span class="icon icon--green" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.5 5.5 4h13L20 8.5M4 8.5h16M4 8.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12v8h13v-8"/><path d="M10 20v-4.5h4V20"/></svg></span>
+            <div><h3>跨境电商卖家</h3><p>多店铺、多账号需要独立环境，也要写大量商品文案。</p></div>
+            <button type="button" data-preset="ip:standard:3,claude:starter:3">住宅 IP + Claude <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="scene" data-reveal data-spot>
+            <span class="icon icon--orange" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.3"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.3c2.6-.4 4.8 1.2 5.5 4.2"/></svg></span>
+            <div><h3>小团队</h3><p>多人并行开发与写文档，需要能长期使用的高强度方案。</p></div>
+            <button type="button" data-preset="codex:flagship:12,claude:standard:12">Codex + Claude <span aria-hidden="true">→</span></button>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="shell">
+        <header class="section-head">
+          <p class="eyebrow" data-reveal>FAQ</p>
+          <h2 id="faq-title" data-reveal>常见问题</h2>
+        </header>
+        <div class="faq-list" data-reveal>
+          <details><summary>如何购买？<i aria-hidden="true"></i></summary><div><p>在价格区选好方案后点击“扫码购买”，用微信或支付宝扫码付款，并在付款备注里填写弹窗中显示的付款备注码。付款后把截图和备注码发给客服，核对完成即为你交付。</p></div></details>
+          <details><summary>价格什么时候公布？<i aria-hidden="true"></i></summary><div><p>各方案价格即将公布。在此之前，下单金额以付款弹窗与客服确认的金额为准。</p></div></details>
+          <details><summary>付款后多久可以交付？<i aria-hidden="true"></i></summary><div><p>目前采用人工核对，核对完成后会尽快交付。具体时效以客服确认为准，高峰时段可能稍有延迟。</p></div></details>
+          <details><summary>三个产品有什么区别？<i aria-hidden="true"></i></summary><div><p>Codex 更适合代码工作，Claude 更适合长文档与深度内容，住宅 IP 面向跨境电商、AI 工具和多环境网络访问。你可以按当前工作目标选择，也可以组合使用。</p></div></details>
+          <details><summary>应该选月付、季付还是年付？<i aria-hidden="true"></i></summary><div><p>第一次使用建议从月付或季付开始，确认适合自己的工作流后再选择更长周期。</p></div></details>
+          <details><summary>为什么有人民币和美元两种币种？<i aria-hidden="true"></i></summary><div><p>账号类方案以人民币计价，住宅 IP 以美元计价。付款弹窗会明确显示金额、币种与可用的支付方式。</p></div></details>
+          <details><summary>需要提供哪些信息？<i aria-hidden="true"></i></summary><div><p>无需注册账号。我们只需要付款备注码与付款凭证来核对订单，交付所需的信息由客服与你单独确认。</p></div></details>
+          <details><summary>可以升级或更换方案吗？<i aria-hidden="true"></i></summary><div><p>可以联系客服说明你的需求，我们会根据当前方案与使用情况，为你说明可行的升级或更换方式。</p></div></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPLIANCE -->
+    <section class="notice" aria-labelledby="notice-title">
+      <div class="shell notice__inner" data-reveal>
+        <h2 id="notice-title">独立服务 · 合规使用</h2>
+        <p>GetToken 是独立服务品牌，并非 OpenAI、Anthropic 或任何第三方的官方平台，页面中的产品名称仅用于说明服务内容。请在遵守相关服务条款与当地法律法规的前提下使用所购服务。</p>
+        <button class="text-link" type="button" data-open-query>联系客服了解更多 <span aria-hidden="true">→</span></button>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="shell footer-main"><div><a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><img class="brand-logo" src="./assets/gettoken/logo.png" alt=""></span><span class="brand-word">gettoken</span></a><p>更好的工具。更自由的创造。</p></div><div class="footer-links"><div><span>产品</span><a href="#codex">Codex</a><a href="#claude">Claude</a><a href="#ip">住宅 IP</a></div><div><span>资源</span><a href="#guide">选购指南</a><a href="#faq">常见问题</a><a href="#guide">探索更多</a></div><div><span>gettoken</span><a href="#features">为什么选择我们</a><button type="button" data-open-query>订单查询</button><a href="#top">返回顶部 ↑</a></div></div></div>
-    <div class="shell footer-bottom"><span>© 2026 gettoken. Designed for your next level.</span><span>独立服务品牌 · 界面预览 · 非第三方官方平台</span></div>
+    <div class="shell footer-main">
+      <div class="footer-brand">
+        <a class="brand" href="#top"><img class="brand-logo" src="./assets/gettoken/logo.png" alt="" width="28" height="28"><span class="brand-word">GetToken</span></a>
+        <p>Codex、Claude 与住宅 IP 一站选购。<br>更好的工具，更自由的创造。</p>
+      </div>
+      <div class="footer-links">
+        <div><span>产品</span><a href="#codex">Codex</a><a href="#claude">Claude</a><a href="#ip">住宅 IP</a></div>
+        <div><span>购买</span><a href="#pricing">套餐价格</a><a href="#tiers">方案对比</a><a href="#how">购买流程</a></div>
+        <div><span>支持</span><a href="#faq">常见问题</a><button type="button" data-open-query>订单查询</button><button type="button" data-open-query>联系客服</button></div>
+      </div>
+    </div>
+    <div class="shell footer-bottom"><span>© 2026 GetToken. All rights reserved.</span><span>独立服务品牌 · 非第三方官方平台</span></div>
   </footer>
 
-  <aside class="mobile-purchase-bar" id="mobile-purchase-bar" aria-label="快捷选购" hidden><div><strong>你的下一份生产力</strong><small>Codex · Claude · 住宅 IP</small></div><a class="header-cta" href="#products">选择产品 <span aria-hidden="true">↗</span></a></aside>
+  <aside class="buy-bar" id="buy-bar" aria-label="快捷选购" hidden>
+    <div><strong>你的下一份生产力</strong><small>Codex · Claude · 住宅 IP</small></div>
+    <a class="pill-button" href="#pricing">选择方案</a>
+  </aside>
 
-  <dialog class="preview-dialog" id="order-dialog" aria-labelledby="dialog-title">
-    <div class="dialog-inner"><button class="dialog-close" type="button" data-close-dialog aria-label="关闭">×</button><p class="eyebrow">Your next level</p><h2 id="dialog-title">确认你的选择</h2><p class="dialog-summary" data-dialog-summary>你正在查看一个方案。</p><div class="dialog-divider"></div><div class="dialog-notice"><span class="notice-icon">i</span><p>这是界面预览。当前不会创建订单、扣款或收集联系方式。正式购买流程将在支付功能接入后开放。</p></div><button class="button button-light dialog-action" type="button" data-close-dialog>确认选择 · 仅预览</button></div>
-  </dialog>
-  <dialog class="preview-dialog" id="query-dialog" aria-labelledby="query-title">
-    <div class="dialog-inner"><button class="dialog-close" type="button" data-close-dialog aria-label="关闭">×</button><p class="eyebrow">Order lookup</p><h2 id="query-title">订单查询预览</h2><p class="dialog-summary">订单查询入口已预留，正式接入后你可以凭邮箱与订单号查看进度。</p><div class="dialog-notice"><span class="notice-icon">i</span><p>当前尚未接入真实订单系统，因此不会要求你填写任何信息。</p></div><button class="button button-light dialog-action" type="button" data-close-dialog>返回首页</button></div>
+  <dialog class="sheet" id="pay-dialog" aria-labelledby="pay-title">
+    <button class="sheet__close" type="button" data-close-dialog aria-label="关闭">×</button>
+    <div class="pay">
+      <div class="pay__summary">
+        <p class="eyebrow">Confirm &amp; pay</p>
+        <h2 id="pay-title" data-pay-title>确认你的方案</h2>
+        <dl class="pay__list" data-pay-list></dl>
+        <div class="pay__ref">
+          <span>付款备注码</span>
+          <code data-pay-ref>GT-0000</code>
+          <button type="button" data-copy-ref>复制</button>
+        </div>
+        <ol class="pay__steps">
+          <li>使用收款码完成付款，并在备注中填写付款备注码。</li>
+          <li>将付款截图与备注码发送给客服。</li>
+          <li>人工核对完成后为你交付，售后全程跟进。</li>
+        </ol>
+      </div>
+      <div class="pay__panel">
+        <div class="pay__methods" role="tablist" aria-label="支付方式" data-pay-methods></div>
+        <div class="pay__qr" data-pay-qr></div>
+        <p class="pay__hint">电脑端可直接扫码；在手机上可截图保存，再到 App 中从相册识别。</p>
+        <p class="pay__amount"><span>应付金额</span><strong data-pay-amount>¥XX</strong><small data-pay-amount-note>金额以客服确认为准</small></p>
+        <div class="pay__contact" data-pay-contact></div>
+      </div>
+    </div>
   </dialog>
 
-  <noscript><div class="noscript-note">GetToken 首页需要启用 JavaScript 才能切换方案预览；页面主要信息仍可正常阅读。</div></noscript>
+  <dialog class="sheet sheet--small" id="query-dialog" aria-labelledby="query-title">
+    <button class="sheet__close" type="button" data-close-dialog aria-label="关闭">×</button>
+    <div class="sheet__body">
+      <p class="eyebrow">Support</p>
+      <h2 id="query-title">订单查询与客服</h2>
+      <p class="sheet__text">把你的付款备注码发给客服，即可查询订单进度。有任何问题，也可以直接联系我们。</p>
+      <div class="pay__contact" data-query-contact></div>
+      <button class="button button--light sheet__action" type="button" data-close-dialog>好的</button>
+    </div>
+  </dialog>
+
+  <div class="toast" role="status" aria-live="polite" data-toast></div>
+  <noscript><div class="noscript-note">启用 JavaScript 后可打开扫码付款窗口；页面主要信息仍可正常阅读。</div></noscript>
   <script type="module" src="./assets/gettoken/home.mjs"></script>
 </body>
 </html>

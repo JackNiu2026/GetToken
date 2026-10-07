@@ -88,15 +88,19 @@ void main() {
   float arcSun = pow(towardSun, 900.0);       // tight around the sun along the arc
   float arcWide = pow(towardSun, 60.0);
 
-  vec3 col = BG;
+  // Space and surface are shaded separately and blended across ~1 device pixel
+  // at the limb, so the planet's edge is antialiased instead of stair-stepped.
+  float aa = 1.0 / uScale;
+  vec3 space = BG;
+  vec3 surf = BG;
 
-  if (h > 0.0) {
+  if (h > -aa) {
     // Space: nebula wash + two parallax star layers that thin out near the air glow.
     vec2 q = frag / W;
     float neb = fbm(vec3(q * vec2(2.0, 3.0) + vec2(uTime * 0.002, 0.0), uTime * 0.01));
     vec3 nebCol = mix(vec3(0.24, 0.13, 0.52), vec3(0.09, 0.22, 0.6), smoothstep(0.1, 0.9, q.x));
     float nebMask = smoothstep(0.0, 0.5, h / max(uHorizon, 1.0)) * 0.6 + 0.4;
-    col += nebCol * pow(neb, 3.2) * 0.42 * nebMask;
+    space += nebCol * pow(neb, 3.2) * 0.42 * nebMask;
 
     // Two star layers drifting very slowly at different speeds for depth.
     vec2 sp1 = frag + vec2(uTime * 0.6, 0.0);
@@ -114,10 +118,11 @@ void main() {
       float along = dot(rel, -dir);
       float across = abs(dot(rel, vec2(-dir.y, dir.x)));
       float trail = step(0.0, along) * exp(-along / 70.0) * exp(-across / 0.8);
-      col += vec3(0.82, 0.88, 1.0) * trail * sin(mt * 3.14159) * 0.8;
+      space += vec3(0.82, 0.88, 1.0) * trail * sin(mt * 3.14159) * 0.8;
     }
-    col += vec3(0.82, 0.86, 1.0) * stars;
-  } else {
+    space += vec3(0.82, 0.86, 1.0) * stars;
+  }
+  if (h < aa) {
     // Planet: night side with continents, drifting clouds and warm city lights.
     vec2 uv = d / R;
     float z = sqrt(max(1.0 - dot(uv, uv), 0.0));
@@ -132,7 +137,7 @@ void main() {
     vec3 L = normalize(vec3(sunDir.x * 0.45, -sunDir.y * 0.45, -0.9));   // sun behind the planet: only a thin crescent is lit
     float day = clamp(dot(n, L) * 1.8 + 0.04, 0.0, 1.0);
 
-    vec3 surf = mix(vec3(0.012, 0.02, 0.052), vec3(0.035, 0.045, 0.08), land);
+    surf = mix(vec3(0.012, 0.02, 0.052), vec3(0.035, 0.045, 0.08), land);
     surf += vec3(0.22, 0.38, 0.72) * day * (0.25 + 0.25 * land);
 
     float clusters = smoothstep(0.48, 0.68, fbm(p * 7.0 + 11.0));
@@ -149,8 +154,8 @@ void main() {
     // Sink the lower planet back into the page colour.
     float deep = smoothstep(140.0, 520.0, -h);
     surf = mix(surf, BG * 0.9, deep * 0.55);
-    col = surf;
   }
+  vec3 col = mix(surf, space, smoothstep(-aa, aa, h));
 
   // Atmosphere: soft layers instead of a drawn line, brighter toward the sun.
   float strength = 0.16 + 0.38 * arcTop + 0.85 * arcWide;
@@ -227,6 +232,7 @@ export function initEarth(canvas, { anchor, hero }) {
   let raf = 0;
   let last = 0;
   let rise = 0;
+  let snap = true;
   const start = performance.now();
   const INTRO_MS = 2600;
 
@@ -234,7 +240,7 @@ export function initEarth(canvas, { anchor, hero }) {
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     // Soft glows tolerate a lower render resolution; it keeps the shader cheap.
-    const quality = rect.width > 900 ? 0.7 : 0.9;
+    const quality = rect.width > 900 ? 0.85 : 0.9;
     scale = Math.min(window.devicePixelRatio || 1, 1.5) * quality;
     canvas.width = Math.round(rect.width * scale);
     canvas.height = Math.round(rect.height * scale);
@@ -247,9 +253,12 @@ export function initEarth(canvas, { anchor, hero }) {
   }
 
   function draw(now) {
-    // Ease toward the scroll target so the planet glides instead of tracking each wheel tick.
-    const target = Math.min(window.scrollY, hero.offsetHeight) * 0.18;
-    rise = reduceMotion.matches ? target : rise + (target - rise) * 0.12;
+    // A gentle parallax: the planet rises at most ~36px while the hero scrolls away.
+    // After a pause (off-screen, background tab) jump straight to the target
+    // instead of easing back from a stale position.
+    const target = Math.min(window.scrollY / Math.max(hero.offsetHeight, 1), 1) * 36;
+    rise = reduceMotion.matches || snap ? target : rise + (target - rise) * 0.15;
+    snap = false;
     const p = reduceMotion.matches ? 1 : Math.min(1, (now - start) / INTRO_MS);
     const intro = 1 - Math.pow(1 - p, 3);
     gl.uniform2f(uRes, canvas.width, canvas.height);
@@ -269,7 +278,11 @@ export function initEarth(canvas, { anchor, hero }) {
     }
     if (visible && !document.hidden && !reduceMotion.matches) raf = requestAnimationFrame(frame);
   }
-  const play = () => { if (!raf && visible) raf = requestAnimationFrame(frame); };
+  const play = () => {
+    if (raf || !visible || document.hidden) return;
+    snap = true;
+    raf = requestAnimationFrame(frame);
+  };
 
   if (reduceMotion.matches) window.addEventListener('scroll', () => { if (visible) draw(performance.now()); }, { passive: true });
   new ResizeObserver(resize).observe(canvas);

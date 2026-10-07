@@ -1,10 +1,11 @@
 import { PRODUCTS, getQuote, formatMoney, createPaymentReference } from './catalog.mjs';
 import { SITE } from './site.config.mjs';
 import {
-  reduceMotion, onScroll, initSplit, initReveal, initCounters, initMagnetic,
-  initSpotlight, initChrome, initConsoleTilt, initSteps,
+  reduceMotion, onScroll, initSplit, initReveal, initCounters, initChrome,
+  initConsoleTilt, initSteps, initScrollSpy,
 } from './motion.mjs';
 import { initEarth } from './scenes.mjs';
+import { enhanceDropdown } from './dropdown.mjs';
 
 // Everything here is page-local: no requests, no storage, no real orders.
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -18,7 +19,7 @@ const payDialog = $('#pay-dialog');
 const queryDialog = $('#query-dialog');
 const toast = $('[data-toast]');
 const drawerViewport = window.matchMedia('(max-width: 960px)');
-const mobileViewport = window.matchMedia('(max-width: 680px)');
+const mobileViewport = window.matchMedia('(max-width: 640px)');
 
 /* ---------- Toast ---------- */
 let toastTimer = 0;
@@ -250,6 +251,7 @@ $$('[data-product]').forEach(card => {
   const featuresEl = $('[data-features]', card);
   const usage = $('[data-usage]', card);
   const usageLabel = $('.plan__select > span', card).textContent.replace(/^\d+\.\s*/, '');
+  enhanceDropdown(usage);
   let shownMonthly;
   let shownTier = null;
 
@@ -414,12 +416,11 @@ function initBuyBar() {
 initSplit();
 initReveal();
 initCounters();
-initMagnetic();
-initSpotlight();
 initChrome({ bar: $('.scroll-progress'), header });
 initConsole($('[data-console]'));
 initConsoleTilt($('[data-console]'), $('[data-stage]'));
 initSteps($('[data-steps]'));
+initScrollSpy($$('.desktop-nav > a, .nav-products > summary'));
 initBuyBar();
 
 const horizon = $('[data-horizon]');

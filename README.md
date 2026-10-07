@@ -9,8 +9,9 @@ index.html
 assets/gettoken/
   home.css          样式（设计变量、各版块、响应式、减少动态效果）
   home.mjs          页面交互：价格卡、预设方案、扫码付款弹窗、导航、移动端购买条
-  motion.mjs        滚动与指针动效：逐字出现、进场、数字递增、磁吸按钮、卡片光斑与倾斜
-  scenes.mjs        首屏“轨道日出” WebGL 场景（星空、夜面地球、大气辉光、日出）
+  motion.mjs        滚动动效：逐字出现、进场、数字递增、步骤连线、导航当前位置高亮
+  dropdown.mjs      自定义下拉框（基于原生 select，支持键盘操作）
+  scenes.mjs        首屏“轨道日出” WebGL 场景（开场升起、星空、夜面地球、大气辉光、日出、流星）
   catalog.mjs       产品、档位、价格与付款备注码
   site.config.mjs   收款码与客服联系方式
   logo.png

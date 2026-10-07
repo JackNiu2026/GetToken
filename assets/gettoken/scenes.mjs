@@ -21,7 +21,7 @@ precision mediump float;
 uniform vec2 uRes;      // backing-store size in device pixels
 uniform float uScale;   // device pixels per CSS pixel
 uniform float uTime;
-uniform vec2 uMouse;    // -1..1, eased
+uniform float uIntro;   // 0..1 eased entrance: planet rises, air and sun light up
 uniform float uHorizon; // y of the planet's top limb, CSS px from the top
 
 const vec3 BG = vec3(0.043, 0.043, 0.063);
@@ -71,7 +71,9 @@ void main() {
   vec2 frag = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uScale;
   float W = uRes.x / uScale;
   float R = max(W * 1.25, 760.0);
-  vec2 c = vec2(W * 0.5 + uMouse.x * 16.0, uHorizon + R + uMouse.y * 6.0);
+  vec2 c = vec2(W * 0.5, uHorizon + R + (1.0 - uIntro) * 56.0);
+  float airIn = smoothstep(0.0, 0.85, uIntro);
+  float sunIn = smoothstep(0.35, 1.0, uIntro);
   vec2 d = frag - c;
   float dist = length(d);
   float h = dist - R;                 // > 0 in space, < 0 on the planet (CSS px)
@@ -91,15 +93,29 @@ void main() {
   if (h > 0.0) {
     // Space: nebula wash + two parallax star layers that thin out near the air glow.
     vec2 q = frag / W;
-    float neb = fbm(vec3(q * vec2(2.0, 3.0) + uMouse * 0.02, uTime * 0.012));
+    float neb = fbm(vec3(q * vec2(2.0, 3.0) + vec2(uTime * 0.002, 0.0), uTime * 0.01));
     vec3 nebCol = mix(vec3(0.24, 0.13, 0.52), vec3(0.09, 0.22, 0.6), smoothstep(0.1, 0.9, q.x));
     float nebMask = smoothstep(0.0, 0.5, h / max(uHorizon, 1.0)) * 0.6 + 0.4;
     col += nebCol * pow(neb, 3.2) * 0.42 * nebMask;
 
-    vec2 sp1 = frag - uMouse * vec2(10.0, 6.0);
-    vec2 sp2 = frag - uMouse * vec2(22.0, 12.0);
+    // Two star layers drifting very slowly at different speeds for depth.
+    vec2 sp1 = frag + vec2(uTime * 0.6, 0.0);
+    vec2 sp2 = frag + vec2(uTime * 1.4, 0.0);
     float stars = starLayer(sp1, 38.0, 0.16) + starLayer(sp2 + 91.0, 71.0, 0.28) * 1.3;
-    stars *= smoothstep(10.0, 220.0, h);
+    stars *= smoothstep(10.0, 220.0, h) * smoothstep(0.0, 0.7, uIntro);
+
+    // A rare, faint shooting star in the upper sky.
+    float cycle = floor(uTime / 11.0);
+    float mt = (uTime - cycle * 11.0 - 4.0) / 0.9;
+    if (mt > 0.0 && mt < 1.0) {
+      vec2 dir = normalize(vec2(-1.0, 0.42));
+      vec2 start = vec2(W * (0.45 + 0.45 * hash2(vec2(cycle, 1.3))), uHorizon * (0.08 + 0.3 * hash2(vec2(cycle, 7.1))));
+      vec2 rel = frag - (start + dir * mt * 300.0);
+      float along = dot(rel, -dir);
+      float across = abs(dot(rel, vec2(-dir.y, dir.x)));
+      float trail = step(0.0, along) * exp(-along / 70.0) * exp(-across / 0.8);
+      col += vec3(0.82, 0.88, 1.0) * trail * sin(mt * 3.14159) * 0.8;
+    }
     col += vec3(0.82, 0.86, 1.0) * stars;
   } else {
     // Planet: night side with continents, drifting clouds and warm city lights.
@@ -141,14 +157,15 @@ void main() {
   float limb = exp(-abs(h) / (h > 0.0 ? 7.0 : 3.5));
   float halo = h > 0.0 ? exp(-h / 34.0) : exp(h / 8.0);
   float veil = h > 0.0 ? exp(-h / 210.0) : exp(h / 40.0);
+  strength *= airIn;
   col += vec3(0.62, 0.86, 1.0) * limb * strength * 0.75;
   col += vec3(0.24, 0.46, 1.0) * halo * strength * 0.32;
-  col += vec3(0.42, 0.28, 0.95) * veil * (0.05 + 0.13 * arcTop + 0.18 * arcWide);
+  col += vec3(0.42, 0.28, 0.95) * veil * (0.05 + 0.13 * arcTop + 0.18 * arcWide) * airIn;
 
   // Orbital sunrise peeking over the limb, with a slow breathing glow.
   vec2 toSun = frag - sunPos;
   float sd = length(toSun);
-  float breathe = 0.86 + 0.14 * sin(uTime * 0.35);
+  float breathe = (0.88 + 0.12 * sin(uTime * 0.3)) * sunIn;
   float above = smoothstep(-8.0, 14.0, h);
   float core = exp(-sd / 10.0) * 1.6;
   float bloom = 1.0 / (1.0 + sd * sd / 4900.0);
@@ -156,7 +173,7 @@ void main() {
   float streak = exp(-abs(dot(toSun, sunDir)) / 2.0) * exp(-abs(dot(toSun, tangent)) / 170.0);
   col += vec3(1.0, 0.86, 0.66) * (core + bloom * 0.38) * breathe * above;
   col += vec3(0.75, 0.85, 1.0) * streak * 0.45 * breathe;
-  col += vec3(1.0, 0.7, 0.45) * arcSun * limb * 0.8;
+  col += vec3(1.0, 0.7, 0.45) * arcSun * limb * 0.8 * sunIn;
 
   // Fade the bottom edge into the page so the hero has no seam with the next section.
   float H = uRes.y / uScale;
@@ -201,15 +218,17 @@ export function initEarth(canvas, { anchor, hero }) {
   const uRes = u('uRes');
   const uScale = u('uScale');
   const uTime = u('uTime');
-  const uMouse = u('uMouse');
+  const uIntro = u('uIntro');
   const uHorizon = u('uHorizon');
 
-  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   let scale = 1;
   let baseHorizon = 0;
   let visible = false;
   let raf = 0;
+  let last = 0;
+  let rise = 0;
   const start = performance.now();
+  const INTRO_MS = 2600;
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
@@ -228,28 +247,30 @@ export function initEarth(canvas, { anchor, hero }) {
   }
 
   function draw(now) {
-    pointer.x += (pointer.tx - pointer.x) * 0.05;
-    pointer.y += (pointer.ty - pointer.y) * 0.05;
-    const rise = Math.min(window.scrollY, hero.offsetHeight) * 0.18;
+    // Ease toward the scroll target so the planet glides instead of tracking each wheel tick.
+    const target = Math.min(window.scrollY, hero.offsetHeight) * 0.18;
+    rise = reduceMotion.matches ? target : rise + (target - rise) * 0.12;
+    const p = reduceMotion.matches ? 1 : Math.min(1, (now - start) / INTRO_MS);
+    const intro = 1 - Math.pow(1 - p, 3);
     gl.uniform2f(uRes, canvas.width, canvas.height);
     gl.uniform1f(uScale, scale);
     gl.uniform1f(uTime, reduceMotion.matches ? 8 : (now - start) / 1000);
-    gl.uniform2f(uMouse, pointer.x, pointer.y);
+    gl.uniform1f(uIntro, intro);
     gl.uniform1f(uHorizon, baseHorizon - rise);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
+  // The scene moves slowly, so ~30fps looks the same and halves GPU work.
   function frame(now) {
     raf = 0;
-    draw(now);
+    if (now - last >= 30) {
+      last = now;
+      draw(now);
+    }
     if (visible && !document.hidden && !reduceMotion.matches) raf = requestAnimationFrame(frame);
   }
   const play = () => { if (!raf && visible) raf = requestAnimationFrame(frame); };
 
-  window.addEventListener('pointermove', event => {
-    pointer.tx = (event.clientX / window.innerWidth - 0.5) * 2;
-    pointer.ty = (event.clientY / window.innerHeight - 0.5) * 2;
-  }, { passive: true });
   if (reduceMotion.matches) window.addEventListener('scroll', () => { if (visible) draw(performance.now()); }, { passive: true });
   new ResizeObserver(resize).observe(canvas);
   new IntersectionObserver(([entry]) => {

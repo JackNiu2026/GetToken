@@ -1,7 +1,6 @@
 // Scroll and pointer motion. Content is readable without any of this running.
 
 export const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
 
 /* One rAF-throttled scroll/resize bus shared by every scroll-linked effect. */
@@ -107,43 +106,6 @@ export function initCounters(root = document) {
   });
 }
 
-/* Buttons that lean toward the cursor. */
-export function initMagnetic(root = document) {
-  if (!finePointer.matches || reduceMotion.matches) return;
-  root.querySelectorAll('[data-magnetic]').forEach(el => {
-    el.addEventListener('pointermove', event => {
-      const r = el.getBoundingClientRect();
-      const x = event.clientX - (r.left + r.width / 2);
-      const y = event.clientY - (r.top + r.height / 2);
-      el.style.transform = `translate(${x * 0.22}px, ${y * 0.32}px)`;
-    });
-    el.addEventListener('pointerleave', () => { el.style.transform = ''; });
-  });
-}
-
-/* Cursor spotlight on cards, plus a slight 3D tilt on pricing cards. */
-export function initSpotlight(root = document) {
-  if (!finePointer.matches) return;
-  root.querySelectorAll('[data-spot], [data-tilt]').forEach(el => {
-    const tilt = el.hasAttribute('data-tilt') && !reduceMotion.matches;
-    el.addEventListener('pointermove', event => {
-      const r = el.getBoundingClientRect();
-      const px = (event.clientX - r.left) / r.width;
-      const py = (event.clientY - r.top) / r.height;
-      el.style.setProperty('--mx', `${px * 100}%`);
-      el.style.setProperty('--my', `${py * 100}%`);
-      if (tilt) {
-        el.style.setProperty('--rx', `${(0.5 - py) * 4}deg`);
-        el.style.setProperty('--ry', `${(px - 0.5) * 5}deg`);
-      }
-    });
-    el.addEventListener('pointerleave', () => {
-      el.style.setProperty('--rx', '0deg');
-      el.style.setProperty('--ry', '0deg');
-    });
-  });
-}
-
 /* Page progress bar + header state. */
 export function initChrome({ bar, header }) {
   onScroll(() => {
@@ -175,5 +137,29 @@ export function initSteps(list) {
     const p = clamp((window.innerHeight * 0.7 - r.top) / (r.height + window.innerHeight * 0.15));
     list.style.setProperty('--steps', String(p));
     items.forEach((item, i) => item.classList.toggle('is-lit', p >= (i / items.length) + 0.02 || reduceMotion.matches));
+  });
+}
+
+/* Header nav: mark the link whose section is under the reading line. */
+export function initScrollSpy(links) {
+  const targets = links.map(link => {
+    const href = link.getAttribute('href') || link.closest('.nav-products')?.querySelector('a')?.getAttribute('href');
+    const id = link.matches('summary') ? 'products' : href?.slice(1);
+    return { link, section: id && document.getElementById(id) };
+  }).filter(t => t.section);
+  onScroll(() => {
+    const line = window.innerHeight * 0.35;
+    let current = null;
+    for (const t of targets) {
+      const r = t.section.getBoundingClientRect();
+      if (r.top <= line && r.bottom > line) current = t;
+    }
+    for (const t of targets) {
+      t.link.classList.toggle('is-current', t === current);
+      if (t.link.matches('a')) {
+        if (t === current) t.link.setAttribute('aria-current', 'true');
+        else t.link.removeAttribute('aria-current');
+      }
+    }
   });
 }

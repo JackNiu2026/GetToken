@@ -4,7 +4,7 @@ import {
   reduceMotion, onScroll, initSplit, initReveal, initCounters, initMagnetic,
   initSpotlight, initChrome, initConsoleTilt, initSteps,
 } from './motion.mjs';
-import { initHorizon } from './scenes.mjs';
+import { initEarth } from './scenes.mjs';
 
 // Everything here is page-local: no requests, no storage, no real orders.
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -423,6 +423,6 @@ initSteps($('[data-steps]'));
 initBuyBar();
 
 const horizon = $('[data-horizon]');
-if (horizon) initHorizon(horizon, { anchor: $('[data-horizon-anchor]'), hero: $('.hero') });
+if (horizon) initEarth(horizon, { anchor: $('[data-horizon-anchor]'), hero: $('.hero') });
 
 document.documentElement.classList.add('motion-ready');

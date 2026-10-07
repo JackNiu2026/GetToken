@@ -1,38 +1,61 @@
-# gettoken
+# GetToken
 
-当前 gettoken 首页的精简、独立静态版本：Codex、Claude 与住宅 IP 三个方案窗口。
+GetToken 首页的独立静态版本：Codex、Claude 与住宅 IP 三款产品的展示与扫码购买入口。版式参考 resip.net：深色背景、地平线光效首屏、渐变描边价格卡。
 
 ## 内容
 
 ```text
 index.html
 assets/gettoken/
-  home.css
-  home.mjs
-  catalog.mjs
-  choices.mjs
+  home.css          样式（设计变量、各版块、响应式、减少动态效果）
+  home.mjs          页面交互：价格卡、预设方案、扫码付款弹窗、导航、移动端购买条
+  motion.mjs        滚动与指针动效：逐字出现、进场、数字递增、磁吸按钮、卡片光斑与倾斜
+  scenes.mjs        首屏地平线 canvas 动画
+  catalog.mjs       产品、档位、价格与付款备注码
+  site.config.mjs   收款码与客服联系方式
   logo.png
   favicon.svg
+tests/
+  catalog.test.mjs
 ```
 
-只包含页面自身的 HTML、CSS、JavaScript 和品牌图片。没有 React、Next.js、node_modules、第三方字体、安装依赖、缓存、截图、备份、抓取工具或服务器二进制。
+没有 React、Next.js、node_modules、第三方字体或构建步骤。
+
+## 页面结构
+
+首屏（地平线动画 + 数据条）→ 产品优势 → 三大产品与产品演示窗口 → 三步购买流程 → 价格 → 三档方案对比 → 使用场景 → 常见问题 → 合规说明 → 页脚。
+
+“方案对比”和“使用场景”里的按钮会一键预填价格卡（产品、档位、周期），然后滚动到对应卡片。
+
+## 上线前需要配置
+
+| 内容 | 位置 | 说明 |
+|---|---|---|
+| 收款码 | `assets/gettoken/site.config.mjs` → `payment.methods[].qr` | 把图片放到 `assets/gettoken/pay/`，填相对路径，如 `./assets/gettoken/pay/wechat.png`。留空时显示“收款码待上传”占位。`currencies` 决定该方式出现在人民币还是美元方案里。 |
+| 客服联系方式 | `site.config.mjs` → `contact` | 微信、Telegram、邮箱；留空的项不显示，全部为空时显示“客服联系方式即将公布”。 |
+| 价格 | `assets/gettoken/catalog.mjs` → `monthlyMinor` | 当前为 `null`，页面显示 `¥XX` / `$XX`。填整数（单位为分/美分，如 `8900` = ¥89）即上线价格。 |
+| 周期折扣 | `catalog.mjs` → `periodRate` | 默认全部为 `1`（无折扣）。如 `{ 1: 1, 3: 0.95, 12: 0.85 }` 会自动显示“省 ¥X”。 |
+
+付款流程：用户点“扫码购买”→ 弹窗显示订单摘要、付款备注码与收款码 → 用户付款并备注 → 把截图发给客服 → 人工核对后交付。页面不发送任何请求，也不保存任何数据。
 
 ## 本地预览
-
-安装 Python 3 后，在仓库目录执行：
 
 ```bash
 python -m http.server 8899 --bind 127.0.0.1
 ```
 
-浏览器访问 `http://127.0.0.1:8899/`。不要直接双击 HTML 文件，ES modules 需要通过 HTTP 加载。无需 pip/npm 安装。
+浏览器访问 `http://127.0.0.1:8899/`。ES modules 需要通过 HTTP 加载，不要直接双击 HTML 文件。
 
-也可直接把仓库内容放入任意静态网站托管服务。所有静态资源使用相对路径，兼容子目录部署。
+也可以直接放到任意静态托管服务；所有资源使用相对路径，兼容子目录部署。
 
-## 精简边界
+## 测试
 
-- 这是界面预览，未接入支付、订单、登录、自动发货或数据库。
-- 页面文案与价格数据保留当前版本，金额为展示示例。
-- 不携带旧博客或 Next.js 镜像，页脚“探索更多”链接指向首页现有指南。
-- 不携带第三方字体，改用操作系统自带字体，字体外观可能随设备不同。
-- Logo 使用项目提供的橙色 G 原图。
+```bash
+node --test tests/*.test.mjs
+```
+
+## 说明
+
+- 动效均为渐进增强：脚本未运行时内容照常显示；系统开启“减少动态效果”时动画会关闭。
+- 不携带第三方字体，使用系统字体，字形可能随设备不同。
+- GetToken 为独立服务品牌，并非 OpenAI、Anthropic 等第三方的官方平台。

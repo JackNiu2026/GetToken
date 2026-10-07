@@ -5,7 +5,6 @@ import {
   initConsoleTilt, initSteps, initScrollSpy,
 } from './motion.mjs';
 import { initEarth } from './scenes.mjs';
-import { enhanceDropdown } from './dropdown.mjs';
 
 // Everything here is page-local: no requests, no storage, no real orders.
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -176,13 +175,12 @@ function showMethod(method) {
   }
 }
 
-function openPayment(quote, usageLabel, usageValue, trigger) {
+function openPayment(quote, trigger) {
   const methods = SITE.payment.methods.filter(m => m.currencies.includes(quote.currency));
   const available = methods.length ? methods : SITE.payment.methods;
   payTitle.textContent = `${quote.name} · ${quote.tierName}`;
   const rows = [
     ['方案', `${quote.tierName} · ${quote.tierHint}`],
-    [usageLabel, usageValue],
     ['服务周期', `${quote.months} 个月`],
     ['月度价格', `${formatMoney(quote.monthlyMinor, quote.currency)} / 月`],
   ];
@@ -249,9 +247,6 @@ $$('[data-product]').forEach(card => {
   const priceEl = $('[data-price]', card);
   const totalEl = $('[data-total]', card);
   const featuresEl = $('[data-features]', card);
-  const usage = $('[data-usage]', card);
-  const usageLabel = $('.plan__select > span', card).textContent.replace(/^\d+\.\s*/, '');
-  enhanceDropdown(usage);
   let shownMonthly;
   let shownTier = null;
 
@@ -288,7 +283,7 @@ $$('[data-product]').forEach(card => {
   card.addEventListener('change', event => { if (event.target.matches('input[type="radio"]')) render(); });
   $('[data-buy]', card).addEventListener('click', event => {
     const quote = render();
-    openPayment(quote, usageLabel, usage.value, event.currentTarget);
+    openPayment(quote, event.currentTarget);
   });
 
   plans.set(product, {

@@ -19,12 +19,16 @@ jobs:
           node-version: '22'
       - name: Check JavaScript and deployment scripts
         run: |
-          for file in assets/gettoken/*.mjs; do node --check "$file"; done
+          for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs; do node --check "$file"; done
           bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh
-      - name: Test catalog
+      - name: Check generated static pages
+        run: node scripts/build-site.mjs --check
+      - name: Test catalog and static website
         run: node --test tests/*.test.mjs
       - name: Package website
-        run: tar -czf site.tar.gz index.html assets
+        run: node scripts/package-site.mjs
+      - name: Verify packaged site with Nginx
+        run: node scripts/test-nginx.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: gettoken-${{ github.sha }}

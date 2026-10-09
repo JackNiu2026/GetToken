@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://gettoken.cc/sitemap.xml

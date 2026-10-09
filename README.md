@@ -19,7 +19,7 @@ tests/
   catalog.test.mjs
 ```
 
-没有 React、Next.js、node_modules、第三方字体或构建步骤。
+没有 React、Next.js、node_modules 或第三方字体。原首页无需构建；新增 SEO 内容使用 Node 原生脚本生成静态 HTML。
 
 ## 页面结构
 
@@ -40,13 +40,20 @@ tests/
 
 ## 本地预览
 
+原首页保持 GitHub 最新版本。新增独立 SEO 导航页 `/navigation/`，十三篇专题文章从该页进入；没有新增产品销售页或咨询流程。内容维护、完整打包与收录步骤见 [SEO.md](SEO.md)。修改 SEO 内容源后执行：
+
+```bash
+node scripts/build-site.mjs
+node scripts/build-site.mjs --check
+```
+
 云服务器和 GitHub Actions 自动部署见 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
 ```bash
 python -m http.server 8899 --bind 127.0.0.1
 ```
 
-浏览器访问 `http://127.0.0.1:8899/`。ES modules 需要通过 HTTP 加载，不要直接双击 HTML 文件。
+浏览器访问原首页 `http://127.0.0.1:8899/` 或 SEO 导航 `http://127.0.0.1:8899/navigation/`。ES modules 需要通过 HTTP 加载，不要直接双击 HTML 文件。
 
 也可以直接放到任意静态托管服务；所有资源使用相对路径，兼容子目录部署。
 
@@ -54,6 +61,9 @@ python -m http.server 8899 --bind 127.0.0.1
 
 ```bash
 node --test tests/*.test.mjs
+node scripts/seo-report.mjs
+# Linux + Docker 环境可验证真实 Nginx 发布包：
+node scripts/test-nginx.mjs
 ```
 
 ## 说明

@@ -14,6 +14,8 @@ coverage/
 !.env.example
 *.log
 *.zip
+site.tar.gz
+.impeccable/review/
 *.pem
 *.key
 *.p12

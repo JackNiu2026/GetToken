@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-09T01:48:09.935064+00:00",
+  "title": "Design System: GetToken",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Near-black canvas",
+        "tonalRamp": [
+          "oklch(15.00% 0.01065 285.06)",
+          "oklch(26.43% 0.01065 285.06)",
+          "oklch(37.86% 0.01065 285.06)",
+          "oklch(49.29% 0.01065 285.06)",
+          "oklch(60.71% 0.01065 285.06)",
+          "oklch(72.14% 0.01065 285.06)",
+          "oklch(83.57% 0.01065 285.06)",
+          "oklch(95.00% 0.01065 285.06)"
+        ]
+      },
+      "bg-tint": {
+        "role": "neutral",
+        "displayName": "Tinted canvas",
+        "tonalRamp": [
+          "oklch(15.00% 0.01249 284.97)",
+          "oklch(26.43% 0.01249 284.97)",
+          "oklch(37.86% 0.01249 284.97)",
+          "oklch(49.29% 0.01249 284.97)",
+          "oklch(60.71% 0.01249 284.97)",
+          "oklch(72.14% 0.01249 284.97)",
+          "oklch(83.57% 0.01249 284.97)",
+          "oklch(95.00% 0.01249 284.97)"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "tonalRamp": [
+          "oklch(15.00% 0.01428 284.88)",
+          "oklch(26.43% 0.01428 284.88)",
+          "oklch(37.86% 0.01428 284.88)",
+          "oklch(49.29% 0.01428 284.88)",
+          "oklch(60.71% 0.01428 284.88)",
+          "oklch(72.14% 0.01428 284.88)",
+          "oklch(83.57% 0.01428 284.88)",
+          "oklch(95.00% 0.01428 284.88)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Quiet separator",
+        "tonalRamp": [
+          "oklch(15.00% 0.03026 281.20)",
+          "oklch(26.43% 0.03026 281.20)",
+          "oklch(37.86% 0.03026 281.20)",
+          "oklch(49.29% 0.03026 281.20)",
+          "oklch(60.71% 0.03026 281.20)",
+          "oklch(72.14% 0.03026 281.20)",
+          "oklch(83.57% 0.03026 281.20)",
+          "oklch(95.00% 0.03026 281.20)"
+        ]
+      },
+      "line-2": {
+        "role": "neutral",
+        "displayName": "Control stroke",
+        "tonalRamp": [
+          "oklch(15.00% 0.03418 281.82)",
+          "oklch(26.43% 0.03418 281.82)",
+          "oklch(37.86% 0.03418 281.82)",
+          "oklch(49.29% 0.03418 281.82)",
+          "oklch(60.71% 0.03418 281.82)",
+          "oklch(72.14% 0.03418 281.82)",
+          "oklch(83.57% 0.03418 281.82)",
+          "oklch(95.00% 0.03418 281.82)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Primary ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.00413 271.37)",
+          "oklch(26.43% 0.00413 271.37)",
+          "oklch(37.86% 0.00413 271.37)",
+          "oklch(49.29% 0.00413 271.37)",
+          "oklch(60.71% 0.00413 271.37)",
+          "oklch(72.14% 0.00413 271.37)",
+          "oklch(83.57% 0.00413 271.37)",
+          "oklch(95.00% 0.00413 271.37)"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Secondary ink / silver",
+        "tonalRamp": [
+          "oklch(15.00% 0.01686 274.79)",
+          "oklch(26.43% 0.01686 274.79)",
+          "oklch(37.86% 0.01686 274.79)",
+          "oklch(49.29% 0.01686 274.79)",
+          "oklch(60.71% 0.01686 274.79)",
+          "oklch(72.14% 0.01686 274.79)",
+          "oklch(83.57% 0.01686 274.79)",
+          "oklch(95.00% 0.01686 274.79)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted text",
+        "tonalRamp": [
+          "oklch(15.00% 0.02841 276.17)",
+          "oklch(26.43% 0.02841 276.17)",
+          "oklch(37.86% 0.02841 276.17)",
+          "oklch(49.29% 0.02841 276.17)",
+          "oklch(60.71% 0.02841 276.17)",
+          "oklch(72.14% 0.02841 276.17)",
+          "oklch(83.57% 0.02841 276.17)",
+          "oklch(95.00% 0.02841 276.17)"
+        ]
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint text",
+        "tonalRamp": [
+          "oklch(15.00% 0.03225 276.87)",
+          "oklch(26.43% 0.03225 276.87)",
+          "oklch(37.86% 0.03225 276.87)",
+          "oklch(49.29% 0.03225 276.87)",
+          "oklch(60.71% 0.03225 276.87)",
+          "oklch(72.14% 0.03225 276.87)",
+          "oklch(83.57% 0.03225 276.87)",
+          "oklch(95.00% 0.03225 276.87)"
+        ]
+      },
+      "blue": {
+        "role": "primary",
+        "displayName": "Clear blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.18801 259.81)",
+          "oklch(26.43% 0.18801 259.81)",
+          "oklch(37.86% 0.18801 259.81)",
+          "oklch(49.29% 0.18801 259.81)",
+          "oklch(60.71% 0.18801 259.81)",
+          "oklch(72.14% 0.18801 259.81)",
+          "oklch(83.57% 0.18801 259.81)",
+          "oklch(95.00% 0.18801 259.81)"
+        ]
+      },
+      "blue-2": {
+        "role": "primary",
+        "displayName": "Pale blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.13739 262.86)",
+          "oklch(26.43% 0.13739 262.86)",
+          "oklch(37.86% 0.13739 262.86)",
+          "oklch(49.29% 0.13739 262.86)",
+          "oklch(60.71% 0.13739 262.86)",
+          "oklch(72.14% 0.13739 262.86)",
+          "oklch(83.57% 0.13739 262.86)",
+          "oklch(95.00% 0.13739 262.86)"
+        ]
+      },
+      "violet": {
+        "role": "secondary",
+        "displayName": "Violet",
+        "tonalRamp": [
+          "oklch(15.00% 0.23254 303.90)",
+          "oklch(26.43% 0.23254 303.90)",
+          "oklch(37.86% 0.23254 303.90)",
+          "oklch(49.29% 0.23254 303.90)",
+          "oklch(60.71% 0.23254 303.90)",
+          "oklch(72.14% 0.23254 303.90)",
+          "oklch(83.57% 0.23254 303.90)",
+          "oklch(95.00% 0.23254 303.90)"
+        ]
+      },
+      "violet-2": {
+        "role": "secondary",
+        "displayName": "Pale violet",
+        "tonalRamp": [
+          "oklch(15.00% 0.13213 299.85)",
+          "oklch(26.43% 0.13213 299.85)",
+          "oklch(37.86% 0.13213 299.85)",
+          "oklch(49.29% 0.13213 299.85)",
+          "oklch(60.71% 0.13213 299.85)",
+          "oklch(72.14% 0.13213 299.85)",
+          "oklch(83.57% 0.13213 299.85)",
+          "oklch(95.00% 0.13213 299.85)"
+        ]
+      },
+      "green": {
+        "role": "secondary",
+        "displayName": "Green",
+        "tonalRamp": [
+          "oklch(15.00% 0.14907 162.48)",
+          "oklch(26.43% 0.14907 162.48)",
+          "oklch(37.86% 0.14907 162.48)",
+          "oklch(49.29% 0.14907 162.48)",
+          "oklch(60.71% 0.14907 162.48)",
+          "oklch(72.14% 0.14907 162.48)",
+          "oklch(83.57% 0.14907 162.48)",
+          "oklch(95.00% 0.14907 162.48)"
+        ]
+      },
+      "green-2": {
+        "role": "secondary",
+        "displayName": "Pale green",
+        "tonalRamp": [
+          "oklch(15.00% 0.14232 167.27)",
+          "oklch(26.43% 0.14232 167.27)",
+          "oklch(37.86% 0.14232 167.27)",
+          "oklch(49.29% 0.14232 167.27)",
+          "oklch(60.71% 0.14232 167.27)",
+          "oklch(72.14% 0.14232 167.27)",
+          "oklch(83.57% 0.14232 167.27)",
+          "oklch(95.00% 0.14232 167.27)"
+        ]
+      },
+      "red": {
+        "role": "secondary",
+        "displayName": "Soft red",
+        "tonalRamp": [
+          "oklch(15.00% 0.16898 13.43)",
+          "oklch(26.43% 0.16898 13.43)",
+          "oklch(37.86% 0.16898 13.43)",
+          "oklch(49.29% 0.16898 13.43)",
+          "oklch(60.71% 0.16898 13.43)",
+          "oklch(72.14% 0.16898 13.43)",
+          "oklch(83.57% 0.16898 13.43)",
+          "oklch(95.00% 0.16898 13.43)"
+        ]
+      },
+      "button-light": {
+        "role": "primary",
+        "displayName": "White action",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Storefront body",
+        "purpose": "Preserved homepage base text."
+      },
+      "navigation-body": {
+        "displayName": "Navigation body",
+        "purpose": "Independent navigation and article-page base text."
+      },
+      "reading-body": {
+        "displayName": "Reading body",
+        "purpose": "Open 74ch article column; 15px below 700px."
+      },
+      "label": {
+        "displayName": "Auxiliary label",
+        "purpose": "Navigation, contents, editorial attribution, update dates and source notes."
+      },
+      "button": {
+        "displayName": "Action label",
+        "purpose": "Shared full-size pill action text."
+      }
+    },
+    "shadows": [
+      {
+        "name": "glass-highlight",
+        "value": "inset 0 1px 0 rgba(255, 255, 255, .07)",
+        "purpose": "Existing glass surfaces and shared homepage card highlight."
+      },
+      {
+        "name": "white-action-hover",
+        "value": "0 8px 28px -8px rgba(168, 85, 247, .6)",
+        "purpose": "Ambient violet hover beneath the shared white action."
+      },
+      {
+        "name": "homepage-card-hover",
+        "value": "var(--glass-highlight), 0 22px 48px -24px rgba(0, 0, 0, .9), 0 12px 36px -18px rgba(var(--rgb), .35)",
+        "purpose": "Incumbent hover-capable card depth without tilt or position change."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Incumbent storefront and shared action transitions."
+      },
+      {
+        "name": "button-transitions",
+        "value": "transform .4s var(--ease), box-shadow .3s, border-color .3s, color .3s",
+        "purpose": "Shared standard-action transitions; SEO reduced-motion styles disable them."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "homepage-wide",
+        "value": "1100px"
+      },
+      {
+        "name": "shared-intermediate",
+        "value": "960px"
+      },
+      {
+        "name": "seo-mobile",
+        "value": "700px"
+      },
+      {
+        "name": "homepage-mobile-and-gutter",
+        "value": "640px"
+      },
+      {
+        "name": "homepage-narrow",
+        "value": "370px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "White primary action",
+      "kind": "button",
+      "description": "Shared storefront and navigation return-to-pricing action.",
+      "html": "<a class=\"ds-button-light\" href=\"#pricing\">查看首页套餐</a>",
+      "css": ".ds-button-light{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 24px;border:1px solid transparent;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;transition:transform .4s var(--ease,cubic-bezier(.16,1,.3,1)),box-shadow .3s,border-color .3s,color .3s;background:#fff;color:var(--bg,#0b0b10);text-decoration:none;}.ds-button-light:hover{box-shadow:0 8px 28px -8px rgba(168,85,247,.6);}.ds-button-light:focus-visible{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:3px;border-radius:6px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}",
+      "refersTo": "button-light"
+    },
+    {
+      "name": "Ghost action",
+      "kind": "button",
+      "description": "Shared secondary action.",
+      "html": "<a class=\"ds-button-ghost\" href=\"#home\">返回首页</a>",
+      "css": ".ds-button-ghost{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 24px;border:1px solid transparent;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;transition:transform .4s var(--ease,cubic-bezier(.16,1,.3,1)),box-shadow .3s,border-color .3s,color .3s;background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.14);color:var(--ink-2,#cdd0dc);text-decoration:none;}.ds-button-ghost:hover{border-color:rgba(255,255,255,.3);color:#fff;}.ds-button-ghost:focus-visible{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:3px;border-radius:6px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}",
+      "refersTo": "button-ghost"
+    },
+    {
+      "name": "Compact white action",
+      "kind": "button",
+      "description": "Existing compact header action.",
+      "html": "<a class=\"ds-pill\" href=\"#pricing\">立即选购</a>",
+      "css": ".ds-pill{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);display:inline-flex;align-items:center;min-height:34px;padding:0 16px;border-radius:999px;background:#fff;color:var(--bg,#0b0b10);font-size:13px;font-weight:600;text-decoration:none;transition:transform .4s var(--ease,cubic-bezier(.16,1,.3,1)),box-shadow .3s;}.ds-pill:hover{box-shadow:0 4px 18px -4px rgba(168,85,247,.6);}.ds-pill:focus-visible{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:3px;border-radius:6px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}",
+      "refersTo": "pill-button"
+    },
+    {
+      "name": "Compact ghost action",
+      "kind": "button",
+      "description": "Existing subdued header action.",
+      "html": "<a class=\"ds-ghost\" href=\"#faq\">常见问题</a>",
+      "css": ".ds-ghost{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);display:inline-flex;align-items:center;min-height:34px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted,#8f93a6);font-size:13px;text-decoration:none;transition:color .2s,border-color .2s;}.ds-ghost:hover{color:var(--ink,#f4f5f8);border-color:rgba(255,255,255,.22);}.ds-ghost:focus-visible{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:3px;border-radius:6px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}",
+      "refersTo": "ghost-button"
+    },
+    {
+      "name": "Storefront tier choice",
+      "kind": "input",
+      "description": "Existing homepage native radios and visible selected labels.",
+      "html": "<fieldset class=\"ds-choice\"><legend>选择版本</legend><div><label><input type=\"radio\" name=\"ds-tier\" checked><span>标准版</span></label><label><input type=\"radio\" name=\"ds-tier\"><span>旗舰版</span></label></div></fieldset>",
+      "css": ".ds-choice{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);border:0;padding:0;margin:0;}.ds-choice legend{margin-bottom:8px;color:var(--muted,#8f93a6);font-size:12px;}.ds-choice>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}.ds-choice label{position:relative;display:block;cursor:pointer;}.ds-choice input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;}.ds-choice span{display:flex;align-items:center;justify-content:center;min-height:50px;padding:6px 4px;border-radius:9px;border:1px solid var(--line,#1f2030);background:rgba(255,255,255,.015);color:var(--muted,#8f93a6);font-size:13px;font-weight:600;transition:border-color .25s,background .25s,color .25s,box-shadow .25s;}.ds-choice label:hover span{border-color:var(--line-2,#2c2d40);color:var(--ink,#f4f5f8);}.ds-choice input:checked+span{border-color:var(--blue,#3b82f6);background:rgba(59,130,246,.1);color:var(--ink,#f4f5f8);box-shadow:0 0 12px rgba(59,130,246,.12);}.ds-choice input:focus-visible+span{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:2px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}",
+      "refersTo": "storefront-choice"
+    },
+    {
+      "name": "Storefront feature card",
+      "kind": "card",
+      "description": "Original shared surface sampled from feature cards.",
+      "html": "<section class=\"ds-card\"><h3>稳定可用</h3><p>清晰了解服务与使用条件。</p></section>",
+      "css": ".ds-card{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);padding:22px;border:1px solid rgba(255,255,255,.07);border-radius:var(--radius,16px);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012)),var(--card,#111118);color:var(--ink,#f4f5f8);box-shadow:var(--glass-highlight,inset 0 1px 0 rgba(255,255,255,.07));transition:border-color .35s,box-shadow .45s var(--ease,cubic-bezier(.16,1,.3,1));}.ds-card h3{font-size:15px;font-weight:600;margin:0;}.ds-card p{margin:6px 0 0;font-size:13px;line-height:1.75;color:var(--muted,#8f93a6);}@media(hover:hover){.ds-card:hover{border-color:rgba(255,255,255,.13);box-shadow:var(--glass-highlight,inset 0 1px 0 rgba(255,255,255,.07)),0 22px 48px -24px rgba(0,0,0,.9),0 12px 36px -18px rgba(59,130,246,.35);}}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}",
+      "refersTo": "storefront-card"
+    },
+    {
+      "name": "Product tag",
+      "kind": "chip",
+      "description": "Existing informational tag; no filter behavior.",
+      "html": "<span class=\"ds-tag\">独立账号</span>",
+      "css": ".ds-tag{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);display:inline-block;padding:3px 9px;border-radius:6px;border:1px solid rgba(59,130,246,.22);background:rgba(59,130,246,.06);color:var(--ink-2,#cdd0dc);font-size:12px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}",
+      "refersTo": "product-tag"
+    },
+    {
+      "name": "SEO header navigation",
+      "kind": "nav",
+      "description": "Two native header links on the independent pages.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"主导航\"><a href=\"#navigation\" aria-current=\"page\">订阅导航</a><a href=\"#guides\">选购指南</a></nav>",
+      "css": ".ds-nav{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);display:flex;gap:28px;color:var(--ink-2,#cdd0dc);font-size:14px;}.ds-nav a{color:inherit;padding-block:12px;text-decoration:none;}.ds-nav a:hover,.ds-nav a[aria-current]{color:var(--blue-2,#7aa7ff);}.ds-nav a:focus-visible{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:3px;border-radius:6px;}@media(max-width:700px){.ds-nav{width:100%;gap:24px;}}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}"
+    },
+    {
+      "name": "Open reading link",
+      "kind": "custom",
+      "description": "Navigation and related-reading entry uses a separator; each article shows three related links.",
+      "html": "<a class=\"ds-reading-link\" href=\"#article\"><strong>Claude Code 订阅与 API 计费有什么区别？</strong><p>先核对接入方式，再比较订阅与计费条件。</p></a>",
+      "css": ".ds-reading-link{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);display:block;padding-block:22px;border-top:1px solid var(--line,#1f2030);color:var(--ink,#f4f5f8);text-decoration:none;}.ds-reading-link strong{font-size:17px;line-height:1.6;font-weight:550;}.ds-reading-link p{color:var(--muted,#8f93a6);margin:10px 0 0;line-height:1.85;font-size:14px;}.ds-reading-link:hover strong{color:var(--blue-2,#7aa7ff);}.ds-reading-link:focus-visible{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:3px;border-radius:6px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}"
+    },
+    {
+      "name": "SEO FAQ disclosure",
+      "kind": "custom",
+      "description": "Native disclosure used in subscription navigation and each article; articles include two questions.",
+      "html": "<details class=\"ds-faq\"><summary>月卡是否代表不限量使用？</summary><p>月卡描述期限，不代表无限用量。需要确认额度限制与续费方式。</p></details>",
+      "css": ".ds-faq{font-family:var(--font,system-ui, -apple-system, \"SF Pro Text\", \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif);border-top:1px solid var(--line,#1f2030);color:var(--ink,#f4f5f8);font-size:15px;}.ds-faq summary{cursor:pointer;padding-block:20px;line-height:1.7;}.ds-faq p{max-width:84ch;margin:0;padding-bottom:22px;color:var(--ink-2,#cdd0dc);line-height:1.9;}.ds-faq summary:focus-visible{outline:2px solid var(--blue-2,#7aa7ff);outline-offset:3px;border-radius:6px;}@media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{animation:none!important;transition:none!important;}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Existing GetToken dark storefront",
+    "overview": "The Chinese interface, GetToken wordmark and existing raster logo remain the visual authority. The preserved homepage uses a compact dark storefront with glass surfaces, blue/violet emphasis, pale text and white pill actions. This name describes the incumbent design rather than a newly selected identity.\n\nThe independent subscription navigation and its thirteen articles inherit the same canvas and font stack. Their information uses open sections, fine separators and a wider reading rhythm. This record describes assets/gettoken/home.css, assets/gettoken/pages.css and the markup in scripts/build-site.mjs; page strategy stays in .impeccable/surfaces/seo-pages.md.",
+    "keyCharacteristics": [
+      "Dark tonal surfaces with fine separators.",
+      "White pill actions and softly rounded storefront cards.",
+      "Glass and ambient depth on the preserved storefront.",
+      "Open navigation and article layouts with native HTML links and disclosure."
+    ],
+    "rules": [
+      {
+        "name": "The Shared Canvas Rule",
+        "body": "Navigation and articles inherit the homepage palette; their links use the existing pale blue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Reading Rhythm Rule",
+        "body": "Keep substantial article text in the open reading column with its generous line-height; reserve muted text for auxiliary material.",
+        "section": "typography"
+      },
+      {
+        "name": "The Open Reading Rule",
+        "body": "Navigation rows and article sections use spacing and separators; they do not inherit the storefront card enclosure.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** inherit the existing dark canvas, pale text, logo and white action treatment.",
+      "**Do** preserve the open article column, mobile contents reflow and generous Chinese-text line-height.",
+      "**Do** keep native links, disclosure, keyboard focus and reduced-motion fallbacks."
+    ],
+    "donts": [
+      "**Don't** replace the incumbent logo or treat this extension as approval for a new identity.",
+      "**Don't** turn the navigation reading links or article paragraphs into promotional cards.",
+      "**Don't** introduce new product colors or page-specific accents without an established source."
+    ]
+  }
+}

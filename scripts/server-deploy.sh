@@ -66,6 +66,21 @@ tar -xzf "$archive" --no-same-owner -C "$stage"
 test -f "$stage/index.html"
 test -f "$stage/assets/gettoken/home.mjs"
 test -f "$stage/assets/gettoken/home.css"
+test -f "$stage/assets/gettoken/pages.css"
+test -f "$stage/navigation/index.html"
+test -f "$stage/robots.txt"
+test -f "$stage/sitemap.xml"
+mapfile -t sitemap_urls < <(sed -n 's:.*<loc>\([^<]*\)</loc>.*:\1:p' "$stage/sitemap.xml")
+[[ ${#sitemap_urls[@]} -gt 1 ]] || { echo 'Sitemap must include the SEO pages'; exit 1; }
+seo_paths=()
+for address in "${sitemap_urls[@]}"; do
+  [[ "$address" == https://* ]] || { echo 'Sitemap URLs must use HTTPS'; exit 1; }
+  without_scheme=${address#https://}
+  route="/${without_scheme#*/}"
+  [[ "$route" =~ ^/([a-z0-9-]+/)*$ ]] || { echo 'Invalid sitemap path'; exit 1; }
+  test -f "$stage${route}index.html"
+  seo_paths+=("$route")
+done
 printf '{"commit":"%s"}\n' "$revision" > "$stage/deployment.json"
 find "$stage" -type d -exec chmod 755 {} +
 find "$stage" -type f -exec chmod 644 {} +
@@ -80,6 +95,9 @@ server {
     root $site_root/current;
     index index.html;
     autoindex off;
+    gzip on;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/xml text/xml image/svg+xml;
     add_header X-Content-Type-Options nosniff always;
     location / {
         try_files \$uri \$uri/ =404;
@@ -93,6 +111,18 @@ server {
         add_header X-Content-Type-Options nosniff always;
     }
     location ~ /\. { deny all; }
+    location ~ ^/(navigation|guides/[a-z0-9-]+)\$ {
+        absolute_redirect off;
+        return 301 /\$1/\$is_args\$args;
+    }
+    location ~ ^/(navigation|guides/[a-z0-9-]+)/index\.html\$ {
+        absolute_redirect off;
+        if (\$request_uri ~ "^/(navigation|guides/[a-z0-9-]+)/index\.html(?:\?.*)?\$") {
+            return 301 /\$1/\$is_args\$args;
+        }
+        try_files \$uri =404;
+        add_header Cache-Control "no-cache";
+    }
 }
 EOF
 nginx -t
@@ -104,6 +134,16 @@ systemctl reload nginx
 
 curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127.0.0.1/ -o /dev/null
 curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127.0.0.1/assets/gettoken/home.css -o /dev/null
+for route in "${seo_paths[@]}"; do
+  curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1$route" -o /dev/null
+done
+for resource in robots.txt sitemap.xml assets/gettoken/pages.css; do
+  curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1/$resource" -o /dev/null
+done
+missing_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Host: $site_host" http://127.0.0.1/__gettoken_seo_missing_page__/)
+[[ "$missing_status" == '404' ]]
+alias_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/navigation/index.html)
+[[ "$alias_headers" == *'301'* && "$alias_headers" == *'/navigation/'* ]]
 js_headers=$(curl --fail --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/assets/gettoken/home.mjs)
 [[ "$js_headers" == *'Content-Type: application/javascript'* ]]
 deployed_version=$(curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127.0.0.1/deployment.json)

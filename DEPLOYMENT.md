@@ -1,6 +1,6 @@
 # 云服务器部署
 
-部署目标：`39.97.40.89`，SSH 用户：`root`。网站为纯静态页面；服务器安装 Nginx 和 curl，不需要 Node.js、数据库或构建工具。安装脚本支持 apt、dnf、yum 和 systemd。Node.js 只用于 GitHub Actions 中的语法检查和产品目录测试。
+部署目标：`39.97.40.89`，SSH 用户：`root`。网站为纯静态页面；服务器安装 Nginx 和 curl，不需要 Node.js、数据库或构建工具。安装脚本支持 apt、dnf、yum 和 systemd。Node.js 用于本地和 GitHub Actions 的生成、打包与验证。
 
 ## 首次配置
 
@@ -31,12 +31,12 @@
 
 ## 发布过程
 
-- CI 检查 JavaScript 与 Shell 语法，运行目录测试，把 `index.html` 和 `assets/` 打包。
+- CI 检查 JavaScript 与 Shell 语法、SEO 页面是否同步及原首页是否保持不变，并通过 `scripts/package-site.mjs` 打包原首页、独立导航页、十三篇文章、资源、robots 和 sitemap。
 - SSH 使用固定的服务器公钥验证身份，临时密钥文件在任务结束时删除。
 - 每次发布创建独立目录 `/var/www/gettoken/releases/<提交 SHA>.<随机后缀>/`。
 - `/var/www/gettoken/current` 原子切换到新目录，Nginx 配置位于 `/etc/nginx/conf.d/gettoken.conf`。
 - 配置专门为 `.mjs` 设置 JavaScript MIME 类型，避免浏览器拒绝加载模块。
-- 切换后检查首页、CSS、JavaScript MIME 类型和 `deployment.json` 中的提交 SHA；失败时恢复之前的链接和 Nginx 配置。
+- 切换后检查 sitemap 列出的全部页面、robots、资源、404、SEO 网址重定向、JavaScript MIME 类型和 `deployment.json` 中的提交 SHA；失败时恢复之前的链接和 Nginx 配置。
 - GitHub 同时只执行一个生产部署；服务器用文件锁防止不同入口并发发布。
 
 Nginx 使用 `server_name 39.97.40.89`，不会删除现有站点配置。已有应用如果占用端口 80，先确认服务器的托管方式，避免直接启动另一套服务。
@@ -49,7 +49,8 @@ Nginx 使用 `server_name 39.97.40.89`，不会删除现有站点配置。已有
 git checkout main
 git pull --ff-only
 node --test tests/*.test.mjs
-tar -czf site.tar.gz index.html assets
+node scripts/build-site.mjs --check
+node scripts/package-site.mjs
 export DEPLOY_HOST=39.97.40.89 DEPLOY_USER=root DEPLOY_PORT=22
 export DEPLOY_REVISION="$(git rev-parse HEAD)"
 export DEPLOY_SSH_KEY="$(cat /安全目录/GetToken.pem)"
@@ -84,3 +85,15 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 ## 域名与正式销售配置
 
 目前先提供 HTTP/IP 访问；配置域名解析后再调整 `server_name` 并签发 HTTPS 证书。价格、收款码和客服联系方式仍遵循 README 中的配置方式；部署不会替你填入真实业务信息。
+
+## SEO 发布验收
+
+CI 在打包后通过真实 Nginx 容器验证发布模板与目录页行为。容器仅用于测试，不是部署目标。新增 SEO 地址的 `index.html` 别名及无末尾斜线地址使用相对 301，并保留查询参数，适用于 HTTPS 代理后的入口；目录请求的内部索引不会进入重定向循环。
+
+正式域名配置完成后，在可以访问该域名的环境中运行：
+
+```bash
+node scripts/check-live-seo.mjs --output /tmp/gettoken-live-seo.json
+```
+
+默认要求 HTTPS；检查 canonical 页面 200、HTTP 到 HTTPS、robots 对 Googlebot 与 Baiduspider 的允许规则、sitemap、修改日期、资源、404 与 SEO 别名。当前安装脚本仍监听 HTTP 80，正式 HTTPS 必须由真实证书与入口代理或服务器配置提供。本地容器检查通过不表示线上 HTTPS、收录或排名通过。

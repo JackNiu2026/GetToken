@@ -19,11 +19,12 @@ const invalidIndexing = value => /\b(noindex|none)\b/i.test(value);
 const run = promisify(execFile);
 
 // curl preserves the environment's proxy and CA trust without npm dependencies.
-export async function curlRequest(address) {
+export async function curlRequest(address, {headers:requestHeaders={}}={}) {
   const directory=await mkdtemp(join(tmpdir(),'gettoken-seo-request-'));
   try {
     const headerPath=join(directory,'headers'),bodyPath=join(directory,'body');
-    const {stdout}=await run('curl',['--silent','--show-error','--max-time','12','--max-redirs','0','--user-agent','GetToken-SEO-Check/1.0','--dump-header',headerPath,'--output',bodyPath,'--write-out','%{http_code}',address],{timeout:15000,maxBuffer:1024*1024});
+    const headersArguments=Object.entries(requestHeaders).flatMap(([key,value])=>['--header',`${key}: ${value}`]);
+    const {stdout}=await run('curl',['--silent','--show-error','--max-time','12','--max-redirs','0','--user-agent','GetToken-SEO-Check/1.0','--dump-header',headerPath,'--output',bodyPath,'--write-out','%{http_code}',...headersArguments,address],{timeout:15000,maxBuffer:1024*1024});
     const raw=await readFile(headerPath,'utf8');
     const last=raw.trim().split(/\r?\n\r?\n/).filter(block=>/^HTTP\//.test(block)).at(-1)||'';
     const headers=new Headers();
@@ -73,7 +74,8 @@ async function parallelMap(items, fn, limit=4) {
   }));
   return output;
 }
-export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview=false,checkAliases=true}={}) {
+export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview=false,checkAliases=true,expectedRevision}={}) {
+  if(expectedRevision && !/^[0-9a-f]{40}$/.test(expectedRevision)) throw new Error('Expected revision must be a full commit SHA.');
   const base=new URL(baseURL);
   if (base.username||base.password||base.search||base.hash||base.pathname!=='/') throw new Error('Use a plain origin without credentials, path or query.');
   if (base.protocol!=='https:' && !(preview && base.protocol==='http:' && ['localhost','127.0.0.1','[::1]'].includes(base.hostname))) throw new Error('Production checks require HTTPS. --preview only permits a local HTTP server.');
@@ -98,6 +100,7 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
     const expected=await readFile(resolve(ROOT,route,'index.html'),'utf8');
     requireCheck(result.status===200,result.url,'http',`Canonical page must return 200; received ${result.status}${result.error?`: ${result.error}`:''}`);
     if (result.status!==200) return {route,title:''};
+    requireCheck(result.body===expected,result.url,'content','Published HTML differs from the reviewed build; the homepage and content must remain unchanged.');
     requireCheck(/text\/html/i.test(result.headers.get('content-type')||''),result.url,'mime','Page must be served as HTML.');
     const canonical=tags(result.body,'link').filter(tag=>attr(tag,'rel').toLowerCase()==='canonical').map(tag=>attr(tag,'href'));
     requireCheck(canonical.length===1 && canonical[0]===`${SITE.origin}/${route}`,result.url,'canonical','Page must have one canonical matching the configured production origin.');
@@ -158,12 +161,18 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
     const location=response.headers.get('location');
     requireCheck([301,308].includes(response.status) && location && new URL(location,response.url).href===new URL('/',base).href,response.url,'https','HTTP origin must permanently redirect to canonical HTTPS.');
   }
+  if(expectedRevision) {
+    const deployed=await get('/deployment.json');
+    let revision;
+    try {revision=JSON.parse(deployed.body).commit;} catch {}
+    requireCheck(deployed.status===200 && revision===expectedRevision,deployed.url,'revision','Public domain does not serve the expected deployed commit.');
+  }
   return {status:issues.length?'failed':'passed',productionVerified:!preview&&!issues.length,baseURL:base.origin,checkedAt:new Date().toISOString(),checks,issues,note:preview?'Local preview only; production HTTPS, crawler access and indexing remain unverified.':'HTTP checks do not certify search-engine indexing, rankings or field Core Web Vitals.'};
 }
 if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   const args=process.argv.slice(2);
   const option=name=>{const i=args.indexOf(name);return i<0?undefined:args[i+1];};
-  const report=await auditLive({baseURL:option('--base')||SITE.origin,preview:args.includes('--preview'),checkAliases:!args.includes('--skip-aliases')});
+  const report=await auditLive({baseURL:option('--base')||SITE.origin,preview:args.includes('--preview'),checkAliases:!args.includes('--skip-aliases'),expectedRevision:option('--revision')});
   if(option('--output')) {const path=resolve(option('--output'));await mkdir(dirname(path),{recursive:true});await writeFile(path,`${JSON.stringify(report,null,2)}\n`);}
   console.log(JSON.stringify(report,null,2));
   if(report.status!=='passed')process.exitCode=1;

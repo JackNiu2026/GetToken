@@ -93,8 +93,20 @@ test('live audit accepts valid HTTP behavior and reports observed failures',asyn
   const row=fixture.map.get(guide);
   fixture.map.set(guide,{...row,headers:{...row.headers,'x-robots-tag':'noindex'}});
   const failure=await auditLive({fetcher:fixture.fetcher});
+  fixture.map.set(guide,{...row,body:row.body+'<!--unexpected modification-->'});
+  const changed=await auditLive({fetcher:fixture.fetcher});
+  assert.ok(changed.issues.some(issue=>issue.type==='content'));
   for(const type of ['crawl','soft404','alias','indexing'])assert.ok(failure.issues.some(issue=>issue.type===type),type);
   assert.equal(failure.productionVerified,false);
+});
+
+test('public revision checks detect deployment to the wrong served directory',async()=>{
+  const revision='a'.repeat(40),fixture=await deployedFixture();
+  fixture.map.set(`${SITE.origin}/deployment.json`,{body:JSON.stringify({commit:revision}),status:200});
+  assert.deepEqual((await auditLive({fetcher:fixture.fetcher,expectedRevision:revision})).issues,[]);
+  const wrong=await auditLive({fetcher:fixture.fetcher,expectedRevision:'b'.repeat(40)});
+  assert.ok(wrong.issues.some(issue=>issue.type==='revision'));
+  await assert.rejects(()=>auditLive({expectedRevision:'main'}),/full commit SHA/);
 });
 
 test('transport failures remain incomplete rather than alleging a site defect',async()=>{

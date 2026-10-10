@@ -1,6 +1,6 @@
 # 云服务器部署
 
-部署目标：`39.97.40.89`，SSH 用户：`root`。网站为纯静态页面；服务器安装 Nginx 和 curl，不需要 Node.js、数据库或构建工具。安装脚本支持 apt、dnf、yum 和 systemd。Node.js 用于本地和 GitHub Actions 的生成、打包与验证。
+部署目标：`39.97.40.89`，SSH 用户：`root`。网站为纯静态页面；服务器需要 Nginx、curl 和 Python 3，不需要 Node.js、数据库或构建工具。Python 只用于更新域名的 SEO 路由与回滚，不运行网站服务。安装脚本支持 apt、dnf、yum 和 systemd。Node.js 用于本地和 GitHub Actions 的生成、打包与验证。
 
 ## 首次配置
 
@@ -36,7 +36,10 @@
 - 每次发布创建独立目录 `/var/www/gettoken/releases/<提交 SHA>.<随机后缀>/`。
 - `/var/www/gettoken/current` 原子切换到新目录，Nginx 配置位于 `/etc/nginx/conf.d/gettoken.conf`。
 - 配置专门为 `.mjs` 设置 JavaScript MIME 类型，避免浏览器拒绝加载模块。
+- SEO 别名规则保存在 `/var/www/gettoken/seo-locations.conf`。脚本从实际加载的 Nginx 配置中寻找 `gettoken.cc`、`www.gettoken.cc` 的站点，仅在根目录为 `/var/www/gettoken/current` 时追加规则 include，保留现有首页、TLS、证书与其他路由；根目录不符会中止发布。
 - 切换后检查 sitemap 列出的全部页面、robots、资源、404、SEO 网址重定向、JavaScript MIME 类型和 `deployment.json` 中的提交 SHA；失败时恢复之前的链接和 Nginx 配置。
+- 域名配置与原 SEO 规则先存入权限为 700 的临时备份目录，失败时恢复原字节和权限，成功后清理；恢复异常时保留私有备份并报告错误。
+- GitHub runner 随后检查实际 HTTPS 域名的全部页面、正文一致性、SEO 别名、HTTP→HTTPS 和公开部署版本，不再只以 IP 站点检查作为发布验收。
 - GitHub 同时只执行一个生产部署；服务器用文件锁防止不同入口并发发布。
 
 Nginx 使用 `server_name 39.97.40.89`，不会删除现有站点配置。已有应用如果占用端口 80，先确认服务器的托管方式，避免直接启动另一套服务。
@@ -84,7 +87,7 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 ## 域名与正式销售配置
 
-目前先提供 HTTP/IP 访问；配置域名解析后再调整 `server_name` 并签发 HTTPS 证书。价格、收款码和客服联系方式仍遵循 README 中的配置方式；部署不会替你填入真实业务信息。
+实际检查已确认 `gettoken.cc` 与 `www.gettoken.cc` 解析到该服务器，宝塔已有 HTTPS 站点且根目录为发布软链接。部署保留现有证书和域名配置，仅补充 SEO 地址规则。安装脚本的 IP 站点仍监听 HTTP 80，不负责签发或更换证书。价格、收款码和客服联系方式仍遵循 README 中的配置方式。
 
 ## SEO 发布验收
 
@@ -93,7 +96,7 @@ CI 在打包后通过真实 Nginx 容器验证发布模板与目录页行为。�
 正式域名配置完成后，在可以访问该域名的环境中运行：
 
 ```bash
-node scripts/check-live-seo.mjs --output /tmp/gettoken-live-seo.json
+node scripts/check-live-seo.mjs --revision "$(git rev-parse HEAD)" --output /tmp/gettoken-live-seo.json
 ```
 
-默认要求 HTTPS；检查 canonical 页面 200、HTTP 到 HTTPS、robots 对 Googlebot 与 Baiduspider 的允许规则、sitemap、修改日期、资源、404 与 SEO 别名。当前安装脚本仍监听 HTTP 80，正式 HTTPS 必须由真实证书与入口代理或服务器配置提供。本地容器检查通过不表示线上 HTTPS、收录或排名通过。
+默认要求 HTTPS；检查 canonical 页面 200、正文与本次构建一致、部署版本、HTTP 到 HTTPS、robots 对 Googlebot 与 Baiduspider 的允许规则、sitemap、日期、资源、404 与 SEO 别名。请求通过不表示搜索平台已收录或已有排名。首页保持原样，新导航直接访问 `/navigation/`。

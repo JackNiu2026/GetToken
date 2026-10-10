@@ -61,7 +61,7 @@ robots 允许 Googlebot 与 Baiduspider，指向含首页及十四个新增页�
 node scripts/check-live-seo.mjs --output /tmp/gettoken-live-seo.json
 ```
 
-检查全部规范页的 HTTP/MIME/title/description/canonical、noindex、作者日期、结构化数据、相关阅读、Googlebot 与 Baiduspider robots 规则、sitemap、资源、404、别名及 HTTP→HTTPS。传输失败报告 incomplete，不把代理阻断当成网站错误。即使通过，也不代表已经收录、有排名或达到真实用户 Core Web Vitals。
+检查全部规范页的 HTTP/MIME/title/description/canonical、正文与构建一致、noindex、作者日期、结构化数据、相关阅读、Googlebot 与 Baiduspider robots 规则、sitemap、资源、404、别名及 HTTP→HTTPS。可加 `--revision 完整提交SHA` 校验实际域名的部署版本，发布流程自动执行此项验收。传输失败报告 incomplete，不把代理阻断当成网站错误。即使通过，也不代表已经收录、有排名或达到真实用户 Core Web Vitals。
 
 `node scripts/seo-report.mjs` 输出本地 `.impeccable/review/seo/`：
 
@@ -87,4 +87,4 @@ node scripts/check-live-seo.mjs --output /tmp/gettoken-live-seo.json
 
 ## 本轮验收与限制
 
-见 `SEO-AUDIT.md`。上述本地验收阶段尚未推送或发布到生产；后续发布结果以 GitHub Actions 和实际站点检查为准。托管环境的出站白名单不包含 `gettoken.cc`，生产请求在代理 CONNECT 阶段被拒绝；这不能证明网站返回 403。本地验收没有已验证的搜索平台账号、生产部署凭据或真实报价资料，发布包通过不能替代这些条件。
+见 `SEO-AUDIT.md`。后续通过实际服务器和 GitHub runner 检查正式域名，确认新页面已上线；首页未添加入口，因此其内容不直接出现在首页。原重定向规则只安装在 IP 站点，本轮将共享规则加入现有域名站点，并添加完整域名发布校验，结果以该修复版本的 Actions 为准。开发环境仍无法直连该域名；站长账号、真实报价和收录排名数据仍需确认。

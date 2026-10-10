@@ -12,16 +12,16 @@ site_host=${3:?Missing site hostname}
 exec 9>/var/lock/gettoken-deploy.lock
 flock -w 120 9
 
-if ! command -v nginx >/dev/null || ! command -v curl >/dev/null; then
+if ! command -v nginx >/dev/null || ! command -v curl >/dev/null || ! command -v python3 >/dev/null; then
   if command -v apt-get >/dev/null; then
     apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y nginx curl
+    DEBIAN_FRONTEND=noninteractive apt-get install -y nginx curl python3
   elif command -v dnf >/dev/null; then
-    dnf install -y nginx curl
+    dnf install -y nginx curl python3
   elif command -v yum >/dev/null; then
-    yum install -y nginx curl
+    yum install -y nginx curl python3
   else
-    echo 'Install Nginx and curl with your operating system package manager first'
+    echo 'Install Nginx, curl and Python 3 with your operating system package manager first'
     exit 1
   fi
 fi
@@ -36,11 +36,18 @@ old_release=$(readlink -f "$site_root/current" || true)
 stage=$(mktemp -d "$site_root/releases/$revision.XXXXXXXX")
 config=/etc/nginx/conf.d/gettoken.conf
 config_backup=$(mktemp)
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+routing_state=$(mktemp -d /tmp/gettoken-seo-routing.XXXXXXXX)
+routing_changed=false
+keep_routing_backup=false
 had_config=false
 [[ ! -f "$config" ]] || { cp "$config" "$config_backup"; had_config=true; }
 switched=false
 config_changed=false
-cleanup() { rm -f "$config_backup"; }
+cleanup() {
+  rm -f "$config_backup"
+  if ! $keep_routing_backup; then rm -rf "$routing_state"; fi
+}
 rollback() {
   trap - ERR
   set +e
@@ -54,8 +61,15 @@ rollback() {
   fi
   if $config_changed; then
     if $had_config; then cp "$config_backup" "$config"; else rm -f "$config"; fi
-    nginx -t && systemctl reload nginx
   fi
+  if $routing_changed; then
+    if ! python3 "$script_dir/configure-seo-routing.py" restore --state-dir "$routing_state"; then
+      keep_routing_backup=true
+      echo "Routing restore failed; private backups retained at $routing_state" >&2
+    fi
+  fi
+  nginx -t && systemctl reload nginx
+  if $keep_routing_backup; then echo 'Deployment failed; routing backup needs recovery.' >&2; exit 1; fi
   echo 'Deployment failed; previous release and Nginx configuration restored.' >&2
   exit 1
 }
@@ -86,6 +100,10 @@ find "$stage" -type d -exec chmod 755 {} +
 find "$stage" -type f -exec chmod 644 {} +
 if command -v restorecon >/dev/null; then restorecon -RF "$site_root"; fi
 
+routing_changed=true
+python3 "$script_dir/configure-seo-routing.py" apply --state-dir "$routing_state" \
+  --root "$site_root/current" --snippet "$site_root/seo-locations.conf" \
+  --source "$script_dir/nginx-seo-locations.conf"
 mkdir -p /etc/nginx/conf.d
 config_changed=true
 cat > "$config" <<EOF
@@ -111,18 +129,7 @@ server {
         add_header X-Content-Type-Options nosniff always;
     }
     location ~ /\. { deny all; }
-    location ~ ^/(navigation|guides/[a-z0-9-]+)\$ {
-        absolute_redirect off;
-        return 301 /\$1/\$is_args\$args;
-    }
-    location ~ ^/(navigation|guides/[a-z0-9-]+)/index\.html\$ {
-        absolute_redirect off;
-        if (\$request_uri ~ "^/(navigation|guides/[a-z0-9-]+)/index\.html(?:\?.*)?\$") {
-            return 301 /\$1/\$is_args\$args;
-        }
-        try_files \$uri =404;
-        add_header Cache-Control "no-cache";
-    }
+    include $site_root/seo-locations.conf;
 }
 EOF
 nginx -t

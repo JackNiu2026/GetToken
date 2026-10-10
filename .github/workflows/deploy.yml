@@ -21,10 +21,13 @@ jobs:
         run: |
           for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs; do node --check "$file"; done
           bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh
+          python3 -m py_compile scripts/configure-seo-routing.py scripts/inspect-live.py
       - name: Check generated static pages
         run: node scripts/build-site.mjs --check
       - name: Test catalog and static website
         run: node --test tests/*.test.mjs
+      - name: Test domain configuration preservation and rollback
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Package website
         run: node scripts/package-site.mjs
       - name: Verify packaged site with Nginx
@@ -36,6 +39,8 @@ jobs:
             site.tar.gz
             scripts/server-deploy.sh
             scripts/deploy-ssh.sh
+            scripts/configure-seo-routing.py
+            scripts/nginx-seo-locations.conf
           retention-days: 7
 
   deploy:
@@ -47,6 +52,10 @@ jobs:
       group: gettoken-production
       cancel-in-progress: false
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - uses: actions/download-artifact@v4
         with:
           name: gettoken-${{ github.sha }}
@@ -59,3 +68,7 @@ jobs:
           DEPLOY_SSH_KEY: ${{ secrets.GETTOKEN_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.GETTOKEN_KNOWN_HOSTS }}
         run: bash scripts/deploy-ssh.sh
+      - name: Verify public production domain and deployed version
+        env:
+          DEPLOY_REVISION: ${{ github.sha }}
+        run: node scripts/check-live-seo.mjs --revision "$DEPLOY_REVISION" --output /tmp/gettoken-live-seo.json

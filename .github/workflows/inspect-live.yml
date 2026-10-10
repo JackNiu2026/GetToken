@@ -1,0 +1,22 @@
+name: Inspect GetToken live routing
+on:
+  push:
+    branches: [seo/diagnose-live-routing]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect routing without modifying the server
+        env:
+          DEPLOY_HOST: ${{ vars.GETTOKEN_HOST || '39.97.40.89' }}
+          DEPLOY_USER: ${{ vars.GETTOKEN_USER || 'root' }}
+          DEPLOY_PORT: ${{ vars.GETTOKEN_PORT || '22' }}
+          DEPLOY_SSH_KEY: ${{ secrets.GETTOKEN_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.GETTOKEN_KNOWN_HOSTS }}
+        run: bash scripts/inspect-live.sh

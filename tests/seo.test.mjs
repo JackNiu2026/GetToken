@@ -4,9 +4,8 @@ import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { gzipSync } from 'node:zlib';
-import { ROOT, ROUTES, generateSite } from '../scripts/build-site.mjs';
-import { GUIDES } from '../content/guides.mjs';
-import { EDITORIAL } from '../content/editorial.mjs';
+import { ROOT, ROUTES, PAGES, ARTICLES, REDIRECTS, FEED_ROUTE, generateSite } from '../scripts/build-site.mjs';
+import { parseFrontMatter, parseBlocks, splitArticle, inline } from '../scripts/content.mjs';
 import { SITE } from '../content/site.mjs';
 import { exportSeoReport } from '../scripts/seo-report.mjs';
 import { auditLive, robotsAllows } from '../scripts/check-live-seo.mjs';
@@ -18,43 +17,64 @@ async function deployedFixture() {
     map.set(`${SITE.origin}/${route}`,{body:await readFile(resolve(ROOT,route,'index.html'),'utf8'),headers:htmlType,status:200});
     if(route)for(const path of [`${route}index.html`,route.slice(0,-1)])map.set(`${SITE.origin}/${path}`,{body:'',headers:{location:`/${route}`},status:301});
   }
-  for(const [path,type] of [['robots.txt','text/plain'],['sitemap.xml','application/xml'],['assets/gettoken/home.css','text/css'],['assets/gettoken/pages.css','text/css'],['assets/gettoken/navigation.css','text/css'],['assets/gettoken/logo.png','image/png']])map.set(`${SITE.origin}/${path}`,{body:await readFile(join(ROOT,path)),headers:{'content-type':type},status:200});
+  for(const [from,to] of REDIRECTS)for(const path of [from,`${from}index.html`,from.slice(0,-1)])map.set(`${SITE.origin}/${path}`,{body:'',headers:{location:`/${to}`},status:301});
+  for(const [path,type] of [['robots.txt','text/plain'],['sitemap.xml','application/xml'],['assets/gettoken/home.css','text/css'],['assets/guides/guides.css','text/css'],['assets/gettoken/logo.png','image/png'],[FEED_ROUTE,'application/rss+xml']])map.set(`${SITE.origin}/${path}`,{body:await readFile(join(ROOT,path)),headers:{'content-type':type},status:200});
   map.set(SITE.origin.replace('https:','http:')+'/',{body:'',headers:{location:SITE.origin+'/'},status:301});
   return {map,fetcher:async address=>{const row=map.get(address)||{body:'Not found',status:404};return new Response(row.body,{status:row.status,headers:row.headers});}};
 }
 
+test('Markdown articles parse into sections, answers and sources',()=>{
+  const {data,body}=parseFrontMatter('---\ntitle: 标题：带冒号\ntopics: [codex, claude]\nrelated:\n  - a-guide\nfeatured: true\n---\n## 第一节\n\n第一行\n第二行 English\nwords\n\n- 列表一\n- [官方](https://example.com/x)\n\n| 项目 | 说明 |\n| --- | --- |\n| A | B |\n\n> 提示内容\n\n## 常见问题\n\n### 问题一？\n\n答案一。\n\n## 资料来源\n\n- [来源](https://example.com/source)\n','t.md');
+  assert.equal(data.title,'标题：带冒号');
+  assert.deepEqual(data.topics,['codex','claude']);
+  assert.deepEqual(data.related,['a-guide']);
+  assert.equal(data.featured,true);
+  const {sections,faqs,sources}=splitArticle(parseBlocks(body),'t.md');
+  assert.equal(sections.length,1);
+  assert.deepEqual(sections[0].blocks.map(b=>b.type),['p','ul','table','note']);
+  assert.equal(sections[0].blocks[0].text,'第一行第二行 English words','Chinese lines join directly; Latin words keep a space');
+  assert.deepEqual(sections[0].blocks[2].rows,[['A','B']]);
+  assert.deepEqual(faqs,[{q:'问题一？',a:['答案一。']}]);
+  assert.deepEqual(sources,[['来源','https://example.com/source']]);
+  assert.equal(inline('**重点** `code` <b>',()=>''),'<strong>重点</strong> <code>code</code> &lt;b&gt;');
+  assert.throws(()=>splitArticle(parseBlocks('## 资料来源\n\n- http://insecure.example\n'),'t.md'),/must be \[label\]/);
+  assert.throws(()=>splitArticle(parseBlocks('正文先于标题'),'t.md'),/must start with a ## heading/);
+  assert.throws(()=>parseFrontMatter('no front matter','t.md'),/missing front matter/);
+});
+
 test('articles expose honest update dates, sources and contextual related links',async()=>{
   const sitemap=await readFile(join(ROOT,'sitemap.xml'),'utf8');
-  assert.ok(sitemap.includes(`<loc>${SITE.origin}/navigation/</loc><lastmod>${EDITORIAL.navigationModified}</lastmod>`));
+  for(const page of PAGES.filter(p=>p.modified))assert.ok(sitemap.includes(`<loc>${SITE.origin}/${page.route}</loc><lastmod>${page.modified}</lastmod>`),page.route);
   assert.ok(sitemap.includes(`<loc>${SITE.origin}/</loc></url>`),'Original homepage receives no invented modification date');
-  for(const guide of GUIDES) {
+  for(const guide of ARTICLES) {
     const html=await readFile(resolve(ROOT,'guides',guide.slug,'index.html'),'utf8');
     const graph=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
     const article=graph.find(row=>row['@type']==='Article');
     assert.equal(article.headline,guide.title);
-    assert.equal(article.dateModified,guide.modified);
+    assert.equal(article.dateModified,guide.updated);
     assert.deepEqual(article.citation,guide.sources.map(([,address])=>address));
-    assert.ok(html.includes(`<time datetime="${guide.modified}">${guide.modified}</time>`));
-    assert.equal(article.datePublished,undefined,'Draft work must not fabricate a production publication date');
-    assert.ok(html.includes('GetToken 内容整理'));
-    assert.ok(guide.related.length>=2);
+    assert.ok(html.includes(`<time datetime="${guide.updated}">${guide.updated}</time>`));
+    assert.equal(article.datePublished,guide.published||undefined,'A publication date appears only when the article records one');
+    assert.ok(html.includes('GetToken 编辑部'));
     for(const slug of guide.related)assert.ok(html.includes(`guides/${slug}/`));
-    for(const [q,a] of guide.faqs)assert.ok(html.includes(q)&&html.includes(a),'Answers visible in HTML');
+    for(const {q,a} of guide.faqs)assert.ok(html.includes(q)&&a.every(text=>html.includes(text)),'Answers visible in HTML');
+    for(const section of guide.sections)assert.ok(html.includes(`<h2>${section.title}</h2>`));
   }
   const before=await readFile(join(ROOT,'sitemap.xml'),'utf8');
   await generateSite();
   assert.equal(await readFile(join(ROOT,'sitemap.xml'),'utf8'),before,'Builds must not refresh dates');
 });
 
-test('new content stays compact and readable without runtime JavaScript',async()=>{
+test('guide pages stay compact and readable without runtime JavaScript',async()=>{
   for(const route of ROUTES.filter(Boolean)) {
     const html=await readFile(resolve(ROOT,route,'index.html'),'utf8');
-    assert.doesNotMatch(html,/<script\b[^>]*\bsrc=/i);
+    assert.doesNotMatch(html,/<script\b(?![^>]*type="application\/ld\+json")/i,`Only structured data scripts on ${route}`);
     assert.ok(Buffer.byteLength(html)<64*1024,route);
     assert.ok(gzipSync(html).length<16*1024,route);
     assert.doesNotMatch(html,/"@type":"(?:Offer|AggregateRating|Review)"/);
+    assert.doesNotMatch(html,/home\.css/,'Guide pages load only their own stylesheet');
   }
-  for(const file of ['pages.css','navigation.css'])assert.ok((await readFile(join(ROOT,'assets/gettoken',file))).length<12*1024,file);
+  assert.ok((await readFile(join(ROOT,'assets/guides/guides.css'))).length<24*1024);
 });
 
 test('keyword exports contain usable URLs and blank measured ranking fields',async()=>{
@@ -88,15 +108,16 @@ test('live audit accepts valid HTTP behavior and reports observed failures',asyn
   assert.equal(success.productionVerified,true,'A fixture simulates verified HTTP only; it says nothing about actual deployment');
   fixture.map.set(`${SITE.origin}/robots.txt`,{body:`User-agent: Baiduspider\nDisallow: /guides/\nSitemap: ${SITE.origin}/sitemap.xml`,status:200});
   fixture.map.set(`${SITE.origin}/__gettoken_seo_missing_page__/`,{body:'Homepage',status:200});
-  fixture.map.set(`${SITE.origin}/navigation/index.html`,{body:'Duplicate',status:200});
-  const guide=`${SITE.origin}/guides/${GUIDES[0].slug}/`;
+  fixture.map.set(`${SITE.origin}/guides/index.html`,{body:'Duplicate',status:200});
+  fixture.map.set(`${SITE.origin}/navigation/`,{body:'Old hub',status:200});
+  const guide=`${SITE.origin}/guides/${ARTICLES[0].slug}/`;
   const row=fixture.map.get(guide);
   fixture.map.set(guide,{...row,headers:{...row.headers,'x-robots-tag':'noindex'}});
   const failure=await auditLive({fetcher:fixture.fetcher});
   fixture.map.set(guide,{...row,body:row.body+'<!--unexpected modification-->'});
   const changed=await auditLive({fetcher:fixture.fetcher});
   assert.ok(changed.issues.some(issue=>issue.type==='content'));
-  for(const type of ['crawl','soft404','alias','indexing'])assert.ok(failure.issues.some(issue=>issue.type===type),type);
+  for(const type of ['crawl','soft404','alias','indexing','redirect'])assert.ok(failure.issues.some(issue=>issue.type===type),type);
   assert.equal(failure.productionVerified,false);
 });
 

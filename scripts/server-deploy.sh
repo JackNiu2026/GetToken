@@ -80,9 +80,9 @@ tar -xzf "$archive" --no-same-owner -C "$stage"
 test -f "$stage/index.html"
 test -f "$stage/assets/gettoken/home.mjs"
 test -f "$stage/assets/gettoken/home.css"
-test -f "$stage/assets/gettoken/pages.css"
-test -f "$stage/assets/gettoken/navigation.css"
-test -f "$stage/navigation/index.html"
+test -f "$stage/assets/guides/guides.css"
+test -f "$stage/guides/index.html"
+test -f "$stage/guides/feed.xml"
 test -f "$stage/robots.txt"
 test -f "$stage/sitemap.xml"
 mapfile -t sitemap_urls < <(sed -n 's:.*<loc>\([^<]*\)</loc>.*:\1:p' "$stage/sitemap.xml")
@@ -145,13 +145,15 @@ curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127
 for route in "${seo_paths[@]}"; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1$route" -o /dev/null
 done
-for resource in robots.txt sitemap.xml assets/gettoken/pages.css assets/gettoken/navigation.css; do
+for resource in robots.txt sitemap.xml assets/guides/guides.css guides/feed.xml; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1/$resource" -o /dev/null
 done
 missing_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Host: $site_host" http://127.0.0.1/__gettoken_seo_missing_page__/)
 [[ "$missing_status" == '404' ]]
-alias_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/navigation/index.html)
-[[ "$alias_headers" == *'301'* && "$alias_headers" == *'/navigation/'* ]]
+alias_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/guides/index.html)
+[[ "$alias_headers" == *'301'* && "$alias_headers" == *'/guides/'* ]]
+retired_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/navigation/)
+[[ "$retired_headers" == *'301'* && "$retired_headers" == *'/guides/'* ]]
 js_headers=$(curl --fail --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/assets/gettoken/home.mjs)
 [[ "$js_headers" == *'Content-Type: application/javascript'* ]]
 deployed_version=$(curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127.0.0.1/deployment.json)

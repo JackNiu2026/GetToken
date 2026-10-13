@@ -11,11 +11,11 @@ import tempfile
 
 domains = ['gettoken.cc', 'www.gettoken.cc']
 release = pathlib.Path('/var/www/gettoken/current')
-paths = ['/', '/navigation/', '/guides/claude-code-subscription-api/', '/robots.txt', '/sitemap.xml', '/deployment.json', '/assets/gettoken/pages.css']
+paths = ['/', '/guides/', '/navigation/', '/guides/claude-code-subscription-api/', '/robots.txt', '/sitemap.xml', '/deployment.json', '/assets/guides/guides.css']
 
 def files_at(root):
     result = {}
-    for name in ['index.html', 'navigation/index.html', 'sitemap.xml', 'robots.txt', 'assets/gettoken/pages.css']:
+    for name in ['index.html', 'guides/index.html', 'sitemap.xml', 'robots.txt', 'assets/guides/guides.css']:
         file = pathlib.Path(root) / name
         try:
             data = file.read_bytes()
@@ -79,7 +79,7 @@ def request(item):
         if path == '/deployment.json':
             try: row['commit'] = json.loads(text).get('commit')
             except (ValueError, AttributeError): pass
-        row['hasSeoLink'] = bool(re.search(r'href=["\x27](?:https://gettoken\.cc)?/navigation/', text))
+        row['hasSeoLink'] = bool(re.search(r'href=["\x27](?:https://gettoken\.cc)?/(?:navigation|guides)/', text))
         allowed = ['location', 'server', 'cache-control', 'age', 'x-cache', 'cf-cache-status', 'content-type', 'x-robots-tag']
         raw = header.read_text(errors='replace') if header.exists() else ''
         row['headers'] = {key.lower(): value.strip() for key, value in re.findall(r'^([^:\r\n]+):([^\r\n]*)', raw, re.M) if key.lower() in allowed}

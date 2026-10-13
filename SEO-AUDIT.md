@@ -54,3 +54,10 @@
 - [Claude 账单](https://support.claude.com/en/articles/8325618-paid-plan-billing-faqs)、[额外用量](https://support.claude.com/en/articles/12429409-manage-usage-credits-for-paid-claude-plans)、[Max／Team API credits](https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-and-team-plans)：不宣称会员包含所有 API 使用，也不宣称任何方案都没有独立 API 权益。
 
 公开搜索结果仅用于了解用户措辞和问题类型，没有取得可靠月搜索量、竞争难度或竞争站流量。本轮达到受保留页面范围与真实资料约束的可验收状态，不能宣称已进入前三页或绝对最优。
+
+## 2026-10-13 指南库重构
+
+- `/navigation/` 单页改为 `/guides/` 内容库：指南首页、6 个专题页、13 篇文章、RSS；`/navigation/` 301 到 `/guides/`。文章网址不变，正文内容逐段比对后保持一致。
+- 文章改为 `content/guides/*.md`，构建时校验必填字段、日期、专题、相关阅读、FAQ 与 HTTPS 来源。
+- 指南页面改用独立样式表，不再加载首页 CSS；每页可见面包屑与结构化数据一致。
+- 本地检查：Node 测试 20 项、Python 测试 5 项通过；打包后在本机 Nginx 1.24 上运行线上检查（预览模式）401 项通过，包括旧网址 301、`index.html` 与无斜线别名、RSS、404。CI 中的 Docker Nginx 测试和正式域名检查需在合并后由 GitHub Actions 执行。

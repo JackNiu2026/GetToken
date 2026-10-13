@@ -5,10 +5,8 @@ import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { ROOT, ROUTES } from './build-site.mjs';
+import { ROOT, ROUTES, PAGES, REDIRECTS, FEED_ROUTE } from './build-site.mjs';
 import { SITE } from '../content/site.mjs';
-import { GUIDES } from '../content/guides.mjs';
-import { EDITORIAL } from '../content/editorial.mjs';
 
 const decode = text => text.replace(/&(amp|lt|gt|quot|#39);/g, (_, key) => ({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'"}[key]));
 const attr = (tag, name) => decode(tag.match(new RegExp(`(?:\\s|^)${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`,'i'))?.slice(1).find(value=>value!==undefined) || '');
@@ -114,13 +112,13 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
       let valid=true;
       try { for(const match of result.body.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) { const data=JSON.parse(match[1]);graph.push(...(data['@graph']||[data])); } } catch {valid=false;}
       requireCheck(valid && graph.some(n=>n['@type']==='BreadcrumbList'),result.url,'schema','Structured data must parse and include breadcrumbs.');
-      const guide=GUIDES.find(g=>route===`guides/${g.slug}/`);
-      const expectedDate=guide?.modified||EDITORIAL.navigationModified;
+      const page=PAGES.find(p=>p.route===route);
+      const guide=page.article;
       const node=graph.find(n=>n['@type']===(guide?'Article':'CollectionPage'));
-      requireCheck(node?.dateModified===expectedDate,result.url,'date','Structured modification date differs from the content source.');
+      requireCheck(node?.dateModified===page.modified,result.url,'date','Structured modification date differs from the content source.');
       if (guide) {
         requireCheck(node?.headline===guide.title && node?.author?.['@id'] && node?.citation?.length===guide.sources.length,result.url,'article','Article title, author or source citations differ from the content source.');
-        requireCheck(result.body.includes(`datetime="${guide.modified}"`) && result.body.includes('GetToken 内容整理'),result.url,'byline','Visible article authorship or update date is missing.');
+        requireCheck(result.body.includes(`datetime="${guide.updated}"`) && result.body.includes('GetToken 编辑部'),result.url,'byline','Visible article authorship or update date is missing.');
         const path=new URL(result.url).pathname;
         for(const slug of guide.related) requireCheck(result.body.includes(`guides/${slug}/`),result.url,'links',`Related guide ${slug} is missing.`);
         requireCheck(path===`/guides/${guide.slug}/`,result.url,'route','Guide route is not canonical.');
@@ -140,14 +138,18 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
   requireCheck(locations.length===ROUTES.length && new Set(locations).size===ROUTES.length && ROUTES.every(route=>locations.includes(`${SITE.origin}/${route}`)),sitemap.url,'sitemap','Sitemap contains missing, duplicate or noncanonical URLs.');
   for(const block of blocks) {
     const address=decode(block.match(/<loc>(.*?)<\/loc>/)?.[1]||'');
-    const guide=GUIDES.find(g=>address===`${SITE.origin}/guides/${g.slug}/`);
-    const modified=guide?.modified||(address===`${SITE.origin}/navigation/`?EDITORIAL.navigationModified:null);
+    const modified=PAGES.find(p=>`${SITE.origin}/${p.route}`===address)?.modified;
     if(modified) requireCheck(block.includes(`<lastmod>${modified}</lastmod>`),sitemap.url,'date',`Sitemap date mismatch for ${address}`);
   }
   requireCheck([404,410].includes(missing.status),missing.url,'soft404',`Missing page must return 404/410; received ${missing.status}.`);
-  for(const [path,type] of [['assets/gettoken/home.css','text/css'],['assets/gettoken/pages.css','text/css'],['assets/gettoken/navigation.css','text/css'],['assets/gettoken/logo.png','image/png']]) {
+  for(const [path,type] of [['assets/gettoken/home.css','text/css'],['assets/guides/guides.css','text/css'],['assets/gettoken/logo.png','image/png'],[FEED_ROUTE,'xml']]) {
     const response=await get(`/${path}`);
-    requireCheck(response.status===200 && (response.headers.get('content-type')||'').includes(type),response.url,'asset','Required CSS or logo is missing or served with the wrong MIME type.');
+    requireCheck(response.status===200 && (response.headers.get('content-type')||'').includes(type),response.url,'asset','Required CSS, logo or feed is missing or served with the wrong MIME type.');
+  }
+  if(checkAliases) for(const [from,to] of REDIRECTS) for(const path of [`/${from}`,`/${from}index.html`,`/${from.slice(0,-1)}`]) {
+    const response=await get(path);
+    const location=response.headers.get('location');
+    requireCheck([301,308].includes(response.status) && location && new URL(location,response.url).href===new URL(`/${to}`,base).href,response.url,'redirect',`Retired address must permanently redirect to /${to}.`);
   }
   if(checkAliases) await parallelMap(ROUTES.filter(Boolean),async route=>{
     for(const path of [`/${route}index.html`, `/${route.slice(0,-1)}`]) {

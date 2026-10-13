@@ -72,9 +72,16 @@ try {
     }
     domainChecks+=2;
   }
-  const query=await curlRequest(base+'/navigation/index.html?utm_source=qa');
-  assert.equal(query.status,301);
-  assert.equal(query.headers.get('location'),'/navigation/?utm_source=qa');
+  for(const path of ['/navigation','/navigation/','/navigation/index.html']) {
+    const retired=await curlRequest(base+path+'?utm_source=qa');
+    assert.equal(retired.status,301);
+    assert.equal(retired.headers.get('location'),'/guides/?utm_source=qa');
+  }
+  const hub=await curlRequest(base+'/guides?utm_source=qa');
+  assert.equal(hub.status,301);
+  assert.equal(hub.headers.get('location'),'/guides/?utm_source=qa');
+  const feed=await curlRequest(base+'/guides/feed.xml');
+  assert.equal(feed.status,200);
   const slash=await curlRequest(base+'/guides/claude-code-cost-checklist?utm_source=qa');
   assert.equal(slash.status,301);
   assert.equal(slash.headers.get('location'),'/guides/claude-code-cost-checklist/?utm_source=qa');

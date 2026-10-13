@@ -15,11 +15,17 @@ assets/gettoken/
   site.config.mjs   收款码与客服联系方式
   logo.png
   favicon.svg
+content/
+  guides/*.md       SEO 文章（一篇一个 Markdown 文件）
+  topics.mjs        指南专题
+  hub.mjs           指南首页文案
+assets/guides/guides.css   指南页面样式（首页不加载）
+guides/             由 scripts/build-site.mjs 生成，不要手改
+scripts/            生成、打包、部署与线上检查脚本
 tests/
-  catalog.test.mjs
 ```
 
-没有 React、Next.js、node_modules 或第三方字体。原首页无需构建；新增 SEO 内容使用 Node 原生脚本生成静态 HTML。
+没有 React、Next.js、node_modules 或第三方字体。原首页无需构建；SEO 指南用 Node 原生脚本从 Markdown 生成静态 HTML。
 
 ## 页面结构
 
@@ -40,7 +46,7 @@ tests/
 
 ## 本地预览
 
-原首页保持 GitHub 最新版本。新增独立 SEO 导航页 `/navigation/`，十三篇专题文章从该页进入；没有新增产品销售页或咨询流程。内容维护、完整打包与收录步骤见 [SEO.md](SEO.md)。修改 SEO 内容源后执行：
+原首页保持不变。SEO 内容在 `/guides/`：指南首页、按产品划分的专题页和文章页，旧的 `/navigation/` 301 到 `/guides/`。新增文章、专题和收录步骤见 [SEO.md](SEO.md)。修改 `content/` 后执行：
 
 ```bash
 node scripts/build-site.mjs
@@ -53,7 +59,7 @@ node scripts/build-site.mjs --check
 python -m http.server 8899 --bind 127.0.0.1
 ```
 
-浏览器访问原首页 `http://127.0.0.1:8899/` 或 SEO 导航 `http://127.0.0.1:8899/navigation/`。ES modules 需要通过 HTTP 加载，不要直接双击 HTML 文件。
+浏览器访问原首页 `http://127.0.0.1:8899/` 或指南 `http://127.0.0.1:8899/guides/`。ES modules 需要通过 HTTP 加载，不要直接双击 HTML 文件。
 
 也可以直接放到任意静态托管服务；所有资源使用相对路径，兼容子目录部署。
 

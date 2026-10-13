@@ -81,6 +81,7 @@ test -f "$stage/index.html"
 test -f "$stage/assets/gettoken/home.mjs"
 test -f "$stage/assets/gettoken/home.css"
 test -f "$stage/assets/gettoken/pages.css"
+test -f "$stage/assets/gettoken/navigation.css"
 test -f "$stage/navigation/index.html"
 test -f "$stage/robots.txt"
 test -f "$stage/sitemap.xml"
@@ -144,7 +145,7 @@ curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127
 for route in "${seo_paths[@]}"; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1$route" -o /dev/null
 done
-for resource in robots.txt sitemap.xml assets/gettoken/pages.css; do
+for resource in robots.txt sitemap.xml assets/gettoken/pages.css assets/gettoken/navigation.css; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1/$resource" -o /dev/null
 done
 missing_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Host: $site_host" http://127.0.0.1/__gettoken_seo_missing_page__/)

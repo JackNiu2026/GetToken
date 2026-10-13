@@ -85,7 +85,7 @@ test('deployment archive contains all routes and excludes project sources', asyn
     execFileSync(process.execPath, ['scripts/package-site.mjs', archive], { cwd: ROOT });
     const entries = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n');
     for (const route of ROUTES) assert.ok(entries.includes(`${route}index.html`), route);
-    for (const file of ['robots.txt', 'sitemap.xml', 'assets/gettoken/pages.css']) assert.ok(entries.includes(file));
+    for (const file of ['robots.txt', 'sitemap.xml', 'assets/gettoken/pages.css', 'assets/gettoken/navigation.css']) assert.ok(entries.includes(file));
     assert.ok(!entries.some(name => /^(scripts|content|tests|\.git)\//.test(name)));
     assert.ok(!entries.some(name => /^(codex|gemini|grok|claude|claude-code|contact|about|privacy|purchase-terms)\//.test(name)), 'Withdrawn storefront extensions must not ship');
   } finally {
@@ -109,5 +109,5 @@ test('SEO generation preserves the original homepage and all existing UI modules
   for (const [file, expected] of Object.entries(originalHashes)) {
     assert.equal(createHash('sha256').update(await readFile(join(ROOT, file))).digest('hex'), expected, file);
   }
-  assert.ok(!(await readFile(join(ROOT, 'index.html'), 'utf8')).includes('pages.css'));
+  assert.ok(!(await readFile(join(ROOT, 'index.html'), 'utf8')).includes('pages.css') || (await readFile(join(ROOT, 'index.html'), 'utf8')).includes('navigation.css'));
 });

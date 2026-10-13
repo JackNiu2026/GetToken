@@ -39,7 +39,8 @@ node scripts/test-nginx.mjs
 | 关键词与目标页面 | `content/keywords.mjs` |
 | 正式域名 | `content/site.mjs` |
 | 模板、元数据、结构化数据、robots、sitemap | `scripts/build-site.mjs` |
-| 新页面样式 | `assets/gettoken/pages.css` |
+| 导航阅读路径（先读三篇、按问题分组） | `content/editorial.mjs` → `NAVIGATION` |
+| 新页面样式 | `assets/gettoken/pages.css`（导航与文章共用）、`assets/gettoken/navigation.css`（仅导航页） |
 
 修改内容后才更新对应的 `modified` 日期；导航实质修改后再更新 `navigationModified`。构建不会自动刷新日期，也不会给原首页添加虚构 lastmod。草稿不伪造线上首次发布日期。来源链接须直接支持正文，并随产品变化复核。
 

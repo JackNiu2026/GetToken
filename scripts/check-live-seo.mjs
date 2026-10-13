@@ -145,7 +145,7 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
     if(modified) requireCheck(block.includes(`<lastmod>${modified}</lastmod>`),sitemap.url,'date',`Sitemap date mismatch for ${address}`);
   }
   requireCheck([404,410].includes(missing.status),missing.url,'soft404',`Missing page must return 404/410; received ${missing.status}.`);
-  for(const [path,type] of [['assets/gettoken/home.css','text/css'],['assets/gettoken/pages.css','text/css'],['assets/gettoken/logo.png','image/png']]) {
+  for(const [path,type] of [['assets/gettoken/home.css','text/css'],['assets/gettoken/pages.css','text/css'],['assets/gettoken/navigation.css','text/css'],['assets/gettoken/logo.png','image/png']]) {
     const response=await get(`/${path}`);
     requireCheck(response.status===200 && (response.headers.get('content-type')||'').includes(type),response.url,'asset','Required CSS or logo is missing or served with the wrong MIME type.');
   }

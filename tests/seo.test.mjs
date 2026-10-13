@@ -18,7 +18,7 @@ async function deployedFixture() {
     map.set(`${SITE.origin}/${route}`,{body:await readFile(resolve(ROOT,route,'index.html'),'utf8'),headers:htmlType,status:200});
     if(route)for(const path of [`${route}index.html`,route.slice(0,-1)])map.set(`${SITE.origin}/${path}`,{body:'',headers:{location:`/${route}`},status:301});
   }
-  for(const [path,type] of [['robots.txt','text/plain'],['sitemap.xml','application/xml'],['assets/gettoken/home.css','text/css'],['assets/gettoken/pages.css','text/css'],['assets/gettoken/logo.png','image/png']])map.set(`${SITE.origin}/${path}`,{body:await readFile(join(ROOT,path)),headers:{'content-type':type},status:200});
+  for(const [path,type] of [['robots.txt','text/plain'],['sitemap.xml','application/xml'],['assets/gettoken/home.css','text/css'],['assets/gettoken/pages.css','text/css'],['assets/gettoken/navigation.css','text/css'],['assets/gettoken/logo.png','image/png']])map.set(`${SITE.origin}/${path}`,{body:await readFile(join(ROOT,path)),headers:{'content-type':type},status:200});
   map.set(SITE.origin.replace('https:','http:')+'/',{body:'',headers:{location:SITE.origin+'/'},status:301});
   return {map,fetcher:async address=>{const row=map.get(address)||{body:'Not found',status:404};return new Response(row.body,{status:row.status,headers:row.headers});}};
 }
@@ -54,7 +54,7 @@ test('new content stays compact and readable without runtime JavaScript',async()
     assert.ok(gzipSync(html).length<16*1024,route);
     assert.doesNotMatch(html,/"@type":"(?:Offer|AggregateRating|Review)"/);
   }
-  assert.ok((await readFile(join(ROOT,'assets/gettoken/pages.css'))).length<12*1024);
+  for(const file of ['pages.css','navigation.css'])assert.ok((await readFile(join(ROOT,'assets/gettoken',file))).length<12*1024,file);
 });
 
 test('keyword exports contain usable URLs and blank measured ranking fields',async()=>{

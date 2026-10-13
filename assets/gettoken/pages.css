@@ -8,26 +8,6 @@
 .seo-header nav a { padding-block: 12px; }
 .seo-header a[aria-current], .seo-header nav a:hover { color: var(--blue-2); }
 .seo-header .button { padding-inline: 20px; }
-.navigation-intro { padding-block: 64px 42px; }
-.navigation-intro h1 { font-size: clamp(30px, 3.5vw, 46px); line-height: 1.35; letter-spacing: -.025em; }
-.navigation-intro > p { max-width: 66ch; margin-top: 20px; color: var(--ink-2); line-height: 1.9; font-size: 17px; }
-.topic-nav { display: flex; flex-wrap: wrap; gap: 10px 30px; margin-top: 28px; }
-.topic-nav a { min-height: 44px; padding-block: 10px; color: var(--blue-2); border-bottom: 1px solid var(--line-2); font-size: 16px; }
-.topic-nav a:hover { color: var(--ink); border-color: var(--blue-2); }
-.delivery-explainer { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; border-top: 1px solid var(--line); padding-block: 32px 52px; }
-.delivery-explainer h2 { font-size: 19px; }
-.delivery-explainer p { max-width: 60ch; color: var(--ink-2); line-height: 1.9; margin-top: 12px; }
-.topic-section { padding-block: 48px; border-top: 1px solid var(--line); scroll-margin-top: 24px; }
-.topic-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; }
-.topic-heading h2, .topic-section > h2 { font-size: clamp(23px, 2.4vw, 30px); line-height: 1.4; }
-.topic-heading span { color: var(--muted); font-size: 13px; }
-.official-link { color: var(--blue-2); font-size: 13px; white-space: nowrap; text-decoration: underline; text-underline-offset: 4px; }
-.topic-intro { max-width: 82ch; color: var(--ink-2); line-height: 1.9; margin-top: 18px; }
-.topic-facts { margin-top: 26px; }
-.topic-facts > div { display: grid; grid-template-columns: 160px 1fr; gap: 32px; padding-block: 18px; border-top: 1px solid var(--line); }
-.topic-facts dt { color: var(--ink); font-weight: 550; }
-.topic-facts dd { max-width: 80ch; color: var(--ink-2); line-height: 1.85; }
-.topic-section h3 { font-size: 16px; margin: 26px 0 16px; color: var(--ink-2); }
 .reading-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; margin-top: 24px; }
 .reading-links a { display: block; padding-block: 22px; border-top: 1px solid var(--line); }
 .reading-links strong { font-size: 17px; line-height: 1.6; font-weight: 550; }
@@ -38,8 +18,6 @@
 .seo-faq summary { cursor: pointer; padding-block: 20px; line-height: 1.7; }
 .seo-faq p { max-width: 84ch; padding-bottom: 22px; color: var(--ink-2); line-height: 1.9; }
 .seo-faq a, .prose a { color: var(--blue-2); text-decoration: underline; text-underline-offset: 4px; }
-.navigation-close { display: flex; justify-content: space-between; align-items: center; gap: 24px; border-top: 1px solid var(--line); padding-block: 40px 56px; }
-.navigation-close p { color: var(--ink-2); }
 .seo-footer { border-top: 1px solid var(--line); background: var(--bg-tint); padding-block: 34px; }
 .seo-footer .shell > div { display: flex; justify-content: space-between; gap: 24px; }
 .seo-footer nav { display: flex; flex-wrap: wrap; gap: 12px 24px; color: var(--ink-2); font-size: 13px; }
@@ -74,16 +52,9 @@
   .seo-header__inner { flex-wrap: wrap; gap: 12px; padding-block: 16px; }
   .seo-header nav { order: 3; width: 100%; gap: 24px; }
   .seo-header .button { min-height: 38px; padding-inline: 16px; }
-  .navigation-intro { padding-block: 38px 30px; }
-  .navigation-intro > p, .reading-header p { font-size: 15px; }
-  .topic-nav { gap: 6px 24px; margin-top: 22px; }
-  .delivery-explainer { grid-template-columns: 1fr; gap: 26px; padding-block: 26px 36px; }
-  .topic-section { padding-block: 34px; }
-  .topic-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
-  .topic-facts > div { grid-template-columns: 1fr; gap: 8px; padding-block: 16px; }
+  .reading-header p { font-size: 15px; }
   .reading-links { grid-template-columns: 1fr; }
-  .navigation-close, .seo-footer .shell > div { flex-direction: column; align-items: flex-start; }
-  .navigation-close { padding-block: 32px 40px; }
+  .seo-footer .shell > div { flex-direction: column; align-items: flex-start; }
   .reading-header { padding-block: 34px; }
   .reading-header h1 { font-size: 29px; }
   .article-layout { grid-template-columns: 1fr; gap: 32px; padding-bottom: 44px; }

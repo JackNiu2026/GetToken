@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { SITE } from '../content/site.mjs';
 import { SERVICES } from '../content/services.mjs';
 import { GUIDES } from '../content/guides.mjs';
-import { EDITORIAL } from '../content/editorial.mjs';
+import { EDITORIAL, NAVIGATION } from '../content/editorial.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const origin = new URL(SITE.origin);
@@ -32,6 +32,9 @@ function validateContent() {
     }
   }
   for (const service of SERVICES) if (service.guideSlugs.some(s => !slugs.has(s))) throw new Error(`Missing topic guide: ${service.slug}`);
+  if (NAVIGATION.startHere.some(s => !slugs.has(s))) throw new Error('Unknown starting guide.');
+  const grouped = NAVIGATION.questions.flatMap(q => q.guides);
+  if (grouped.length !== GUIDES.length || grouped.some(s => !slugs.has(s)) || new Set(grouped).size !== GUIDES.length) throw new Error('Every guide must appear in exactly one navigation question.');
 }
 validateContent();
 export const ROUTES = ['', 'navigation/', ...GUIDES.map(g => `guides/${g.slug}/`)];
@@ -61,7 +64,7 @@ function page(route, title, description, content, schema = [], article = false, 
 ${article ? `  <meta property="article:modified_time" content="${esc(modified)}">` : ''}
   <script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': graph })}</script>
   <link rel="icon" href="${href(route, 'assets/gettoken/favicon.svg')}" type="image/svg+xml">
-  <link rel="stylesheet" href="${href(route, 'assets/gettoken/home.css')}"><link rel="stylesheet" href="${href(route, 'assets/gettoken/pages.css')}">
+  <link rel="stylesheet" href="${href(route, 'assets/gettoken/home.css')}"><link rel="stylesheet" href="${href(route, 'assets/gettoken/pages.css')}">${route === 'navigation/' ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/navigation.css')}">` : ''}
 </head><body class="seo-page"><a class="seo-skip" href="#main">跳到正文</a>
 <header class="seo-header"><div class="shell seo-header__inner"><a class="brand" href="${href(route)}" aria-label="GetToken 首页"><img class="brand-logo" src="${href(route, 'assets/gettoken/logo.png')}" width="28" height="28" alt=""><span class="brand-word">GetToken</span></a><nav aria-label="主导航"><a href="${href(route, 'navigation/')}"${route === 'navigation/' ? ' aria-current="page"' : ''}>订阅导航</a><a href="${href(route, 'navigation/')}#guides">选购指南</a></nav><a class="button button--ghost" href="${href(route)}">返回首页</a></div></header>
 ${content}
@@ -71,19 +74,35 @@ ${content}
 function readingLinks(route, guides) {
   return `<div class="reading-links">${guides.map(g => `<a href="${href(route, `guides/${g.slug}/`)}"><strong>${esc(g.title)}</strong><p>${esc(g.summary)}</p></a>`).join('')}</div>`;
 }
+// Decorative product marks for the navigation hub; names stay in the headings.
+const MARKS = { codex: '&gt;_', gemini: '◆', grok: 'G', claude: '✦', 'claude-code': '&lt;/&gt;' };
+const guideBySlug = slug => GUIDES.find(g => g.slug === slug);
+const topicLabel = g => g.services ? '通用' : SERVICES.find(s => s.slug === g.service).name;
 function navigationPage() {
   const route = 'navigation/';
   const title = 'Codex、Gemini、Grok、Claude 与 Claude Code 订阅代充导航 - GetToken';
   const description = 'AI 订阅选购导航：了解 Codex、Gemini、Grok、Claude、Claude Code 的订阅、充值、代充、独立账号与月卡，阅读套餐、额度及续费指南。';
-  const body = `<main id="main" class="shell">
-<header class="navigation-intro"><h1>AI 订阅与代充导航</h1><p>从 Codex、Gemini、Grok 到 Claude、Claude Code，按产品了解订阅、账号与月卡的区别，再选择适合自己的购买方式。</p><nav class="topic-nav" aria-label="按产品查找">${SERVICES.map(s => `<a href="#${s.slug}">${esc(s.name)}</a>`).join('')}</nav></header>
-<section class="delivery-explainer" aria-label="两种主要交付方式"><div><h2>给自己的账号代充</h2><p>已有账号，希望保留原来的使用记录？先确认账号资格、适用套餐、原订阅状态，以及开通或续费的方式。</p></div><div><h2>选择独立账号</h2><p>需要一个单独使用的账号？确认是否包含会员、实际套餐、有效期、管理权限，以及交付后的售后条件。</p></div></section>
-${SERVICES.map(s => `<section class="topic-section" id="${s.slug}" aria-labelledby="${s.slug}-title"><div class="topic-heading"><h2 id="${s.slug}-title">${esc(s.name)} 订阅、代充与月卡</h2><a class="official-link" href="${esc(s.source[1])}" target="_blank" rel="noopener noreferrer">核对官方说明</a></div><p class="topic-intro">${esc(s.intro)}</p><dl class="topic-facts">${s.distinctions.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl><h3>相关选购指南</h3>${readingLinks(route, GUIDES.filter(g => s.guideSlugs.includes(g.slug)))}</section>`).join('')}
-<section class="topic-section" id="guides" aria-labelledby="guides-title"><div class="topic-heading"><h2 id="guides-title">全部选购指南</h2><span>${GUIDES.length} 篇专题文章</span></div><p class="topic-intro">按具体问题了解套餐选择、充值路径、月卡额度、账号交付与续费。</p>${readingLinks(route, GUIDES)}</section>
-<section class="topic-section" aria-labelledby="questions-title"><h2 id="questions-title">订阅购买前的常见问题</h2><div class="seo-faq"><details><summary>订阅、充值和代充有什么区别？</summary><p>订阅是购买会员权益；充值可能指订阅开通、额外用量或 API 余额；代充是协助给已有账号开通或续费的交付方式。先说明产品、使用入口和需求，避免买错服务。</p></details><details><summary>月卡是否代表不限量使用？</summary><p>月卡描述期限，不代表无限用量。需要同时确认套餐名称、起算时间、额度限制、重置规则、超额处理与续费方式。</p></details><details><summary>Claude 和 Claude Code 应该分别购买吗？</summary><p>Claude Code 是编码工具。使用适用的 Claude 订阅与 API 接入是不同计费路径；先核实账号与登录方式，不重复购买相同权益。</p></details><details><summary>在哪里查看套餐价格与购买入口？</summary><p>返回 <a href="${href(route)}#pricing">GetToken 首页套餐区</a> 查看现有展示与购买入口。Gemini、Grok 等导航主题不表示当前已有可售库存；实际套餐、价格、交付和售后需另行确认。</p></details></div></section>
-<section class="topic-section" id="editorial" aria-labelledby="editorial-title"><h2 id="editorial-title">内容来源与更新原则</h2><p class="topic-intro">这些指南由 GetToken 根据官方资料和已确认的交付方式整理，帮助核对账号、订阅与购买条件。涉及产品权益、资格和计费的信息会列出来源；具体规则以当前官方说明和目标账号状态为准。</p><p class="topic-intro">文章日期仅在正文或重要信息有实质变化时更新。具体可售套餐、价格、库存、交付时效和售后，需要通过原首页实际公布的渠道确认。</p><p class="editorial-meta">GetToken 内容整理 · 导航更新：<time datetime="${EDITORIAL.navigationModified}">${EDITORIAL.navigationModified}</time></p></section>
-<div class="navigation-close"><p>了解方案后，查看首页套餐与购买说明。</p><a class="button button--light" href="${href(route)}#pricing">查看首页套餐</a></div></main>`;
-  return page(route, title, description, body, [crumbs(route, 'AI 订阅导航'), { '@type': 'CollectionPage', '@id': `${url(route)}#webpage`, name: title, url: url(route), description, dateModified: EDITORIAL.navigationModified, inLanguage: 'zh-CN', isPartOf: { '@id': `${ORIGIN}/#website` } }, { '@type': 'ItemList', name: 'AI 订阅主题导航', itemListElement: SERVICES.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: `${s.name} 订阅与代充`, url: `${url(route)}#${s.slug}` })) }]);
+  const guideHref = g => href(route, `guides/${g.slug}/`);
+  const updated = `<time datetime="${EDITORIAL.navigationModified}">${EDITORIAL.navigationModified}</time>`;
+  const ordered = NAVIGATION.questions.flatMap(q => q.guides.map(guideBySlug));
+  const body = `<div class="hub-top"><nav class="shell seo-breadcrumbs" aria-label="面包屑"><a href="${href(route)}">首页</a><span>/</span><span aria-current="page">AI 订阅导航</span></nav>
+<header class="shell hub-hero"><div><p class="hub-eyebrow">GetToken 选购指南</p><h1>AI 订阅与代充导航</h1><p class="hub-lead">从 Codex、Gemini、Grok 到 Claude、Claude Code，按产品了解订阅、账号与月卡的区别，再选择适合自己的购买方式。</p><p class="editorial-meta">${GUIDES.length} 篇专题文章 · ${SERVICES.length} 个产品 · <a href="#editorial">GetToken 内容整理</a> · 更新：${updated}</p></div>
+<aside class="hub-start" aria-labelledby="start-title"><h2 id="start-title">第一次来，先读这三篇</h2><ol>${NAVIGATION.startHere.map(guideBySlug).map(g => `<li><a href="${guideHref(g)}"><strong>${esc(g.title)}</strong><span>${esc(topicLabel(g))}</span></a></li>`).join('')}</ol></aside></header></div>
+<nav class="hub-bar" aria-label="按产品或问题查找"><div class="shell">${SERVICES.map(s => `<a href="#${s.slug}">${esc(s.name)} <small>${s.guideSlugs.length}</small></a>`).join('')}<span aria-hidden="true"></span><a href="#guides">按问题查找</a><a href="#faq">常见问题</a></div></nav>
+<main id="main" class="shell">
+<section class="hub-delivery" aria-labelledby="delivery-title"><h2 id="delivery-title">两种主要交付方式</h2><div><h3>给自己的账号代充</h3><p>已有账号，希望保留原来的使用记录？先确认账号资格、适用套餐、原订阅状态，以及开通或续费的方式。</p></div><div><h3>选择独立账号</h3><p>需要一个单独使用的账号？确认是否包含会员、实际套餐、有效期、管理权限，以及交付后的售后条件。</p></div><a href="${href(route, 'guides/account-topup-or-independent/')}">详细对比：代充与独立账号有什么区别 →</a></section>
+${SERVICES.map(s => `<section class="hub-topic" id="${s.slug}" data-topic="${s.slug}" aria-labelledby="${s.slug}-title"><div class="hub-topic__head"><span class="hub-mark" aria-hidden="true">${MARKS[s.slug]}</span><div><h2 id="${s.slug}-title">${esc(s.name)} 订阅、代充与月卡</h2><p>${esc(s.intro)}</p></div><a class="official-link" href="${esc(s.source[1])}" target="_blank" rel="noopener noreferrer">核对官方说明 ↗</a></div><dl class="hub-facts">${s.distinctions.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl><h3 class="hub-sub">${esc(s.name)} 选购指南</h3><ul class="hub-cards">${s.guideSlugs.map(guideBySlug).map(g => `<li><a href="${guideHref(g)}"><strong>${esc(g.title)}</strong><p>${esc(g.summary)}</p><span>更新 <time datetime="${g.modified}">${g.modified}</time> · 阅读全文 →</span></a></li>`).join('')}</ul></section>`).join('')}
+<section class="hub-questions" id="guides" aria-labelledby="guides-title"><div class="hub-section-head"><h2 id="guides-title">按问题查找全部指南</h2><span>${GUIDES.length} 篇专题文章</span></div><div class="hub-questions__grid">${NAVIGATION.questions.map(q => `<section aria-labelledby="q-${q.slug}"><h3 id="q-${q.slug}">${esc(q.name)}</h3><ul>${q.guides.map(guideBySlug).map(g => `<li><a href="${guideHref(g)}">${esc(g.title)}<small>${esc(topicLabel(g))}</small></a></li>`).join('')}</ul></section>`).join('')}</div></section>
+<section class="hub-split" id="faq" aria-labelledby="questions-title"><h2 id="questions-title">订阅购买前的常见问题</h2><div class="seo-faq"><details><summary>订阅、充值和代充有什么区别？</summary><p>订阅是购买会员权益；充值可能指订阅开通、额外用量或 API 余额；代充是协助给已有账号开通或续费的交付方式。先说明产品、使用入口和需求，避免买错服务。</p></details><details><summary>月卡是否代表不限量使用？</summary><p>月卡描述期限，不代表无限用量。需要同时确认套餐名称、起算时间、额度限制、重置规则、超额处理与续费方式。</p></details><details><summary>Claude 和 Claude Code 应该分别购买吗？</summary><p>Claude Code 是编码工具。使用适用的 Claude 订阅与 API 接入是不同计费路径；先核实账号与登录方式，不重复购买相同权益。</p></details><details><summary>在哪里查看套餐价格与购买入口？</summary><p>返回 <a href="${href(route)}#pricing">GetToken 首页套餐区</a> 查看现有展示与购买入口。Gemini、Grok 等导航主题不表示当前已有可售库存；实际套餐、价格、交付和售后需另行确认。</p></details></div></section>
+<section class="hub-split" id="editorial" aria-labelledby="editorial-title"><h2 id="editorial-title">内容来源与更新原则</h2><div><p>这些指南由 GetToken 根据官方资料和已确认的交付方式整理，帮助核对账号、订阅与购买条件。涉及产品权益、资格和计费的信息会列出来源；具体规则以当前官方说明和目标账号状态为准。</p><p>文章日期仅在正文或重要信息有实质变化时更新。具体可售套餐、价格、库存、交付时效和售后，需要通过原首页实际公布的渠道确认。</p><p class="editorial-meta">GetToken 内容整理 · 导航更新：${updated}</p></div></section>
+<div class="hub-close"><div><h2>看完指南，确认适合你的方案</h2><p>了解方案后，查看首页套餐与购买说明。</p></div><a class="button button--light" href="${href(route)}#pricing">查看首页套餐</a></div></main>`;
+  return page(route, title, description, body, [crumbs(route, 'AI 订阅导航'), {
+    '@type': 'CollectionPage', '@id': `${url(route)}#webpage`, name: title, url: url(route), description, dateModified: EDITORIAL.navigationModified,
+    inLanguage: 'zh-CN', isPartOf: { '@id': `${ORIGIN}/#website` }, about: SERVICES.map(s => ({ '@type': 'Thing', name: s.name })), mainEntity: { '@id': `${url(route)}#guide-list` },
+  }, {
+    '@type': 'ItemList', '@id': `${url(route)}#guide-list`, name: 'AI 订阅选购指南', numberOfItems: ordered.length,
+    itemListElement: ordered.map((g, i) => ({ '@type': 'ListItem', position: i + 1, name: g.title, url: url(`guides/${g.slug}/`) })),
+  }]);
 }
 function sections(items) {
   return items.map((s, i) => `<section id="section-${i + 1}"><h2>${esc(s.title)}</h2>${s.table ? `<div class="compare-wrap"><table><thead><tr>${s.table.headers.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${s.table.rows.map(row => `<tr>${row.map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}${(s.paragraphs || []).map(p => `<p>${esc(p)}</p>`).join('')}${s.list ? `<ul>${s.list.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}</section>`).join('');

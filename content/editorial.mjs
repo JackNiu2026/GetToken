@@ -1,7 +1,18 @@
 // Dates are edited only when substantive content changes, never at build time.
 export const EDITORIAL = Object.freeze({
-  navigationModified: '2026-10-09',
+  navigationModified: '2026-10-13',
   organization: 'GetToken',
+});
+// Reading paths on /navigation/: a short starting list, then every guide once by the question it answers.
+export const NAVIGATION = Object.freeze({
+  startHere: ['account-topup-or-independent', 'monthly-subscription-renewal', 'claude-code-subscription-api'],
+  questions: [
+    { slug: 'choose-plan', name: '套餐怎么选', guides: ['claude-pro-max-selection', 'gemini-plan-checklist', 'grok-subscription-checklist'] },
+    { slug: 'topup-path', name: '充值走哪条路', guides: ['codex-subscription-credits-api', 'claude-code-subscription-api', 'grok-subscription-billing-check'] },
+    { slug: 'delivery', name: '代充还是独立账号', guides: ['account-topup-or-independent', 'gemini-topup-account-options'] },
+    { slug: 'term-cost', name: '期限、额度与成本', guides: ['monthly-subscription-renewal', 'claude-code-usage-checklist', 'claude-code-cost-checklist'] },
+    { slug: 'verify', name: '买完怎么验收', guides: ['codex-topup-verification', 'claude-topup-verification'] },
+  ],
 });
 export const GUIDE_DETAILS = {
   'codex-subscription-credits-api': {

@@ -50,8 +50,8 @@ spacing:
   card-padding: "22px"
   storefront-section: "88px"
   storefront-section-mobile: "64px"
-  topic-section: "48px"
-  topic-section-mobile: "34px"
+  topic-section: "56px"
+  topic-section-mobile: "40px"
 components:
   button-light:
     backgroundColor: "{colors.button-light}"
@@ -102,7 +102,7 @@ components:
 
 The Chinese interface, GetToken wordmark and existing raster logo remain the visual authority. The preserved homepage uses a compact dark storefront with glass surfaces, blue/violet emphasis, pale text and white pill actions. This name describes the incumbent design rather than a newly selected identity.
 
-The independent subscription navigation and its thirteen articles inherit the same canvas and font stack. Their information uses open sections, fine separators and a wider reading rhythm. This record describes assets/gettoken/home.css, assets/gettoken/pages.css and the markup in scripts/build-site.mjs; page strategy stays in .impeccable/surfaces/seo-pages.md.
+The independent subscription navigation and its thirteen articles inherit the same canvas and font stack. Their information uses open sections, fine separators and a wider reading rhythm. This record describes assets/gettoken/home.css, assets/gettoken/pages.css, assets/gettoken/navigation.css and the markup in scripts/build-site.mjs; page strategy stays in .impeccable/surfaces/seo-pages.md.
 
 **Key Characteristics:**
 
@@ -157,7 +157,7 @@ Observed heading geometry: the original hero uses weight 800, line-height 1.15 a
 
 The shared shell is `min(1200px, 100% - 2 × gutter)`. home.css supplies the recorded desktop gutter and switches to the mobile gutter at 640px. The preserved homepage retains its 1100px, 960px, 640px and 370px adaptations, compact grids and purchase dialogs.
 
-The independent /navigation/ page uses a wrapping row of topic anchors, two explanatory columns with a 64px gap, open topic sections and two columns of reading links with a 48px gap. Topic facts pair a 160px label column with a flexible description, separated by 32px. At 700px these structures become single columns and the header links move to a full-width row.
+The independent /navigation/ page loads navigation.css in addition to pages.css. A tinted hero pairs the breadcrumb, H1, lead and byline with a 380px glass "start here" list of three numbered guides. A sticky jump bar follows: five product anchors with guide counts, a separator, then the question index and FAQ. The delivery explainer uses a 200px label column and two text columns. Each product section has a 48px tinted mark, heading, intro and an official-source link, three facts in ruled columns, and three guide cards (title, full summary, update date). The question index lists every guide once in five groups across three columns, followed by FAQ and editorial sections in a 300px heading column, and a glass closing panel linking to homepage pricing. At 960px the hero, cards and index reflow to one or two columns; at 700px everything is one column and the jump bar scrolls sideways.
 
 The thirteen articles use an open reading column and a 240px sticky contents column with a 72px gap. At 960px the aside narrows to 200px with a 36px gap. At 700px it moves into normal flow before the article; its links form two columns. Comparison tables scroll inside a bordered wrapper on narrow screens. Each article includes two native FAQ disclosures and three related article links. Related reading reuses the two-column reading-link layout below a fine separator, with 36px/52px vertical padding that becomes 28px/38px on mobile. New pages have no runtime JavaScript, inquiry form or product selection workflow.
 
@@ -193,7 +193,7 @@ The existing homepage pricing choices use native radio inputs over styled labels
 
 ### Navigation and contents
 
-The preserved storefront keeps its original desktop dropdown, mobile menu and glass header. The independent SEO header is a simple bordered row with the existing brand, two links and a return-home ghost action. Pale blue marks its current navigation link and hover state. Topic anchors use open underlined boundaries; article contents uses a sticky bordered list until mobile reflow.
+The preserved storefront keeps its original desktop dropdown, mobile menu and glass header. The independent SEO header is a simple bordered row with the existing brand, two links and a return-home ghost action. Pale blue marks its current navigation link and hover state. The navigation jump bar is sticky with a translucent blurred fill; article contents uses a sticky bordered list until mobile reflow.
 
 ### Reading links and disclosure
 
@@ -201,7 +201,7 @@ Reading entries use a fine top separator, 22px vertical padding, a 17px title at
 
 ### Editorial metadata
 
-Article headers and the navigation editorial-policy section show GetToken content attribution and a semantic update date. This auxiliary line uses 13px type, muted text, line-height 1.8 and 20px top spacing. Its attribution link uses secondary ink with an underline offset of 4px. The currently shipped date is 2026-10-09, held in content metadata rather than generated on every build; dates describe substantive content updates. Related-reading headings use the existing 24px article-section size, reducing to 22px on mobile. These remain open reading elements in the established Read surface.
+Article headers and the navigation editorial-policy section show GetToken content attribution and a semantic update date. This auxiliary line uses 13px type, muted text, line-height 1.8 and 20px top spacing. Its attribution link uses secondary ink with an underline offset of 4px. Article dates are 2026-10-09 and the navigation date is 2026-10-13, held in content metadata rather than generated on every build; dates describe substantive content updates. Related-reading headings use the existing 24px article-section size, reducing to 22px on mobile. These remain open reading elements in the established Read surface.
 
 ## Do's and Don'ts
 
@@ -214,7 +214,7 @@ Article headers and the navigation editorial-policy section show GetToken conten
 ### Don't:
 
 - **Don't** replace the incumbent logo or treat this extension as approval for a new identity.
-- **Don't** turn the navigation reading links or article paragraphs into promotional cards.
+- **Don't** turn guide cards or article paragraphs into promotional cards: no prices, badges or purchase claims on reading entries.
 - **Don't** introduce new product colors or page-specific accents without an established source.
 
 Pre-existing drift not canonized or repaired: homepage eyebrow labels, text-glyph product marks and system display faces remain in the restored baseline. Their presence is not a rule for future surfaces; repairing them would exceed the user's explicit homepage-preservation scope.

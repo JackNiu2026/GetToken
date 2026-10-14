@@ -15,6 +15,10 @@ coverage/
 *.log
 *.zip
 site.tar.gz
+verify-api.tar.gz
+*.db
+*.db-shm
+*.db-wal
 .impeccable/review/
 *.pem
 *.key

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-archive=${1:?Usage: server-deploy.sh ARCHIVE COMMIT HOST}
+archive=${1:?Usage: server-deploy.sh ARCHIVE COMMIT HOST [NODE_VERSION]}
 revision=${2:?Missing commit SHA}
 site_host=${3:?Missing site hostname}
+node_version=${4:-}
 [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid commit SHA'; exit 1; }
 [[ "$site_host" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] || { echo 'Invalid hostname'; exit 1; }
+[[ -z "$node_version" || "$node_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid Node.js version'; exit 1; }
 [[ $EUID -eq 0 ]] || { echo 'This installer needs root to configure Nginx'; exit 1; }
 [[ -f "$archive" ]] || { echo 'Archive not found'; exit 1; }
 
@@ -85,6 +87,9 @@ test -f "$stage/assets/gettoken/product.css"
 test -f "$stage/assets/gettoken/product.mjs"
 test -f "$stage/assets/gettoken/shop.mjs"
 test -f "$stage/claude/index.html"
+test -f "$stage/verify/index.html"
+test -f "$stage/verify/admin/index.html"
+test -f "$stage/assets/gettoken/verify.mjs"
 test -f "$stage/guides/index.html"
 test -f "$stage/guides/feed.xml"
 test -f "$stage/robots.txt"
@@ -104,6 +109,17 @@ printf '{"commit":"%s"}\n' "$revision" > "$stage/deployment.json"
 find "$stage" -type d -exec chmod 755 {} +
 find "$stage" -type f -exec chmod 644 {} +
 if command -v restorecon >/dev/null; then restorecon -RF "$site_root"; fi
+
+# Review API (/api/verify/). A separate process so its own rollback works; a failure there
+# is reported but never blocks the website release.
+verify_ready=false
+if [[ -n "$node_version" && -f "$script_dir/verify-api.tar.gz" && -f "$script_dir/install-verify.sh" ]]; then
+  if bash "$script_dir/install-verify.sh" "$script_dir/verify-api.tar.gz" "$revision" "$node_version" "$script_dir/node-runtime.tar.xz"; then
+    verify_ready=true
+  else
+    echo 'WARNING: the review API was not updated; see the messages above.' >&2
+  fi
+fi
 
 routing_changed=true
 python3 "$script_dir/configure-seo-routing.py" apply --state-dir "$routing_state" \
@@ -149,7 +165,7 @@ curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127
 for route in "${seo_paths[@]}"; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1$route" -o /dev/null
 done
-for resource in robots.txt sitemap.xml assets/guides/guides.css assets/gettoken/product.css assets/gettoken/product.mjs assets/gettoken/shop.mjs guides/feed.xml; do
+for resource in robots.txt sitemap.xml assets/guides/guides.css assets/gettoken/product.css assets/gettoken/product.mjs assets/gettoken/shop.mjs assets/gettoken/verify.css assets/gettoken/verify.mjs assets/gettoken/qr.mjs verify/admin/ guides/feed.xml; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1/$resource" -o /dev/null
 done
 missing_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Host: $site_host" http://127.0.0.1/__gettoken_seo_missing_page__/)
@@ -162,8 +178,13 @@ retired_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_ho
 [[ "$retired_headers" == *'301'* && "$retired_headers" == *'/guides/'* ]]
 js_headers=$(curl --fail --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/assets/gettoken/home.mjs)
 [[ "$js_headers" == *'Content-Type: application/javascript'* ]]
+if $verify_ready; then
+  api_health=$(curl --silent --max-time 15 -H "Host: $site_host" http://127.0.0.1/api/verify/health || true)
+  [[ "$api_health" == *'"ok":true'* ]] || echo "WARNING: Nginx does not forward /api/verify/ for $site_host yet; check the domain vhost includes $site_root/seo-locations.conf" >&2
+fi
 deployed_version=$(curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127.0.0.1/deployment.json)
 [[ "$deployed_version" == "{\"commit\":\"$revision\"}" ]]
 trap - ERR
 echo "Deployed $revision to $site_root/current"
+$verify_ready || echo 'NOTE: the review API is not running; /verify/ shows that the service is unavailable.'
 echo "Server checks passed. Open http://$site_host/ after allowing inbound TCP port 80."

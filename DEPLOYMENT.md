@@ -37,6 +37,7 @@
 - `/var/www/gettoken/current` 原子切换到新目录，Nginx 配置位于 `/etc/nginx/conf.d/gettoken.conf`。
 - 配置专门为 `.mjs` 设置 JavaScript MIME 类型，避免浏览器拒绝加载模块。
 - SEO 别名规则保存在 `/var/www/gettoken/seo-locations.conf`。脚本从实际加载的 Nginx 配置中寻找 `gettoken.cc`、`www.gettoken.cc` 的站点，仅在根目录为 `/var/www/gettoken/current` 时追加规则 include，保留现有首页、TLS、证书与其他路由；根目录不符会中止发布。
+- 同时打包 `server/verify/`（`scripts/package-verify.mjs` → `verify-api.tar.gz`），安装审核验证服务，见下文。
 - 切换后检查 sitemap 列出的全部页面、robots、资源、404、SEO 网址重定向、JavaScript MIME 类型和 `deployment.json` 中的提交 SHA；失败时恢复之前的链接和 Nginx 配置。
 - 域名配置与原 SEO 规则先存入权限为 700 的临时备份目录，失败时恢复原字节和权限，成功后清理；恢复异常时保留私有备份并报告错误。
 - GitHub runner 随后检查实际 HTTPS 域名的全部页面、正文一致性、SEO 别名、HTTP→HTTPS 和公开部署版本，不再只以 IP 站点检查作为发布验收。
@@ -88,6 +89,59 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 ## 域名与正式销售配置
 
 实际检查已确认 `gettoken.cc` 与 `www.gettoken.cc` 解析到该服务器，宝塔已有 HTTPS 站点且根目录为发布软链接。部署保留现有证书和域名配置，仅补充 SEO 地址规则。安装脚本的 IP 站点仍监听 HTTP 80，不负责签发或更换证书。价格、收款码和客服联系方式仍遵循 README 中的配置方式。
+
+## 审核验证服务（/verify/ 与 /api/verify/）
+
+`/verify/` 是静态页面，订单、付款、审核结果由同一台服务器上的小后端处理：
+
+- 代码在 `server/verify/`，用 Node.js 自带的 SQLite，没有第三方依赖。每次发布随网站一起安装到 `/opt/gettoken/verify/releases/<提交 SHA>/`，`current` 软链接指向当前版本，保留最近 5 个版本。
+- Node.js 固定为 v22.22.0 官方 linux-x64 版本（校验 SHA-256），首次发布时由 GitHub runner 下载后上传到 `/opt/gettoken/runtime/`。服务器需要 x86_64、glibc 2.28 以上；不满足时发布会给出警告并跳过后端，网站照常更新，审核页显示“服务暂时无法连接”。
+- systemd 服务 `gettoken-verify` 以专用用户 `gettoken-verify` 运行，只监听 `127.0.0.1:8790`；Nginx 通过 `seo-locations.conf` 中的 `location ^~ /api/verify/` 转发。发布时先检查服务健康，失败则恢复上一个版本。
+- 数据库：`/var/lib/gettoken-verify/verify.db`，每天自动备份到同目录 `backups/`，保留 14 天。用户提交的代码加密保存，出结果 7 天后自动删除（天数在 `assets/gettoken/verify-rules.mjs` 的 `purgeDays`，页面常见问题会同步）。
+- 日志：`journalctl -u gettoken-verify -f`。
+- 安装由 `scripts/install-verify.sh` 单独完成：新版本健康检查不通过时自动恢复上一个版本，并在发布日志里给出警告；网站本身照常发布，不会因为后端失败而中断。
+
+### 第一次上线后
+
+1. 设置后台密码（至少 12 位）：`sudo gettoken-verify passwd`。后台地址 `https://gettoken.cc/verify/admin/`，robots 已禁止收录。
+2. 配置文件 `/etc/gettoken/verify.env` 在首次发布时自动生成，只有 root 可读，之后的发布不会覆盖。其中的 `VERIFY_SECRET` 用于加密代码，**不要修改或丢失**，换掉后已有订单的代码无法解密。
+3. 刚安装时 `VERIFY_PAY_MODE=off`，页面显示“在线支付暂未开通”。查看状态：`sudo gettoken-verify status`。
+4. 修改 `verify.env` 后执行 `sudo systemctl restart gettoken-verify`。
+
+### 测试模式
+
+`VERIFY_PAY_MODE=mock`：不接任何支付平台，付款二维码只是测试内容；在后台点开订单，用“模拟收款”让订单进入审核，“未通过”时退款也是模拟的。页面顶部会显示“测试模式”。验收完改回 `live` 或 `off`，不要长期开着。
+
+### 接入支付宝与微信支付
+
+密钥文件放在 `/etc/gettoken/keys/`（发布时自动设为 root:gettoken-verify、640），路径写进 `verify.env`。异步通知地址由程序自动生成，必须能从公网 HTTPS 访问：
+
+- 支付宝：`https://gettoken.cc/api/verify/notify/alipay`
+- 微信支付：`https://gettoken.cc/api/verify/notify/wechat`
+
+**支付宝（当面付，公钥模式）**：在支付宝开放平台创建应用并签约“当面付”，接口加签方式选“公钥”、RSA2，上传应用公钥，下载支付宝公钥。
+
+```ini
+ALIPAY_APP_ID=2021xxxxxxxxxxxx
+ALIPAY_PRIVATE_KEY_FILE=/etc/gettoken/keys/alipay_app_private.pem
+ALIPAY_PUBLIC_KEY_FILE=/etc/gettoken/keys/alipay_public.pem
+```
+
+**微信支付（Native 扫码，APIv3，微信支付公钥模式）**：商户号需开通 Native 支付并绑定一个 AppID；在商户平台设置 APIv3 密钥、申请 API 证书（得到 `apiclient_key.pem` 与证书序列号），下载“微信支付公钥”并记下公钥 ID（`PUB_KEY_ID_` 开头）。
+
+```ini
+WECHAT_MCHID=1900000000
+WECHAT_APPID=wx0000000000000000
+WECHAT_SERIAL_NO=商户 API 证书序列号
+WECHAT_APIV3_KEY=32 位 APIv3 密钥
+WECHAT_PRIVATE_KEY_FILE=/etc/gettoken/keys/apiclient_key.pem
+WECHAT_PAY_PUBLIC_KEY_FILE=/etc/gettoken/keys/wechatpay_public.pem
+WECHAT_PAY_PUBLIC_KEY_ID=PUB_KEY_ID_xxxxxxxx
+```
+
+配置完成后把 `VERIFY_PAY_MODE` 改为 `live` 并重启。只配置了一种时，页面只显示那一种；两种都配置时用户可以切换。`sudo gettoken-verify status` 会列出可用的付款方式。
+
+付款成功由支付平台的异步通知确认，页面每 3 秒查询一次订单，并在需要时主动向平台查单，所以通知偶尔丢失也不影响。审核结果只能在后台录入：点“未通过”会立即原路退回审核费 ¥300（技术费 ¥30 不退），退款失败时后台显示原因，可以点“重试”；同一订单被重复付款时，多付的一笔自动全额退回。
 
 ## SEO 发布验收
 

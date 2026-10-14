@@ -80,11 +80,17 @@ try {
   const hub=await curlRequest(base+'/guides?utm_source=qa');
   assert.equal(hub.status,301);
   assert.equal(hub.headers.get('location'),'/guides/?utm_source=qa');
-  for(const slug of ['codex','claude','gemini','grok','ip']) {
+  for(const slug of ['codex','claude','gemini','grok','ip','verify']) {
     const product=await curlRequest(base+'/'+slug+'?utm_source=qa');
     assert.equal(product.status,301);
     assert.equal(product.headers.get('location'),'/'+slug+'/?utm_source=qa');
   }
+  const admin=await curlRequest(base+'/verify/admin/');
+  assert.equal(admin.status,200);
+  assert.match(await admin.text(),/<meta name="robots" content="noindex, nofollow">/);
+  // No review API runs in this container: a 502 proves /api/verify/ is proxied, not served as files.
+  const api=await curlRequest(base+'/api/verify/health');
+  assert.equal(api.status,502);
   const module=await curlRequest(base+'/assets/gettoken/product.mjs');
   assert.equal(module.status,200);
   assert.match(module.headers.get('content-type')||'',/javascript/);

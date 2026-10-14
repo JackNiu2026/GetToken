@@ -195,7 +195,7 @@ function unpaidView(order) {
   const qr = p ? qrSvg(p.qr, { label: `${channelLabel(p.channel)}付款二维码` }) : '';
   const mobile = p && !expired && p.channel === 'alipay' && /^https:\/\//.test(p.qr)
     ? `<a class="v-btn v-btn--light v-btn--sm v-pay__open" href="${esc(p.qr)}" rel="noopener">在手机上？打开支付宝付款</a>`
-    : p?.channel === 'wechat' ? '<p class="v-hint" style="margin-top:10px">手机上可保存二维码图片，在微信「扫一扫」中从相册识别。</p>' : '';
+    : p?.channel === 'wechat' ? '<p class="v-hint" style="margin-top:10px">微信付款需要用另一部设备扫描这个二维码；只有这一部手机时，请换成支付宝。</p>' : '';
   return `${top(order, '<span class="v-tag v-tag--amber">待付款</span>')}
 <h2>扫码付款 ${yuan(order.fees.total)}</h2>
 <p class="v-sub">请用${esc(channelLabel(channel))}扫码。付款成功后本页自动更新，并开始 ${VERIFY.reviewHours} 小时审核计时。</p>
@@ -218,7 +218,8 @@ ${track(2)}
 <p class="v-sub v-center" style="margin-top:10px" data-ring-note>审核员正在处理，结果出来后本页自动更新</p>
 <dl class="v-kv"><div><dt>审核代码</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>付款时间</dt><dd class="v-num">${esc(stamp(order.paidAt))}</dd></div><div><dt>预计出结果</dt><dd class="v-num">${esc(stamp(order.dueAt))} 前</dd></div></dl>
 ${ownRef(order)}
-<p class="v-note">可以关闭页面，审核不受影响。本机会记住这个订单；换设备时输入订单号即可查询。</p>`;
+<p class="v-note">可以关闭页面，审核不受影响。本机会记住这个订单；换设备时输入订单号即可查询。</p>
+<div class="v-acts">${again('提交另一个代码')}</div>`;
 }
 
 function confetti() {
@@ -336,7 +337,8 @@ function schedulePoll() {
   clearTimeout(pollTimer);
   if (!current || !['unpaid', 'reviewing'].includes(current.status) && !(current.status === 'failed' && current.refund?.status !== 'success')) return;
   const hidden = document.visibilityState === 'hidden';
-  const delay = current.status === 'unpaid' ? (hidden ? 15000 : 3000) : (hidden ? 120000 : 30000);
+  const qrLive = current.payment && current.payment.expiresAt > serverNow();
+  const delay = current.status === 'unpaid' ? (hidden || !qrLive ? 15000 : 3000) : (hidden ? 120000 : 30000);
   pollTimer = setTimeout(refresh, delay);
 }
 
@@ -376,6 +378,14 @@ panel.addEventListener('click', async event => {
       target.disabled = false;
     }
   }
+});
+
+// The header button and any other #submit link return to the form while an order is open.
+document.addEventListener('click', event => {
+  const link = event.target.closest('a[href="#submit"]');
+  if (!link || !form.hidden) return;
+  event.preventDefault();
+  closeOrder();
 });
 
 /* ---------- lookup ---------- */

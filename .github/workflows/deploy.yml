@@ -20,7 +20,7 @@ jobs:
       - name: Check JavaScript and deployment scripts
         run: |
           for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs server/verify/*.mjs server/verify/pay/*.mjs; do node --check "$file"; done
-          bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh
+          bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh scripts/install-verify.sh
           python3 -m py_compile scripts/configure-seo-routing.py scripts/inspect-live.py
       - name: Check generated static pages
         run: node scripts/build-site.mjs --check
@@ -42,6 +42,7 @@ jobs:
             verify-api.tar.gz
             scripts/server-deploy.sh
             scripts/deploy-ssh.sh
+            scripts/install-verify.sh
             scripts/configure-seo-routing.py
             scripts/nginx-seo-locations.conf
           retention-days: 7

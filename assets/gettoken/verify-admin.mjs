@@ -2,7 +2,7 @@
 // The session cookie is HttpOnly and scoped to /api/verify/admin; this script never sees it.
 import { VERIFY, yuan, STATUS_NAMES, REFUND_NAMES } from './verify-rules.mjs';
 
-const API = new URL('../../../api/verify/', import.meta.url);
+const API = new URL('../../api/verify/', import.meta.url);
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const pad = n => String(n).padStart(2, '0');
@@ -22,6 +22,8 @@ const app = $('[data-app]');
 const rows = $('[data-rows]');
 const detail = $('[data-detail]');
 const FILTERS = [['reviewing', '审核中'], ['unpaid', '待付款'], ['refund', '退款'], ['passed', '已通过'], ['failed', '未通过'], ['expired', '已过期'], ['', '全部']];
+const CHANNELS = { alipay: '支付宝', wechat: '微信支付', mock: '测试通道' };
+const PAYMENT_STATES = { pending: '待付款', paid: '已付款', duplicate: '重复付款', closed: '已关闭' };
 const TONES = { unpaid: 'amber', reviewing: 'violet', passed: 'green', failed: 'rose', expired: 'gray' };
 const EVENTS = {
   created: '用户提交', payment_opened: '生成付款二维码', payment_error: '二维码生成失败', paid: '付款成功', duplicate_payment: '重复付款（自动全额退回）',
@@ -173,7 +175,7 @@ ${o.refundDueAt ? `<div><dt>退款截止</dt><dd>${esc(stamp(o.refundDueAt))}</d
 <div><dt>同意展示</dt><dd>${o.showPublic ? '是' : '否'}</dd></div>
 </dl>
 ${actions.join('\n')}
-${o.payments.length ? `<h2>付款</h2><dl class="v-kv">${o.payments.map(p => `<div><dt>${esc(p.channel)} · ${esc(p.status)}</dt><dd>${yuan(p.amount)}${p.tradeNo ? `<br><span class="v-mono">${esc(p.tradeNo)}</span>` : ''}</dd></div>`).join('')}</dl>` : ''}
+${o.payments.length ? `<h2>付款</h2><dl class="v-kv">${o.payments.map(p => `<div><dt>${esc(CHANNELS[p.channel] || p.channel)} · ${esc(PAYMENT_STATES[p.status] || p.status)}</dt><dd>${yuan(p.amount)}${p.tradeNo ? `<br><span class="v-mono">${esc(p.tradeNo)}</span>` : ''}</dd></div>`).join('')}</dl>` : ''}
 ${o.refunds.length ? `<h2>退款</h2><dl class="v-kv">${o.refunds.map(r => `<div><dt>${r.kind === 'audit' ? '审核费' : '重复付款'} · ${esc(REFUND_NAMES[r.status] || r.status)}</dt><dd>${yuan(r.amount)}${r.error ? `<br><span class="v-error">${esc(r.error)}</span>` : ''}</dd></div>`).join('')}</dl>` : ''}
 <ol class="a-log">${o.events.map(e => `<li><span>${esc(EVENTS[e.kind] || e.kind)}${e.detail && !['payment_opened', 'paid', 'created'].includes(e.kind) ? ` · ${esc(e.detail)}` : ''}</span><time>${esc(stamp(e.at))}</time></li>`).join('')}</ol>`;
 }

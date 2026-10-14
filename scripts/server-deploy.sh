@@ -46,10 +46,6 @@ had_config=false
 [[ ! -f "$config" ]] || { cp "$config" "$config_backup"; had_config=true; }
 switched=false
 config_changed=false
-verify_root=/opt/gettoken/verify
-verify_old=$(readlink -f "$verify_root/current" || true)
-verify_switched=false
-verify_ready=false
 cleanup() {
   rm -f "$config_backup"
   if ! $keep_routing_backup; then rm -rf "$routing_state"; fi
@@ -57,14 +53,6 @@ cleanup() {
 rollback() {
   trap - ERR
   set +e
-  if $verify_switched; then
-    if [[ -n "$verify_old" && -d "$verify_old" ]]; then
-      ln -sfn "$verify_old" "$verify_root/.rollback-$$" && mv -Tf "$verify_root/.rollback-$$" "$verify_root/current"
-      systemctl restart gettoken-verify
-    else
-      systemctl stop gettoken-verify
-    fi
-  fi
   if $switched; then
     if [[ -n "$old_release" && -d "$old_release" ]]; then
       ln -s "$old_release" "$site_root/.rollback-$$"
@@ -122,97 +110,16 @@ find "$stage" -type d -exec chmod 755 {} +
 find "$stage" -type f -exec chmod 644 {} +
 if command -v restorecon >/dev/null; then restorecon -RF "$site_root"; fi
 
-# Review API (/api/verify/): Node.js service on 127.0.0.1:8790, data in /var/lib/gettoken-verify.
-# Secrets live in /etc/gettoken/verify.env (created once, never overwritten) and /etc/gettoken/keys/.
-install_verify() {
-  [[ -n "$node_version" && -f "$script_dir/verify-api.tar.gz" ]] || { echo 'Review API: no package or Node.js version, skipped' >&2; return 0; }
-  local runtime="/opt/gettoken/runtime/node-$node_version-linux-x64"
-  if [[ ! -x "$runtime/bin/node" ]]; then
-    if [[ ! -f "$script_dir/node-runtime.tar.xz" ]]; then echo 'WARNING: Node.js runtime not available; review API not installed' >&2; return 0; fi
-    mkdir -p /opt/gettoken/runtime
-    tar -xJf "$script_dir/node-runtime.tar.xz" --no-same-owner -C /opt/gettoken/runtime
+# Review API (/api/verify/). A separate process so its own rollback works; a failure there
+# is reported but never blocks the website release.
+verify_ready=false
+if [[ -n "$node_version" && -f "$script_dir/verify-api.tar.gz" && -f "$script_dir/install-verify.sh" ]]; then
+  if bash "$script_dir/install-verify.sh" "$script_dir/verify-api.tar.gz" "$revision" "$node_version" "$script_dir/node-runtime.tar.xz"; then
+    verify_ready=true
+  else
+    echo 'WARNING: the review API was not updated; see the messages above.' >&2
   fi
-  if ! "$runtime/bin/node" --version >/dev/null 2>&1; then
-    echo "WARNING: the bundled Node.js cannot run here ($(ldd --version 2>&1 | head -1)); review API not installed" >&2
-    return 0
-  fi
-  if ! id gettoken-verify >/dev/null 2>&1; then
-    useradd --system --home-dir /var/lib/gettoken-verify --no-create-home --shell "$(command -v nologin || echo /bin/false)" gettoken-verify
-  fi
-  install -d -m 700 -o gettoken-verify -g gettoken-verify /var/lib/gettoken-verify
-  install -d -m 755 /etc/gettoken
-  if [[ ! -f /etc/gettoken/verify.env ]]; then
-    ( umask 077; printf '%s\n' '# GetToken review API. See DEPLOYMENT.md for payment settings.' \
-      "VERIFY_SECRET=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" 'VERIFY_PAY_MODE=off' 'VERIFY_PUBLIC_ORIGIN=https://gettoken.cc' > /etc/gettoken/verify.env )
-  fi
-  chown root:root /etc/gettoken/verify.env
-  chmod 600 /etc/gettoken/verify.env
-  if [[ -d /etc/gettoken/keys ]]; then
-    chown -R root:gettoken-verify /etc/gettoken/keys
-    chmod 750 /etc/gettoken/keys
-    find /etc/gettoken/keys -type f -exec chmod 640 {} +
-  fi
-  mkdir -p "$verify_root/releases"
-  local release="$verify_root/releases/$revision"
-  rm -rf "$release"
-  mkdir -p "$release"
-  tar -xzf "$script_dir/verify-api.tar.gz" --no-same-owner -C "$release"
-  find "$release" -type d -exec chmod 755 {} +
-  find "$release" -type f -exec chmod 644 {} +
-  cat > /etc/systemd/system/gettoken-verify.service <<UNIT
-[Unit]
-Description=GetToken review verification API
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-User=gettoken-verify
-Group=gettoken-verify
-EnvironmentFile=/etc/gettoken/verify.env
-ExecStart=$runtime/bin/node --disable-warning=ExperimentalWarning $verify_root/current/server/verify/server.mjs
-Restart=always
-RestartSec=3
-NoNewPrivileges=true
-UMask=0077
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/var/lib/gettoken-verify
-
-[Install]
-WantedBy=multi-user.target
-UNIT
-  cat > /usr/local/bin/gettoken-verify <<WRAP
-#!/bin/sh
-# Admin tool for the review API: gettoken-verify passwd | status
-set -a
-. /etc/gettoken/verify.env
-set +a
-exec runuser -u gettoken-verify -- $runtime/bin/node --disable-warning=ExperimentalWarning $verify_root/current/server/verify/cli.mjs "\$@"
-WRAP
-  chmod 755 /usr/local/bin/gettoken-verify
-  ln -sfn "$release" "$verify_root/.current-$$"
-  mv -Tf "$verify_root/.current-$$" "$verify_root/current"
-  verify_switched=true
-  systemctl daemon-reload
-  systemctl enable gettoken-verify >/dev/null 2>&1
-  systemctl restart gettoken-verify
-  local health=''
-  for _ in $(seq 1 20); do
-    health=$(curl --silent --max-time 2 http://127.0.0.1:8790/api/verify/health || true)
-    [[ "$health" == *'"ok":true'* ]] && break
-    sleep 0.5
-  done
-  if [[ "$health" != *'"ok":true'* ]]; then
-    journalctl -u gettoken-verify -n 30 --no-pager >&2 || true
-    echo 'Review API failed its health check' >&2
-    return 1
-  fi
-  verify_ready=true
-  echo "Review API running: $health"
-  for old in $(ls -1dt "$verify_root"/releases/* 2>/dev/null | tail -n +6); do rm -rf "$old"; done
-}
-install_verify
+fi
 
 routing_changed=true
 python3 "$script_dir/configure-seo-routing.py" apply --state-dir "$routing_state" \

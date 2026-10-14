@@ -81,6 +81,10 @@ test -f "$stage/index.html"
 test -f "$stage/assets/gettoken/home.mjs"
 test -f "$stage/assets/gettoken/home.css"
 test -f "$stage/assets/guides/guides.css"
+test -f "$stage/assets/gettoken/product.css"
+test -f "$stage/assets/gettoken/product.mjs"
+test -f "$stage/assets/gettoken/shop.mjs"
+test -f "$stage/claude/index.html"
 test -f "$stage/guides/index.html"
 test -f "$stage/guides/feed.xml"
 test -f "$stage/robots.txt"
@@ -145,13 +149,15 @@ curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127
 for route in "${seo_paths[@]}"; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1$route" -o /dev/null
 done
-for resource in robots.txt sitemap.xml assets/guides/guides.css guides/feed.xml; do
+for resource in robots.txt sitemap.xml assets/guides/guides.css assets/gettoken/product.css assets/gettoken/product.mjs assets/gettoken/shop.mjs guides/feed.xml; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1/$resource" -o /dev/null
 done
 missing_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Host: $site_host" http://127.0.0.1/__gettoken_seo_missing_page__/)
 [[ "$missing_status" == '404' ]]
 alias_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/guides/index.html)
 [[ "$alias_headers" == *'301'* && "$alias_headers" == *'/guides/'* ]]
+product_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/claude)
+[[ "$product_headers" == *'301'* && "$product_headers" == *'/claude/'* ]]
 retired_headers=$(curl --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/navigation/)
 [[ "$retired_headers" == *'301'* && "$retired_headers" == *'/guides/'* ]]
 js_headers=$(curl --fail --silent --show-error --max-time 15 -I -H "Host: $site_host" http://127.0.0.1/assets/gettoken/home.mjs)

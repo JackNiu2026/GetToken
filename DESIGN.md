@@ -192,13 +192,13 @@ The shared full-size light and ghost actions have a minimum 44px height; compact
 
 Feature, product, tier and scene cards share the original layered dark fill, fine translucent border and glass top highlight. Feature and product cards use the recorded card padding; responsive feature layouts reduce it to 18px. Tags remain small bordered labels, with existing product accent color controlling their tint. They are not navigation filters.
 
-### Storefront radio choices
+### Pricing cards and radio choices
 
-The existing homepage pricing choices use native radio inputs over styled labels. Checked tier options gain a product-colored border and a soft tinted fill; checked period options use the solid product accent. Keyboard focus outlines the visible sibling label. These describe the preserved homepage controls; guide pages contain no form controls.
+Pricing lives on the product pages (`/codex/`, `/claude/` …), not the homepage. Each page shows three cards copied from the original homepage pricing module: the first tier uses the blue scheme, the second is featured with the violet-pink gradient border and 推荐 flag, the third uses the green scheme. Choices are native radio inputs over styled labels: the delivery choice (代充 / 独立账号) gains a tier-colored border and soft fill when checked; the checked period uses the solid tier accent. Keyboard focus outlines the visible sibling label. Guide pages contain no form controls.
 
 ### Navigation and contents
 
-The preserved storefront keeps its original desktop dropdown, mobile menu and glass header. The guide header is sticky with a translucent blurred fill; the current topic uses a faint filled pill. Article contents is a sticky list with a left rule whose hover marker takes the topic tone.
+The homepage keeps its original desktop dropdown (now linking to the five product pages), mobile menu and glass header. Product pages use the guide header with product links and an 选购方案 action. The guide header is sticky with a translucent blurred fill; the current topic uses a faint filled pill. Article contents is a sticky list with a left rule whose hover marker takes the topic tone.
 
 ### Lists, disclosure and metadata
 
@@ -215,7 +215,7 @@ Guide rows, topic-card links and contents links brighten on hover; row titles ta
 ### Don't:
 
 - **Don't** replace the incumbent logo or treat this extension as approval for a new identity.
-- **Don't** turn guide cards or article paragraphs into promotional cards: no prices, badges or purchase claims on reading entries.
+- **Don't** turn guide cards or article paragraphs into promotional cards: no prices, badges or purchase claims on reading entries. Prices appear only in product-page pricing cards.
 - **Don't** introduce new product colors or page-specific accents without an established source.
 
-Pre-existing drift not canonized or repaired: homepage eyebrow labels, text-glyph product marks and system display faces remain in the restored baseline. Their presence is not a rule for future surfaces; repairing them would exceed the user's explicit homepage-preservation scope.
+Pre-existing drift not canonized or repaired: homepage eyebrow labels, text-glyph product marks and system display faces remain in the baseline. Their presence is not a rule for future surfaces; the homepage was changed only where the 2026-10-14 product-page plan required it.

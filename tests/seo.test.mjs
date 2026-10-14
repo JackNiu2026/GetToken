@@ -5,10 +5,11 @@ import { resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { gzipSync } from 'node:zlib';
 import { ROOT, ROUTES, PAGES, ARTICLES, REDIRECTS, FEED_ROUTE, generateSite } from '../scripts/build-site.mjs';
-import { parseFrontMatter, parseBlocks, splitArticle, inline } from '../scripts/content.mjs';
+import { parseFrontMatter, parseBlocks, splitArticle, inline, loadArticles } from '../scripts/content.mjs';
+import { writeFile } from 'node:fs/promises';
 import { SITE } from '../content/site.mjs';
 import { exportSeoReport } from '../scripts/seo-report.mjs';
-import { auditLive, robotsAllows } from '../scripts/check-live-seo.mjs';
+import { auditLive, robotsAllows, ASSETS } from '../scripts/check-live-seo.mjs';
 
 async function deployedFixture() {
   const map=new Map();
@@ -18,7 +19,8 @@ async function deployedFixture() {
     if(route)for(const path of [`${route}index.html`,route.slice(0,-1)])map.set(`${SITE.origin}/${path}`,{body:'',headers:{location:`/${route}`},status:301});
   }
   for(const [from,to] of REDIRECTS)for(const path of [from,`${from}index.html`,from.slice(0,-1)])map.set(`${SITE.origin}/${path}`,{body:'',headers:{location:`/${to}`},status:301});
-  for(const [path,type] of [['robots.txt','text/plain'],['sitemap.xml','application/xml'],['assets/gettoken/home.css','text/css'],['assets/guides/guides.css','text/css'],['assets/gettoken/logo.png','image/png'],[FEED_ROUTE,'application/rss+xml']])map.set(`${SITE.origin}/${path}`,{body:await readFile(join(ROOT,path)),headers:{'content-type':type},status:200});
+  const types={xml:'application/rss+xml',javascript:'application/javascript'};
+  for(const [path,type] of [['robots.txt','text/plain'],['sitemap.xml','application/xml'],...ASSETS.map(([path,type])=>[path,types[type]||type])])map.set(`${SITE.origin}/${path}`,{body:await readFile(join(ROOT,path)),headers:{'content-type':type},status:200});
   map.set(SITE.origin.replace('https:','http:')+'/',{body:'',headers:{location:SITE.origin+'/'},status:301});
   return {map,fetcher:async address=>{const row=map.get(address)||{body:'Not found',status:404};return new Response(row.body,{status:row.status,headers:row.headers});}};
 }
@@ -42,6 +44,18 @@ test('Markdown articles parse into sections, answers and sources',()=>{
   assert.throws(()=>parseFrontMatter('no front matter','t.md'),/missing front matter/);
 });
 
+test('articles default to guides and accept only known types',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'gettoken-types-'));
+  const article=type=>`---\ntitle: 标题\ndescription: 描述\nsummary: 摘要\ntopic: claude\n${type?`type: ${type}\n`:''}updated: 2026-10-14\n---\n## 一\n\n正文。\n\n## 二\n\n正文。\n`;
+  try {
+    await writeFile(join(dir,'a-guide.md'),article());
+    await writeFile(join(dir,'a-news.md'),article('news'));
+    assert.deepEqual(loadArticles(dir).map(a=>[a.slug,a.type]).sort(),[['a-guide','guide'],['a-news','news']]);
+    await writeFile(join(dir,'a-bad.md'),article('rumor'));
+    assert.throws(()=>loadArticles(dir),/type must be one of guide, news/);
+  } finally {await rm(dir,{recursive:true,force:true});}
+});
+
 test('articles expose honest update dates, sources and contextual related links',async()=>{
   const sitemap=await readFile(join(ROOT,'sitemap.xml'),'utf8');
   for(const page of PAGES.filter(p=>p.modified))assert.ok(sitemap.includes(`<loc>${SITE.origin}/${page.route}</loc><lastmod>${page.modified}</lastmod>`),page.route);
@@ -49,7 +63,7 @@ test('articles expose honest update dates, sources and contextual related links'
   for(const guide of ARTICLES) {
     const html=await readFile(resolve(ROOT,'guides',guide.slug,'index.html'),'utf8');
     const graph=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
-    const article=graph.find(row=>row['@type']==='Article');
+    const article=graph.find(row=>row['@type']===(guide.type==='news'?'NewsArticle':'Article'));
     assert.equal(article.headline,guide.title);
     assert.equal(article.dateModified,guide.updated);
     assert.deepEqual(article.citation,guide.sources.map(([,address])=>address));
@@ -65,16 +79,19 @@ test('articles expose honest update dates, sources and contextual related links'
   assert.equal(await readFile(join(ROOT,'sitemap.xml'),'utf8'),before,'Builds must not refresh dates');
 });
 
-test('guide pages stay compact and readable without runtime JavaScript',async()=>{
-  for(const route of ROUTES.filter(Boolean)) {
+test('guide pages stay readable without runtime JavaScript and product pages load only their module',async()=>{
+  for(const page of PAGES.filter(p=>p.route)) {
+    const route=page.route;
     const html=await readFile(resolve(ROOT,route,'index.html'),'utf8');
-    assert.doesNotMatch(html,/<script\b(?![^>]*type="application\/ld\+json")/i,`Only structured data scripts on ${route}`);
+    const scripts=[...html.matchAll(/<script\b(?![^>]*type="application\/ld\+json")[^>]*>/gi)].map(m=>m[0]);
+    assert.deepEqual(scripts,page.kind==='product'?['<script type="module" src="../assets/gettoken/product.mjs">']:[],`Scripts on ${route}`);
     assert.ok(Buffer.byteLength(html)<64*1024,route);
     assert.ok(gzipSync(html).length<16*1024,route);
     assert.doesNotMatch(html,/"@type":"(?:Offer|AggregateRating|Review)"/);
     assert.doesNotMatch(html,/home\.css/,'Guide pages load only their own stylesheet');
   }
   assert.ok((await readFile(join(ROOT,'assets/guides/guides.css'))).length<24*1024);
+  assert.ok((await readFile(join(ROOT,'assets/gettoken/product.css'))).length<24*1024);
 });
 
 test('keyword exports contain usable URLs and blank measured ranking fields',async()=>{

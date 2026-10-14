@@ -80,6 +80,14 @@ try {
   const hub=await curlRequest(base+'/guides?utm_source=qa');
   assert.equal(hub.status,301);
   assert.equal(hub.headers.get('location'),'/guides/?utm_source=qa');
+  for(const slug of ['codex','claude','gemini','grok','ip']) {
+    const product=await curlRequest(base+'/'+slug+'?utm_source=qa');
+    assert.equal(product.status,301);
+    assert.equal(product.headers.get('location'),'/'+slug+'/?utm_source=qa');
+  }
+  const module=await curlRequest(base+'/assets/gettoken/product.mjs');
+  assert.equal(module.status,200);
+  assert.match(module.headers.get('content-type')||'',/javascript/);
   const feed=await curlRequest(base+'/guides/feed.xml');
   assert.equal(feed.status,200);
   const slash=await curlRequest(base+'/guides/claude-code-cost-checklist?utm_source=qa');

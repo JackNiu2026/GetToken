@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://gettoken.cc/</loc></url>
+  <url><loc>https://gettoken.cc/codex/</loc><lastmod>2026-10-14</lastmod></url>
+  <url><loc>https://gettoken.cc/claude/</loc><lastmod>2026-10-14</lastmod></url>
+  <url><loc>https://gettoken.cc/gemini/</loc><lastmod>2026-10-14</lastmod></url>
+  <url><loc>https://gettoken.cc/grok/</loc><lastmod>2026-10-14</lastmod></url>
+  <url><loc>https://gettoken.cc/ip/</loc><lastmod>2026-10-14</lastmod></url>
   <url><loc>https://gettoken.cc/guides/</loc><lastmod>2026-10-13</lastmod></url>
   <url><loc>https://gettoken.cc/guides/codex/</loc><lastmod>2026-10-13</lastmod></url>
   <url><loc>https://gettoken.cc/guides/claude/</loc><lastmod>2026-10-13</lastmod></url>

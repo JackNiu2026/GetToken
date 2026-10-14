@@ -31,7 +31,7 @@
 
 ## 发布过程
 
-- CI 检查 JavaScript 与 Shell 语法、SEO 页面是否同步及原首页是否保持不变，并通过 `scripts/package-site.mjs` 打包原首页、`/guides/` 下的指南首页、专题页、文章、RSS、资源、robots 和 sitemap。
+- CI 检查 JavaScript 与 Shell 语法、生成页面是否同步（产品页、指南与首页“最新动态”）、首页不再含价格区，并通过 `scripts/package-site.mjs` 打包首页、五个产品页（`/codex/` `/claude/` `/gemini/` `/grok/` `/ip/`）、`/guides/` 下的指南首页、专题页、文章、RSS、资源、robots 和 sitemap。
 - SSH 使用固定的服务器公钥验证身份，临时密钥文件在任务结束时删除。
 - 每次发布创建独立目录 `/var/www/gettoken/releases/<提交 SHA>.<随机后缀>/`。
 - `/var/www/gettoken/current` 原子切换到新目录，Nginx 配置位于 `/etc/nginx/conf.d/gettoken.conf`。
@@ -99,4 +99,4 @@ CI 在打包后通过真实 Nginx 容器验证发布模板与目录页行为。�
 node scripts/check-live-seo.mjs --revision "$(git rev-parse HEAD)" --output /tmp/gettoken-live-seo.json
 ```
 
-默认要求 HTTPS；检查 canonical 页面 200、正文与本次构建一致、部署版本、HTTP 到 HTTPS、robots 对 Googlebot 与 Baiduspider 的允许规则、sitemap、日期、资源、404 与 SEO 别名。请求通过不表示搜索平台已收录或已有排名。首页保持原样，指南直接访问 `/guides/`；旧的 `/navigation/` 由 `scripts/nginx-seo-locations.conf` 301 到 `/guides/`。
+默认要求 HTTPS；检查 canonical 页面 200、正文与本次构建一致、部署版本、HTTP 到 HTTPS、robots 对 Googlebot 与 Baiduspider 的允许规则、sitemap、日期、资源、404 与 SEO 别名。请求通过不表示搜索平台已收录或已有排名。产品页与指南都是目录网址：`/claude`、`/claude/index.html` 这类写法由 `scripts/nginx-seo-locations.conf` 301 到 `/claude/`；旧的 `/navigation/` 301 到 `/guides/`。

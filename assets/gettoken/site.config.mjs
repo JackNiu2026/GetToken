@@ -12,8 +12,11 @@ export const SITE = Object.freeze({
     ]),
   }),
   // Where customers send the payment screenshot. Leave a field empty to hide it.
+  // `wechatQr` is the customer-service WeChat QR image shown by every 微信咨询 / 订单查询
+  // button (e.g. './assets/gettoken/pay/wechat-contact.png'; product pages resolve it from the site root).
   contact: Object.freeze({
     wechat: '',
+    wechatQr: '',
     telegram: '',
     email: '',
   }),

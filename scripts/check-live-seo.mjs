@@ -15,6 +15,8 @@ const meta = (html, name, field='name') => tags(html,'meta').filter(tag=>attr(ta
 const title = html => decode(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1].trim() || '');
 const invalidIndexing = value => /\b(noindex|none)\b/i.test(value);
 const run = promisify(execFile);
+// Files every page depends on, with the MIME type they must be served as.
+export const ASSETS = [['assets/gettoken/home.css','text/css'],['assets/guides/guides.css','text/css'],['assets/gettoken/product.css','text/css'],['assets/gettoken/product.mjs','javascript'],['assets/gettoken/shop.mjs','javascript'],['assets/gettoken/catalog.mjs','javascript'],['assets/gettoken/logo.png','image/png'],[FEED_ROUTE,'xml']];
 
 // curl preserves the environment's proxy and CA trust without npm dependencies.
 export async function curlRequest(address, {headers:requestHeaders={}}={}) {
@@ -114,7 +116,7 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
       requireCheck(valid && graph.some(n=>n['@type']==='BreadcrumbList'),result.url,'schema','Structured data must parse and include breadcrumbs.');
       const page=PAGES.find(p=>p.route===route);
       const guide=page.article;
-      const node=graph.find(n=>n['@type']===(guide?'Article':'CollectionPage'));
+      const node=graph.find(n=>n['@type']===(guide?(guide.type==='news'?'NewsArticle':'Article'):page.kind==='product'?'WebPage':'CollectionPage'));
       requireCheck(node?.dateModified===page.modified,result.url,'date','Structured modification date differs from the content source.');
       if (guide) {
         requireCheck(node?.headline===guide.title && node?.author?.['@id'] && node?.citation?.length===guide.sources.length,result.url,'article','Article title, author or source citations differ from the content source.');
@@ -142,9 +144,9 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
     if(modified) requireCheck(block.includes(`<lastmod>${modified}</lastmod>`),sitemap.url,'date',`Sitemap date mismatch for ${address}`);
   }
   requireCheck([404,410].includes(missing.status),missing.url,'soft404',`Missing page must return 404/410; received ${missing.status}.`);
-  for(const [path,type] of [['assets/gettoken/home.css','text/css'],['assets/guides/guides.css','text/css'],['assets/gettoken/logo.png','image/png'],[FEED_ROUTE,'xml']]) {
+  for(const [path,type] of ASSETS) {
     const response=await get(`/${path}`);
-    requireCheck(response.status===200 && (response.headers.get('content-type')||'').includes(type),response.url,'asset','Required CSS, logo or feed is missing or served with the wrong MIME type.');
+    requireCheck(response.status===200 && (response.headers.get('content-type')||'').includes(type),response.url,'asset','Required CSS, script, logo or feed is missing or served with the wrong MIME type.');
   }
   if(checkAliases) for(const [from,to] of REDIRECTS) for(const path of [`/${from}`,`/${from}index.html`,`/${from.slice(0,-1)}`]) {
     const response=await get(path);

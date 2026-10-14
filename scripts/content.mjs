@@ -10,6 +10,8 @@ export const ARTICLE_DIR = resolve(ROOT, 'content/guides');
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const RESERVED = new Set(['page', 'feed', 'assets', 'index']);
+// `type: news` marks a dated update (price changes, new plans); everything else is an evergreen guide.
+export const ARTICLE_TYPES = ['guide', 'news'];
 export const dateIsValid = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value).toISOString().startsWith(value);
 export const esc = value => String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
@@ -140,11 +142,12 @@ export function loadArticles(dir = ARTICLE_DIR) {
     if (topics.some(t => !topicSlugs.has(t)) || new Set(topics).size !== topics.length) throw new Error(`${file}: invalid extra topics`);
     if (!dateIsValid(data.updated) || (data.published && !dateIsValid(data.published))) throw new Error(`${file}: dates must be YYYY-MM-DD`);
     if (data.published && data.published > data.updated) throw new Error(`${file}: published must not be after updated`);
+    if (data.type !== undefined && !ARTICLE_TYPES.includes(data.type)) throw new Error(`${file}: type must be one of ${ARTICLE_TYPES.join(', ')}`);
     const { sections, faqs, sources } = splitArticle(parseBlocks(body), file);
     if (sections.length < 2) throw new Error(`${file}: an article needs at least two ## sections`);
     return Object.freeze({
       slug, file, title: data.title, description: data.description, summary: data.summary,
-      topic: data.topic, topics, updated: data.updated, published: data.published || null,
+      type: data.type || 'guide', topic: data.topic, topics, updated: data.updated, published: data.published || null,
       featured: data.featured === true, related: data.related || [],
       sections, faqs, sources, minutes: readingMinutes(body),
     });

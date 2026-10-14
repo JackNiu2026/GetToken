@@ -11,11 +11,11 @@ import tempfile
 
 domains = ['gettoken.cc', 'www.gettoken.cc']
 release = pathlib.Path('/var/www/gettoken/current')
-paths = ['/', '/guides/', '/navigation/', '/guides/claude-code-subscription-api/', '/robots.txt', '/sitemap.xml', '/deployment.json', '/assets/guides/guides.css']
+paths = ['/', '/claude/', '/guides/', '/navigation/', '/guides/claude-code-subscription-api/', '/robots.txt', '/sitemap.xml', '/deployment.json', '/assets/guides/guides.css', '/assets/gettoken/product.css']
 
 def files_at(root):
     result = {}
-    for name in ['index.html', 'guides/index.html', 'sitemap.xml', 'robots.txt', 'assets/guides/guides.css']:
+    for name in ['index.html', 'claude/index.html', 'guides/index.html', 'sitemap.xml', 'robots.txt', 'assets/guides/guides.css', 'assets/gettoken/product.css']:
         file = pathlib.Path(root) / name
         try:
             data = file.read_bytes()

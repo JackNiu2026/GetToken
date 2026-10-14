@@ -67,6 +67,7 @@ time { font-variant-numeric: tabular-nums; }
 .g-meta a:hover, .g-prose a:hover { text-decoration-color: currentColor; }
 .g-chip { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; border: 1px solid rgba(var(--rgb), .35); background: rgba(var(--rgb), .1); color: var(--tone); font-size: 12px; font-weight: 600; line-height: 1.6; }
 .g-chip--link:hover { background: rgba(var(--rgb), .18); }
+.g-flag { display: inline-flex; padding: 1px 7px; border-radius: 6px; background: rgba(16, 185, 129, .14); color: #4ee0b0; font-size: 12px; font-weight: 600; line-height: 1.6; vertical-align: middle; }
 .g-mark { display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(var(--rgb), .32); background: rgba(var(--rgb), .1); color: var(--tone); font: 700 13px/1 var(--mono); }
 .g-mark--lg { width: 64px; height: 64px; border-radius: 18px; font-size: 20px; box-shadow: 0 20px 50px -20px rgba(var(--rgb), .7); }
 

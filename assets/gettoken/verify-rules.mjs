@@ -1,6 +1,7 @@
 // Fees, timings and the code format for /verify/. Shared by the page, the build and the API
 // (server/verify), so the amounts shown before payment are the amounts charged.
 export const VERIFY = Object.freeze({
+  open: false, // false: the navigation and page say 即将开放. Set true once live payments work, then rebuild.
   techFeeMinor: 3000, // 人工技术费 ¥30, never refunded
   auditFeeMinor: 30000, // 审核费 ¥300, refunded when the review fails
   reviewHours: 24, // expected review time; drives the countdown only

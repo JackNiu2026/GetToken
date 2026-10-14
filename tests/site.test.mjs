@@ -169,3 +169,21 @@ test('product pages render three working price cards from the catalog', async ()
     assert.equal(page.mainEntity['@type'], 'Service');
   }
 });
+
+test('every page shares the homepage header and footer, styled by the same rules', async () => {
+  const home = await readFile(join(ROOT, 'assets/gettoken/home.css'), 'utf8');
+  const chrome = await readFile(join(ROOT, 'assets/gettoken/chrome.css'), 'utf8');
+  const copied = chrome.slice(chrome.indexOf('/* COPY:START home.css */'), chrome.indexOf('/* COPY:END */')).split('\n').slice(1).filter(Boolean);
+  assert.ok(copied.length > 30);
+  for (const line of copied) assert.ok(home.includes(line), `chrome.css drifted from home.css: ${line.slice(0, 80)}`);
+  const labels = html => [...html.match(/<nav class="desktop-nav"[\s\S]*?<\/nav>/)[0].matchAll(/<(?:a|summary)\b[^>]*>([\s\S]*?)<\/(?:a|summary)>/g)]
+    .map(m => m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ''));
+  const expected = labels(await htmlFor(''));
+  assert.equal(expected.length, 10, 'product menu (5) + menu label + 4 links');
+  for (const route of [...ROUTES, 'verify/admin/']) {
+    const html = await readFile(join(ROOT, route, 'index.html'), 'utf8');
+    assert.deepEqual(labels(html), expected, `Header differs on /${route}`);
+    assert.equal((html.match(/<footer class="site-footer"/g) || []).length, 1, `Footer on /${route}`);
+    assert.ok(html.includes('id="mobile-nav"'), `Phone menu on /${route}`);
+  }
+});

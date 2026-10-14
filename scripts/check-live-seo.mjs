@@ -16,7 +16,7 @@ const title = html => decode(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[
 const invalidIndexing = value => /\b(noindex|none)\b/i.test(value);
 const run = promisify(execFile);
 // Files every page depends on, with the MIME type they must be served as.
-export const ASSETS = [['assets/gettoken/home.css','text/css'],['assets/guides/guides.css','text/css'],['assets/gettoken/product.css','text/css'],['assets/gettoken/product.mjs','javascript'],['assets/gettoken/shop.mjs','javascript'],['assets/gettoken/catalog.mjs','javascript'],['assets/gettoken/verify.css','text/css'],['assets/gettoken/verify.mjs','javascript'],['assets/gettoken/verify-rules.mjs','javascript'],['assets/gettoken/qr.mjs','javascript'],['assets/gettoken/logo.png','image/png'],[FEED_ROUTE,'xml']];
+export const ASSETS = [['assets/gettoken/home.css','text/css'],['assets/guides/guides.css','text/css'],['assets/gettoken/product.css','text/css'],['assets/gettoken/product.mjs','javascript'],['assets/gettoken/shop.mjs','javascript'],['assets/gettoken/catalog.mjs','javascript'],['assets/gettoken/chrome.css','text/css'],['assets/gettoken/chrome.mjs','javascript'],['assets/gettoken/verify.css','text/css'],['assets/gettoken/verify.mjs','javascript'],['assets/gettoken/verify-rules.mjs','javascript'],['assets/gettoken/qr.mjs','javascript'],['assets/gettoken/logo.png','image/png'],[FEED_ROUTE,'xml']];
 
 // curl preserves the environment's proxy and CA trust without npm dependencies.
 export async function curlRequest(address, {headers:requestHeaders={}}={}) {

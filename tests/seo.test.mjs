@@ -79,13 +79,15 @@ test('articles expose honest update dates, sources and contextual related links'
   assert.equal(await readFile(join(ROOT,'sitemap.xml'),'utf8'),before,'Builds must not refresh dates');
 });
 
-test('guide pages stay readable without runtime JavaScript; product and verify pages load only their module',async()=>{
+test('guide pages need only the shared header script; product and verify pages add only their module',async()=>{
   for(const page of PAGES.filter(p=>p.route)) {
     const route=page.route;
     const html=await readFile(resolve(ROOT,route,'index.html'),'utf8');
     const scripts=[...html.matchAll(/<script\b(?![^>]*type="application\/ld\+json")[^>]*>/gi)].map(m=>m[0]);
-    const modules={product:['<script type="module" src="../assets/gettoken/product.mjs">'],verify:['<script type="module" src="../assets/gettoken/verify.mjs">']};
-    assert.deepEqual(scripts,modules[page.kind]||[],`Scripts on ${route}`);
+    // Every generated page runs the shared header (chrome.mjs); product and verify pages add their own module.
+    const up='../'.repeat(route.split('/').filter(Boolean).length);
+    const modules={product:[`<script type="module" src="${up}assets/gettoken/product.mjs">`],verify:[`<script type="module" src="${up}assets/gettoken/verify.mjs">`]};
+    assert.deepEqual(scripts,[`<script type="module" src="${up}assets/gettoken/chrome.mjs">`,...(modules[page.kind]||[])],`Scripts on ${route}`);
     assert.ok(Buffer.byteLength(html)<64*1024,route);
     assert.ok(gzipSync(html).length<16*1024,route);
     assert.doesNotMatch(html,/"@type":"(?:Offer|AggregateRating|Review)"/);

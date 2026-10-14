@@ -138,10 +138,12 @@ function renderChannels() {
     return;
   }
   if (!config.channels.length) {
-    channelBox.innerHTML = '<p class="v-hint">在线支付暂未开通，请稍后再来。</p>';
+    channelBox.innerHTML = '<p class="v-hint">在线支付即将开放，开通后即可在本页提交审核。已经提交过的订单仍可在右侧查询。</p>';
     submit.disabled = true;
+    submit.textContent = '即将开放';
     return;
   }
+  submit.textContent = `付款并提交审核 · ${yuan(totalMinor())}`;
   channelBox.innerHTML = config.channels.map((c, i) => `<label class="v-channel"><input type="radio" name="channel" value="${esc(c.key)}"${i === 0 ? ' checked' : ''}><span>${esc(c.label)}</span></label>`).join('');
   submit.disabled = false;
 }

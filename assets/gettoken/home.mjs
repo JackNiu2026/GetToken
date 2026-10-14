@@ -1,4 +1,4 @@
-import { $, $$, onBeforeDialog } from './shop.mjs';
+import { $, $$, onBeforeDialog, openDialog } from './shop.mjs';
 import {
   onScroll, initSplit, initReveal, initCounters, initChrome,
   initConsoleTilt, initSteps, initScrollSpy, reduceMotion,
@@ -48,6 +48,16 @@ onBeforeDialog(() => {
   closeMenu();
   productNav.open = false;
 });
+
+// Other pages link 联系客服 to /#contact; open the customer-service dialog when they land here.
+function openContactFromHash() {
+  if (location.hash !== '#contact') return;
+  const dialog = $('#query-dialog');
+  if (dialog && !dialog.open) openDialog(dialog, $('.header-actions [data-open-query]'));
+  history.replaceState(null, '', location.pathname + location.search);
+}
+window.addEventListener('hashchange', openContactFromHash);
+openContactFromHash();
 
 /* ---------- Hero product console ---------- */
 function initConsole(root) {

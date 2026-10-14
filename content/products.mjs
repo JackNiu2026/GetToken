@@ -1,10 +1,12 @@
 // Product pages. Each becomes /<slug>/ with the price cards from assets/gettoken/catalog.mjs,
 // the buying steps, the latest news and guides from `topics`, and the FAQ below.
+// `navHint` is the one-line description in the header's product menu.
 // `updated` changes only when this copy changes; the page date is the later of this and its newest article.
 // Official prices are quoted for comparison only and must name their source.
 export const PRODUCT_PAGES = Object.freeze([
   {
     slug: 'codex',
+    navHint: '开发者的下一份生产力',
     updated: '2026-10-14',
     tone: 'blue',
     topics: ['codex'],
@@ -24,6 +26,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'claude',
+    navHint: '把灵感展开更多',
     updated: '2026-10-14',
     tone: 'violet',
     topics: ['claude', 'claude-code'],
@@ -43,6 +46,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'gemini',
+    navHint: 'Google AI 会员一并开通',
     updated: '2026-10-14',
     tone: 'cyan',
     topics: ['gemini'],
@@ -62,6 +66,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'grok',
+    navHint: '实时信息与长对话',
     updated: '2026-10-14',
     tone: 'silver',
     topics: ['grok'],
@@ -81,6 +86,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'ip',
+    navHint: '给连接一个独立身份',
     updated: '2026-10-14',
     tone: 'green',
     topics: [],

@@ -43,10 +43,14 @@ scp "${ssh_options[@]}" -P "$DEPLOY_PORT" scripts/configure-seo-routing.py scrip
 # Upload Node.js only when the server does not have this version yet.
 runtime="/opt/gettoken/runtime/node-$node_version-linux-x64/bin/node"
 remote_arch=$(ssh "${ssh_options[@]}" -p "$DEPLOY_PORT" "$target" "test -x '$runtime' && echo present || uname -m")
+# A failed download only skips the review API; the website is still deployed.
 if [[ "$remote_arch" == x86_64 ]]; then
-  curl --fail --silent --show-error --location --retry 3 --max-time 300 -o "$ssh_dir/node.tar.xz" "https://nodejs.org/dist/$node_version/node-$node_version-linux-x64.tar.xz"
-  echo "$node_sha256  $ssh_dir/node.tar.xz" | sha256sum --check --quiet -
-  scp "${ssh_options[@]}" -P "$DEPLOY_PORT" "$ssh_dir/node.tar.xz" "$target:$remote_dir/node-runtime.tar.xz"
+  if curl --fail --silent --show-error --location --retry 3 --max-time 300 -o "$ssh_dir/node.tar.xz" "https://nodejs.org/dist/$node_version/node-$node_version-linux-x64.tar.xz" \
+    && echo "$node_sha256  $ssh_dir/node.tar.xz" | sha256sum --check --quiet -; then
+    scp "${ssh_options[@]}" -P "$DEPLOY_PORT" "$ssh_dir/node.tar.xz" "$target:$remote_dir/node-runtime.tar.xz"
+  else
+    echo 'WARNING: could not download Node.js; the review API is skipped in this deploy.' >&2
+  fi
 elif [[ "$remote_arch" != present ]]; then
   echo "Server architecture $remote_arch has no bundled Node.js; the review API will not be installed." >&2
 fi

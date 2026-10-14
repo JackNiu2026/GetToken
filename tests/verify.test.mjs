@@ -8,7 +8,7 @@ import { openStore } from '../server/verify/store.mjs';
 import { createService } from '../server/verify/service.mjs';
 import { createApp } from '../server/verify/app.mjs';
 import { mockProvider } from '../server/verify/pay/mock.mjs';
-import { alipayProvider, signContent, rawNode } from '../server/verify/pay/alipay.mjs';
+import { alipayProvider, requestSignContent, notifySignContent, rawNode } from '../server/verify/pay/alipay.mjs';
 import { wechatProvider } from '../server/verify/pay/wechat.mjs';
 import { yuanToMinor, minorToYuan } from '../server/verify/pay/keys.mjs';
 import { hashPassword, checkPassword, sealCode, openCode } from '../server/verify/secure.mjs';
@@ -19,7 +19,7 @@ const HOUR = 3600_000;
 function setup({ start = Date.UTC(2026, 9, 14, 2), providers = { mock: mockProvider() } } = {}) {
   let now = start;
   const store = openStore(':memory:');
-  const config = { secret: randomBytes(32), mode: 'mock', purgeDays: 7 };
+  const config = { secret: randomBytes(32), mode: 'mock' };
   const service = createService({ store, config, providers, now: () => now });
   return { store, service, config, clock: { get: () => now, add: ms => { now += ms; } } };
 }
@@ -137,7 +137,10 @@ function alipayFixture() {
   const sign = text => createSign('RSA-SHA256').update(text).sign(platform.privateKey, 'base64');
   const fetch = async (url, { body }) => {
     const params = Object.fromEntries(new URLSearchParams(body));
-    assert.ok(createVerify('RSA-SHA256').update(signContent(params)).verify(app.publicKey, params.sign, 'base64'), 'request signed with app key');
+    // Built by hand from the spec: every non-empty parameter except sign, sign_type included, sorted.
+    const expected = Object.keys(params).filter(k => k !== 'sign' && params[k] !== '').sort().map(k => `${k}=${params[k]}`).join('&');
+    assert.match(expected, /&sign_type=RSA2&/);
+    assert.ok(createVerify('RSA-SHA256').update(expected).verify(app.publicKey, params.sign, 'base64'), 'request signed with app key');
     const biz = JSON.parse(params.biz_content);
     let node;
     if (params.method === 'alipay.trade.precreate') {
@@ -149,7 +152,9 @@ function alipayFixture() {
       node = trade ? { code: '10000', trade_status: trade.status, total_amount: trade.amount, trade_no: '2026TRADE' } : { code: '40004', sub_code: 'ACQ.TRADE_NOT_EXIST' };
     } else if (params.method === 'alipay.trade.refund') {
       state.refunds.push(biz);
-      node = { code: '10000', fund_change: 'Y' };
+      node = { code: '10000', fund_change: state.refunds.length === 1 ? 'Y' : 'N' };
+    } else if (params.method === 'alipay.trade.fastpay.refund.query') {
+      node = { code: '10000', refund_status: 'REFUND_SUCCESS' };
     }
     const key = `${params.method.replaceAll('.', '_')}_response`;
     const raw = JSON.stringify(node);
@@ -173,9 +178,12 @@ test('Alipay requests are signed, responses verified and notifications checked',
   assert.deepEqual(await provider.query('GTVF1014AAAAAAP1'), { paid: true, tradeNo: '2026TRADE', amountMinor: 33000 });
   assert.deepEqual(await provider.refund({ outTradeNo: 'GTVF1014AAAAAAP1', refundId: 'GTVF1014AAAAAAR1', amountMinor: 30000, reason: 'r' }), { status: 'success' });
   assert.equal(state.refunds[0].refund_amount, '300.00');
+  assert.deepEqual(await provider.refund({ outTradeNo: 'GTVF1014AAAAAAP1', refundId: 'GTVF1014AAAAAAR1', amountMinor: 30000, reason: 'r' }), { status: 'processing' }, 'fund_change=N is confirmed by a query');
+  assert.deepEqual(await provider.refundQuery({ outTradeNo: 'GTVF1014AAAAAAP1', refundId: 'GTVF1014AAAAAAR1' }), { status: 'success' });
 
   const notify = { app_id: '2021000000000001', out_trade_no: 'GTVF1014AAAAAAP1', trade_no: '2026TRADE', trade_status: 'TRADE_SUCCESS', total_amount: '330.00', sign_type: 'RSA2' };
-  notify.sign = sign(signContent(notify));
+  notify.sign = sign(notifySignContent(notify));
+  assert.ok(!notifySignContent(notify).includes('sign_type'), 'notifications are verified without sign_type');
   assert.deepEqual(provider.parseNotify(new URLSearchParams(notify).toString()), { outTradeNo: 'GTVF1014AAAAAAP1', tradeNo: '2026TRADE', amountMinor: 33000 });
   assert.throws(() => provider.parseNotify(new URLSearchParams({ ...notify, total_amount: '0.01' }).toString()), /signature invalid/);
   assert.equal(rawNode('{"a_response":{"x":"}{\\"","y":{"z":1}},"sign":"s"}', 'a_response'), '{"x":"}{\\"","y":{"z":1}}');
@@ -261,6 +269,7 @@ test('the HTTP API guards the admin endpoints and validates input', async () => 
 
     assert.equal((await call('/admin/orders')).status, 401);
     assert.equal((await call('/admin/login', { method: 'POST', body: { password: 'nope' } })).status, 401);
+    assert.equal((await call('/admin/login', { method: 'POST', body: { password: 'correct horse battery' }, headers: { 'X-Forwarded-Proto': 'http' } })).status, 403, 'No admin login over plain HTTP');
     const login = await call('/admin/login', { method: 'POST', body: { password: 'correct horse battery' } });
     assert.equal(login.status, 200);
     const cookie = login.headers.get('set-cookie');
@@ -282,4 +291,53 @@ test('the HTTP API guards the admin endpoints and validates input', async () => 
   } finally {
     server.close();
   }
+});
+
+test('refund status checks keep retrying, failed requests back off without a cap', async () => {
+  let mode = 'processing';
+  const provider = {
+    ...mockProvider(),
+    async refund() { if (mode === 'down') throw new Error('network'); return { status: 'processing' }; },
+    async refundQuery() { if (mode === 'down') throw new Error('network'); return { status: mode }; },
+  };
+  const { store, service, clock } = setup({ providers: { mock: provider } });
+  const order = await service.createOrder({ code: CODE, agree: true, channel: 'mock' });
+  payFirst(store, service, order.id);
+  service.decide(order.id, 'failed');
+  const read = () => store.get("select * from refunds where kind = 'audit'");
+  for (let i = 0; i < 5; i += 1) { clock.add(60_000); await service.tick(); }
+  assert.equal(read().status, 'processing');
+  assert.equal(read().attempts, 0, 'Status checks are not failed attempts');
+  mode = 'down';
+  clock.add(60_000);
+  await service.tick();
+  assert.equal(read().status, 'processing', 'A failed status check keeps the refund in processing');
+  mode = 'success';
+  clock.add(60_000);
+  await service.tick();
+  assert.equal((await service.lookup(order.id)).refund.status, 'success');
+  assert.equal(service.stats().refundOverdue, 0);
+});
+
+test('a refund that keeps failing is retried later and shows as overdue after 24 hours', async () => {
+  let calls = 0;
+  const provider = { ...mockProvider(), async refund() { calls += 1; return { status: 'error', error: '余额不足' }; } };
+  const { store, service, clock } = setup({ providers: { mock: provider } });
+  const order = await service.createOrder({ code: CODE, agree: true, channel: 'mock' });
+  payFirst(store, service, order.id);
+  service.decide(order.id, 'failed');
+  for (let i = 0; i < 26 * 6; i += 1) { clock.add(10 * 60_000); await service.tick(); }
+  assert.ok(calls > 20, `retried ${calls} times over 26 hours`);
+  assert.equal(service.stats().refundOverdue, 1);
+  const detail = service.adminDetail(order.id);
+  assert.equal(detail.refunds[0].error, '余额不足');
+});
+
+test('an amount mismatch is logged for the admin and never marks the order paid', async () => {
+  const { store, service } = setup();
+  const order = await service.createOrder({ code: CODE, agree: true, channel: 'mock' });
+  const payment = store.get('select * from payments where order_id = ?', order.id);
+  assert.throws(() => service.markPaid(payment.id, { amountMinor: 1 }), /Amount mismatch/);
+  assert.equal((await service.lookup(order.id)).status, 'unpaid');
+  assert.ok(service.adminDetail(order.id).events.some(e => e.kind === 'payment_amount_mismatch'));
 });

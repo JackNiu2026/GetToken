@@ -110,7 +110,7 @@ async function loadStats() {
   const s = await api('admin/stats');
   $('[data-stats]').innerHTML = [
     ['is-blue', s.reviewing, '审核中'], ['is-rose', s.overdue, '已超过 24 小时'], ['is-amber', s.unpaid, '待付款'],
-    ['is-green', s.passedToday, '今日通过'], ['', s.failedToday, '今日未通过'], ['is-amber', s.refunding, '退款未完成'],
+    ['is-green', s.passedToday, '今日通过'], ['', s.failedToday, '今日未通过'], [s.refundOverdue ? 'is-rose' : 'is-amber', s.refunding, s.refundOverdue ? `退款未完成 · ${s.refundOverdue} 单超过 24 小时` : '退款未完成'],
   ].map(([tone, n, label]) => `<div class="${tone}"><b>${n}</b><span>${label}</span></div>`).join('');
 }
 

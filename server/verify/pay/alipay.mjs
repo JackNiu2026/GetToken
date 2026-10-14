@@ -3,13 +3,17 @@
 import { createSign, createVerify } from 'node:crypto';
 import { privateKey, publicKey, yuanToMinor, minorToYuan, beijingTime } from './keys.mjs';
 
-export function signContent(params) {
+// Requests sign every non-empty parameter except `sign` (sign_type included);
+// notifications are verified without both `sign` and `sign_type`.
+function content(params, skip) {
   return Object.keys(params)
-    .filter(key => key !== 'sign' && key !== 'sign_type' && params[key] !== undefined && params[key] !== null && params[key] !== '')
+    .filter(key => !skip.includes(key) && params[key] !== undefined && params[key] !== null && params[key] !== '')
     .sort()
     .map(key => `${key}=${params[key]}`)
     .join('&');
 }
+export const requestSignContent = params => content(params, ['sign']);
+export const notifySignContent = params => content(params, ['sign', 'sign_type']);
 
 // The signed text is the raw JSON of the response node, exactly as sent.
 export function rawNode(text, key) {
@@ -49,7 +53,7 @@ export function alipayProvider(config, { fetch = globalThis.fetch, now = () => D
       app_id: config.appId, method, format: 'JSON', charset: 'utf-8', sign_type: 'RSA2',
       timestamp: beijingTime(now()), version: '1.0', ...extra, biz_content: JSON.stringify(biz),
     };
-    params.sign = sign(signContent(params));
+    params.sign = sign(requestSignContent(params));
     const response = await fetch(config.gateway, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
@@ -87,7 +91,8 @@ export function alipayProvider(config, { fetch = globalThis.fetch, now = () => D
     },
     async refund({ outTradeNo, refundId, amountMinor, reason }) {
       const node = await call('alipay.trade.refund', { out_trade_no: outTradeNo, refund_amount: minorToYuan(amountMinor), out_request_no: refundId, refund_reason: reason });
-      if (node.code === '10000') return { status: 'success' };
+      // fund_change=Y means money moved now; otherwise confirm with the refund query.
+      if (node.code === '10000') return { status: node.fund_change === 'Y' ? 'success' : 'processing' };
       return { status: 'error', error: node.sub_msg || node.msg || node.code };
     },
     async refundQuery({ outTradeNo, refundId }) {
@@ -99,7 +104,7 @@ export function alipayProvider(config, { fetch = globalThis.fetch, now = () => D
     // POSTed form from Alipay. Returns the paid payment or null; the reply body must be "success".
     parseNotify(rawBody) {
       const params = Object.fromEntries(new URLSearchParams(rawBody));
-      if (!params.sign || !verify(signContent(params), params.sign)) throw new Error('Alipay notify: signature invalid');
+      if (!params.sign || !verify(notifySignContent(params), params.sign)) throw new Error('Alipay notify: signature invalid');
       if (params.app_id !== config.appId) throw new Error('Alipay notify: wrong app_id');
       const paid = params.trade_status === 'TRADE_SUCCESS' || params.trade_status === 'TRADE_FINISHED';
       return paid ? { outTradeNo: params.out_trade_no, tradeNo: params.trade_no, amountMinor: yuanToMinor(params.total_amount) } : null;

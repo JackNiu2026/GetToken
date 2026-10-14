@@ -97,8 +97,9 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 - 代码在 `server/verify/`，用 Node.js 自带的 SQLite，没有第三方依赖。每次发布随网站一起安装到 `/opt/gettoken/verify/releases/<提交 SHA>/`，`current` 软链接指向当前版本，保留最近 5 个版本。
 - Node.js 固定为 v22.22.0 官方 linux-x64 版本（校验 SHA-256），首次发布时由 GitHub runner 下载后上传到 `/opt/gettoken/runtime/`。服务器需要 x86_64、glibc 2.28 以上；不满足时发布会给出警告并跳过后端，网站照常更新，审核页显示“服务暂时无法连接”。
 - systemd 服务 `gettoken-verify` 以专用用户 `gettoken-verify` 运行，只监听 `127.0.0.1:8790`；Nginx 通过 `seo-locations.conf` 中的 `location ^~ /api/verify/` 转发。发布时先检查服务健康，失败则恢复上一个版本。
-- 数据库：`/var/lib/gettoken-verify/verify.db`，每天自动备份到同目录 `backups/`，保留 14 天。用户提交的代码加密保存，出结果 7 天后自动删除（`VERIFY_PURGE_DAYS` 可调）。
+- 数据库：`/var/lib/gettoken-verify/verify.db`，每天自动备份到同目录 `backups/`，保留 14 天。用户提交的代码加密保存，出结果 7 天后自动删除（天数在 `assets/gettoken/verify-rules.mjs` 的 `purgeDays`，页面常见问题会同步）。
 - 日志：`journalctl -u gettoken-verify -f`。
+- 安装由 `scripts/install-verify.sh` 单独完成：新版本健康检查不通过时自动恢复上一个版本，并在发布日志里给出警告；网站本身照常发布，不会因为后端失败而中断。
 
 ### 第一次上线后
 

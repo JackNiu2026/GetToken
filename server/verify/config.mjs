@@ -55,6 +55,5 @@ export function loadConfig(env = process.env) {
     mode,
     alipay: mode === 'live' ? alipay : null,
     wechat: mode === 'live' ? wechat : null,
-    purgeDays: Number(env.VERIFY_PURGE_DAYS || 7),
   });
 }

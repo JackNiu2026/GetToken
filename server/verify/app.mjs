@@ -130,6 +130,8 @@ export function createApp({ service, store, providers, config, now = () => Date.
 
     ['POST', /^\/admin\/login$/, async (req, res) => {
       limit(req, 'login', 8, 15 * 60_000);
+      // The session cookie is Secure: over plain HTTP the browser drops it and the password travels in clear.
+      if (req.headers['x-forwarded-proto'] === 'http') throw new UserError('请通过 https://gettoken.cc/verify/admin/ 登录后台', 403);
       const body = await json(req);
       const hash = store.setting('admin_password');
       if (!hash) throw new UserError('后台密码还没有设置，请在服务器上运行 gettoken-verify passwd', 503);

@@ -6,6 +6,7 @@ export const VERIFY = Object.freeze({
   reviewHours: 24, // expected review time; drives the countdown only
   refundHours: 24, // the audit fee goes back within this window after a failed review
   paymentMinutes: 15, // a payment QR code stays valid this long
+  purgeDays: 7, // submitted codes are deleted this many days after the result
   codeMin: 40,
   codeMax: 120,
 });

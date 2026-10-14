@@ -25,6 +25,7 @@ let shownKey = '';
 let pollTimer = 0;
 let tickTimer = 0;
 let clockOffset = 0; // server time minus browser time
+let lastChannel = null; // channel of the last QR code shown, reused when a new one is needed
 
 /* ---------- helpers ---------- */
 async function api(path, options = {}) {
@@ -189,7 +190,7 @@ const again = (label = '提交新的审核') => `<button class="v-btn v-btn--gho
 function unpaidView(order) {
   const p = order.payment;
   const expired = !p || p.expiresAt <= serverNow();
-  const channel = p?.channel || config?.channels[0]?.key;
+  const channel = p?.channel || (config?.channels.some(c => c.key === lastChannel) ? lastChannel : config?.channels[0]?.key);
   const tabs = (config?.channels.length || 0) > 1
     ? `<div class="v-pay__tabs" aria-label="换一种付款方式">${config.channels.map(c => `<button type="button" data-switch="${esc(c.key)}" aria-pressed="${c.key === channel}">${esc(c.label)}</button>`).join('')}</div>` : '';
   const qr = p ? qrSvg(p.qr, { label: `${channelLabel(p.channel)}付款二维码` }) : '';
@@ -208,7 +209,7 @@ ${tabs}${mobile}
 <p class="v-hint" style="margin-top:10px" data-expiry>${expired ? '二维码已过期，请重新获取。' : ''}</p>
 </div></div>
 ${ownRef(order)}
-<div class="v-acts">${expired ? `<button class="v-btn v-btn--light" type="button" data-renew="${esc(channel)}">重新获取二维码</button>` : '<button class="v-btn v-btn--light" type="button" data-refresh>我已付款，刷新状态</button>'}${again('换一个代码')}</div>`;
+<div class="v-acts">${expired ? (channel ? `<button class="v-btn v-btn--light" type="button" data-renew="${esc(channel)}">重新获取二维码</button>` : '') : '<button class="v-btn v-btn--light" type="button" data-refresh>我已付款，刷新状态</button>'}${again('换一个代码')}</div>`;
 }
 
 function reviewingView(order) {
@@ -266,14 +267,21 @@ function expiredView(order) {
 
 const VIEWS = { unpaid: unpaidView, reviewing: reviewingView, passed: passedView, failed: failedView, expired: expiredView };
 
-function showOrder(order, { scroll = false } = {}) {
-  current = order;
-  clockOffset = order.now - Date.now();
+// Redraws the panel only when what it shows has changed (status, QR code, expiry, refund).
+function render(order) {
   const key = JSON.stringify([order.status, order.payment?.id, order.payment && order.payment.expiresAt <= serverNow(), order.refund?.status]);
   if (key !== shownKey || panel.hidden) {
     shownKey = key;
     panel.innerHTML = VIEWS[order.status](order);
   }
+}
+
+// Shows an order fresh from the API; the server time it carries keeps the countdown honest.
+function showOrder(order, { scroll = false } = {}) {
+  current = order;
+  clockOffset = order.now - Date.now();
+  if (order.payment) lastChannel = order.payment.channel;
+  render(order);
   form.hidden = true;
   panel.hidden = false;
   const address = new URL(location.href);
@@ -324,11 +332,8 @@ function tick() {
   if (current.status === 'unpaid' && current.payment) {
     const left = current.payment.expiresAt - now;
     const note = $('[data-expiry]', panel);
-    if (left <= 0) {
-      showOrder(current);
-      return;
-    }
-    if (note) note.textContent = `二维码 ${clock(left).slice(3)} 后过期`;
+    if (left <= 0) render(current); // switches to the expired view once; polling carries on
+    else if (note) note.textContent = `二维码 ${clock(left).slice(3)} 后过期`;
   }
   tickTimer = setTimeout(tick, 1000);
 }

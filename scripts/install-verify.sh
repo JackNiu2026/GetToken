@@ -67,9 +67,8 @@ if [[ -d /etc/gettoken/keys ]]; then
 fi
 
 mkdir -p "$root/releases"
-release="$root/releases/$revision"
-rm -rf "$release"
-mkdir -p "$release"
+# A fresh directory per run, so re-deploying the same commit never touches the live release.
+release=$(mktemp -d "$root/releases/$revision.XXXXXXXX")
 tar -xzf "$package" --no-same-owner -C "$release"
 test -f "$release/server/verify/server.mjs"
 find "$release" -type d -exec chmod 755 {} +

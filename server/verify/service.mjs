@@ -42,14 +42,15 @@ export function createService({ store, config, providers, now = () => Date.now()
 
   // Called from a verified payment notification or a verified query result.
   function markPaid(paymentId, { tradeNo, amountMinor }) {
+    const known = store.get('select * from payments where id = ?', paymentId);
+    if (!known) throw new Error(`Unknown payment ${paymentId}`);
+    if (amountMinor !== known.amount) {
+      event(known.order_id, 'system', 'payment_amount_mismatch', `${paymentId} ${amountMinor} != ${known.amount}`);
+      throw new Error(`Amount mismatch for ${paymentId}`);
+    }
     return store.transaction(() => {
       const payment = store.get('select * from payments where id = ?', paymentId);
-      if (!payment) throw new Error(`Unknown payment ${paymentId}`);
       if (payment.status === 'paid' || payment.status === 'duplicate') return payment;
-      if (amountMinor !== payment.amount) {
-        event(payment.order_id, 'system', 'payment_amount_mismatch', `${paymentId} ${amountMinor} != ${payment.amount}`);
-        throw new Error(`Amount mismatch for ${paymentId}`);
-      }
       const t = now();
       const order = getOrder(payment.order_id);
       const first = order.status === 'unpaid' || order.status === 'expired';
@@ -195,24 +196,28 @@ export function createService({ store, config, providers, now = () => Date.now()
     if (!provider) return refund;
     const payment = store.get('select * from payments where id = ?', refund.payment_id);
     const t = now();
+    const querying = refund.status === 'processing';
     let status;
     let error = null;
     try {
-      const result = refund.status === 'processing'
+      const result = querying
         ? await provider.refundQuery({ outTradeNo: payment.id, refundId: refund.id })
         : await provider.refund({ outTradeNo: payment.id, refundId: refund.id, amountMinor: refund.amount, totalMinor: payment.amount, reason: refund.kind === 'audit' ? '审核未通过，退回审核费' : '重复付款退回' });
       status = result.status;
       error = result.error || null;
     } catch (err) {
-      status = 'error';
+      // A failed status check says nothing about the refund itself: keep checking.
+      status = querying ? 'processing' : 'error';
       error = err.message.slice(0, 300);
     }
+    // Only failed refund requests count as attempts; status checks of a processing refund do not.
+    const failed = status === 'error' ? 1 : 0;
     store.transaction(() => {
-      store.run('update refunds set status = ?, error = ?, attempts = attempts + 1, updated_at = ? where id = ?', status, error, t, refund.id);
+      store.run('update refunds set status = ?, error = ?, attempts = attempts + ?, updated_at = ? where id = ?', status, error, failed, t, refund.id);
       if (refund.kind === 'audit') {
         store.run('update orders set refund_status = ?, refunded_at = ? where id = ?', status, status === 'success' ? t : null, refund.order_id);
       }
-      if (status !== refund.status || error) event(refund.order_id, actor, `refund_${status}`, `${refund.kind} ${refund.id}${error ? ` · ${error}` : ''}`);
+      if (status !== refund.status || (error && !querying)) event(refund.order_id, actor, `refund_${status}`, `${refund.kind} ${refund.id}${error ? ` · ${error}` : ''}`);
     });
     return store.get('select * from refunds where id = ?', refund.id);
   }
@@ -273,6 +278,7 @@ export function createService({ store, config, providers, now = () => Date.now()
       passedToday: count("status = 'passed' and decided_at >= ?", day),
       failedToday: count("status = 'failed' and decided_at >= ?", day),
       refunding: count("refund_status is not null and refund_status != 'success'"),
+      refundOverdue: count("refund_status is not null and refund_status != 'success' and refund_due_at < ?", t),
       total: count('1 = 1'),
     };
   }
@@ -288,11 +294,12 @@ export function createService({ store, config, providers, now = () => Date.now()
       store.run("update orders set status = 'expired' where id = ? and status = 'unpaid'", o.id);
       event(o.id, 'system', 'expired');
     }
-    for (const refund of store.all("select * from refunds where status in ('pending', 'processing') or (status = 'error' and attempts < 3 and updated_at < ?)", t - 10 * MINUTE)) {
+    // Failed refunds are retried with a growing pause (10 min, 20 min … at most hourly), without a cap.
+    for (const refund of store.all("select * from refunds where status in ('pending', 'processing') or (status = 'error' and updated_at < ? - min(attempts * 10, 60) * 60000)", t)) {
       await runRefund(refund);
     }
     // Codes are secrets: drop them once an order is settled.
-    const cutoff = t - config.purgeDays * 24 * HOUR;
+    const cutoff = t - VERIFY.purgeDays * 24 * HOUR;
     for (const o of store.all("select id from orders where code_sealed is not null and ((decided_at is not null and decided_at < ?) or (status = 'expired' and created_at < ?))", cutoff, cutoff)) {
       store.run('update orders set code_sealed = null, purged_at = ? where id = ?', t, o.id);
       event(o.id, 'system', 'code_purged');

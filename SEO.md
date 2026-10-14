@@ -1,90 +1,167 @@
-# 独立 SEO 导航与内容维护
+# GetToken 产品页与 AI 订阅指南（SEO）
 
-原首页及既有 UI 保持 GitHub 基线（`origin/main`，`0fe017b`）不变。新增 `/navigation/` 与十三篇专题文章，承接 Codex、Gemini、Grok、Claude、Claude Code 的订阅、充值、代充、独立账号、月卡与续费需求。本站已知主要交付方式是代充、独立账号；说明性文章不代表库存或报价承诺。
+`scripts/build-site.mjs` 从 `content/` 和 `assets/gettoken/catalog.mjs` 生成五个产品页、`/guides/` 文章库、sitemap 与 RSS，并刷新首页的“最新动态”一块。不依赖 npm；指南页没有运行时 JavaScript，产品页只加载价格卡脚本。
 
-## 页面与搜索意图
+## 网址结构
 
-| 内容组 | 解决的问题 |
+| 网址 | 页面 | 作用 |
+| --- | --- | --- |
+| `/` | 首页 | 品牌展示与产品分流，“最新动态”显示最新 3 篇文章 |
+| `/codex/` `/claude/` `/gemini/` `/grok/` `/ip/` | 产品页 | 承接产品主词与购买词（如“Claude 代充”）：三档价格、购买流程、最新动态、选购指南、常见问题 |
+| `/guides/` | 指南首页 | 新手先读、按产品浏览、最近更新、常见问题、内容原则 |
+| `/guides/{专题}/` | 专题页 | 该专题全部动态与指南（Claude Code 专题的文章也出现在 Claude 产品页） |
+| `/guides/{专题}/page/{n}/` | 专题分页 | 每页 20 篇，超过时自动生成 |
+| `/guides/{文章}/` | 文章页 | 承接具体长尾问题 |
+| `/guides/feed.xml` | RSS | 最新 50 篇 |
+| `/navigation/` | 已下线 | Nginx 301 到 `/guides/`，保留查询参数 |
+
+文章网址与旧版相同，已收录的链接不会失效。专题与文章同在 `/guides/` 下，构建时会拒绝与专题同名、或使用 `page`、`feed` 等保留词的文章名。
+
+## 写一条动态
+
+动态和指南是同一种 Markdown 文件，多一行 `type: news`。动态会：
+
+- 出现在对应产品页的“最新动态”（每页最新 6 条），并标绿色“动态”；
+- 进入首页“最新动态”（全站最新 3 篇，动态与指南按日期混排）；
+- 结构化数据使用 NewsArticle。
+
+只写会影响购买和使用的变化：涨价、额度调整、新套餐、地区限制、故障。每条附官方来源，并写清对买家的影响。`topic` 决定出现在哪个产品页：`codex`、`claude`、`claude-code`（显示在 Claude 页）、`gemini`、`grok`。
+
+```markdown
+---
+title: Claude Max 用量规则调整：已订阅用户需要注意什么
+description: 搜索结果摘要，80–120 字。
+summary: 一两句话说清变化和影响。
+topic: claude
+type: news
+updated: 2026-10-20
+published: 2026-10-20
+---
+## 发生了什么
+
+…
+
+## 对购买和续费的影响
+
+…
+
+## 资料来源
+
+- [官方公告](https://example.com/official)
+```
+
+## 新增一篇指南
+
+在 `content/guides/` 新建 `文章网址.md`，文件名即网址，只用小写字母、数字和连字符：
+
+```markdown
+---
+title: Claude Max 续费前要核对什么？
+description: 搜索结果里显示的摘要，80–120 字，写清问题和答案方向。
+summary: 页面顶部的导语和列表摘要，一两句话直接回答问题。
+topic: claude
+topics: [claude-code]
+updated: 2026-10-20
+published: 2026-10-20
+related:
+  - claude-topup-verification
+  - monthly-subscription-renewal
+---
+## 第一个小标题
+
+正文段落。一行一段，空行分段。可以用 **加粗**、`代码`、[站内链接](/guides/claude/) 和 [外部链接](https://claude.com/pricing)。
+
+- 列表项
+- 列表项
+
+| 项目 | 说明 |
 | --- | --- |
-| `/navigation/` 与五个品牌主题 | 辨认产品、交付方式与阅读入口；主题锚点不是五个独立排名页面 |
-| Codex 两篇 | 订阅、额外用量与 API 的区别；代充后账号与订阅验收 |
-| Gemini 两篇 | Google AI 套餐资格；原账号代充、独立账号与家庭权益的区别 |
-| Grok 两篇 | 开通套餐核对；网页、X 与应用商店的登录和账单来源 |
-| Claude 两篇 | Pro / Max 选择；会员、账单与续费验收 |
-| Claude Code 三篇 | 订阅和 API 接入；用量排查；同一周期的实际总成本 |
-| 通用两篇 | 代充与独立账号交付；月卡期限与续费 |
+| 第一列会作为行标题 | 其余列为内容 |
 
-`content/keywords.mjs` 将 32 个主词和长尾词映射到这些内容。映射来自公开搜索结果用语、官方资料和已确认的交付方式，**没有测得搜索量、关键词难度或真实排名**。相同意图集中在一个页面，避免复制正文生成大量后缀词页面。文章均有具体核对步骤、可见 FAQ、三个相关阅读链接和内容整理方及修改日期。
+> 以 > 开头的段落显示为提示框。
 
-## 编辑与生成
+## 常见问题
+
+### 问题写成三级标题？
+
+答案写成下面的段落。
+
+## 资料来源
+
+- [官方来源名称](https://example.com/official)
+```
+
+字段说明：
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| `title` | 是 | H1 与标题标签；全站唯一 |
+| `description` | 是 | meta description；全站唯一 |
+| `summary` | 是 | 导语、列表摘要、RSS 摘要 |
+| `topic` | 是 | 主专题，决定面包屑、配色和出现在哪个产品页 |
+| `type` | 否 | `news` 表示动态；不写即为指南 |
+| `topics` | 否 | 同时出现在哪些其他专题 |
+| `updated` | 是 | 正文实质修改的日期；构建不会自动改 |
+| `published` | 否 | 首次上线日期；不知道就不填，不要编造 |
+| `related` | 否 | 相关阅读；不足 3 篇时自动补同专题最新文章 |
+
+至少两个正文 `##` 小节。`## 常见问题` 与 `## 资料来源` 是固定标题，会被单独渲染；资料来源必须是 HTTPS 链接。格式写错时构建会报出文件名和原因。
+
+写完后：
 
 ```bash
-node scripts/build-site.mjs
+node scripts/build-site.mjs      # 生成页面、专题列表、sitemap 与 RSS
+node --test tests/*.test.mjs     # 检查标题重复、断链、结构化数据、价格卡等
+```
+
+把 `content/guides/*.md` 和生成的 `guides/`、产品页目录、`index.html`、`sitemap.xml` 一起提交。
+
+## 新增一个专题
+
+在 `content/topics.mjs` 加一项：`slug`（网址）、`name`、`title`、`description`、`short`（指南首页卡片说明）、`intro`、三条 `facts`、可选的官方 `source`、`mark`（装饰字符）、`tone`（`blue`、`violet`、`orange`、`cyan`、`silver`、`green`）和 `updated`。至少要有一篇文章属于它。页头导航、页脚和指南首页会自动出现新专题。
+
+指南首页文案、“新手先读”和常见问题在 `content/hub.mjs`。
+
+## 每页的 SEO 处理
+
+- 独立的 title、description、H1、HTTPS canonical、Open Graph；中文 `lang`。
+- 页面上可见的面包屑，与 BreadcrumbList 结构化数据一致。
+- 结构化数据：Organization、WebSite；产品页为 WebPage + Service；指南首页与专题页为 CollectionPage + ItemList；文章为 Article，动态为 NewsArticle（作者、发布方、更新日期、引用来源）。不编造价格、库存、评价、Offer 或 FAQ 富结果；价格未公布前产品页显示 ¥XX。
+- 内链：首页 → 产品页与指南；产品页 → 动态、指南、其他产品；指南首页 → 专题 → 文章；文章 → 专题、相关阅读与对应产品页。每篇文章最多三次点击可达。
+- 内容直接写在 HTML 里，百度和 Google 看到的内容与用户一致；目录、FAQ 使用原生链接和 `details`。
+- sitemap 包含全部规范网址与真实更新日期；robots 允许全部抓取；RSS 帮助发现新文章。
+- 指南页只加载 `assets/guides/guides.css`；产品页再加 `assets/gettoken/product.css` 和价格卡脚本，都不加载首页的样式和动效。
+- 专题页与文章的页头、侧栏和底部按钮引导到对应产品页（如 Claude Code 文章 → `/claude/`）；选购基础类文章引导到首页产品区（`/#products`）。
+
+## 写作原则
+
+- 一个搜索意图只写一篇。相近关键词合并到同一篇，不批量生成换词页面。
+- 标题直接回答问题；`summary` 第一句就给结论。
+- 涉及权益、资格、计费的内容附官方来源，并写清“以账号实际显示为准”。
+- 不写未确认的价格、库存、时效或售后承诺。
+- 只在内容实质变化时更新 `updated`。
+
+## 发布与检查
+
+```bash
 node scripts/build-site.mjs --check
 node --test tests/*.test.mjs
+python3 -m unittest discover -s tests -p 'test_*.py'
 node scripts/seo-report.mjs
 node scripts/package-site.mjs /tmp/gettoken-site.tar.gz
-# Linux + Docker + curl：验证实际发布包和 Nginx 模板
-node scripts/test-nginx.mjs
+node scripts/test-nginx.mjs      # Linux + Docker：真实 Nginx 验证发布包与跳转
 ```
 
-生成与检查使用 Node 原生模块，无需 npm install。线上为静态 HTML，没有新增运行时 JavaScript 或 Node 服务。CI 检查生成结果、原首页基线、内容及爬取规则，再用真实 Nginx 验证打包后的网站。
+合并到 `main` 后 GitHub Actions 自动部署，并执行 `node scripts/check-live-seo.mjs --revision <提交>` 检查正式域名：首页、产品页与全部规范页 200、正文与构建一致、canonical、日期、结构化数据、robots、sitemap、RSS、CSS 与脚本的类型、404、`index.html` 与无斜线别名（如 `/claude` → `/claude/`），以及 `/navigation/` 301 到 `/guides/`。
 
-| 内容 | 编辑源 |
-| --- | --- |
-| 品牌主题、导航与文章关联 | `content/services.mjs` |
-| 八篇原专题正文 | `content/guides.mjs` |
-| 五篇代充、账号与成本专题 | `content/topup-guides.mjs` |
-| 原专题 FAQ、相关阅读、编辑规则与修改日期 | `content/editorial.mjs` |
-| 关键词与目标页面 | `content/keywords.mjs` |
-| 正式域名 | `content/site.mjs` |
-| 模板、元数据、结构化数据、robots、sitemap | `scripts/build-site.mjs` |
-| 新页面样式 | `assets/gettoken/pages.css` |
+`node scripts/seo-report.mjs` 输出到 `.impeccable/review/seo/`：`submit-urls.txt`（全部正式网址）、`ranking-tracker.csv`（百度与 Google 各 32 个查询，排名与流量留空待测）和 `content-report.json`。`content/keywords.mjs` 维护关键词与目标页的对应关系；产品主词和“代充”类购买词指向产品页，具体问题指向文章。
 
-修改内容后才更新对应的 `modified` 日期；导航实质修改后再更新 `navigationModified`。构建不会自动刷新日期，也不会给原首页添加虚构 lastmod。草稿不伪造线上首次发布日期。来源链接须直接支持正文，并随产品变化复核。
+## 收录与运营
 
-生成器不读写原首页。基线测试校验原首页、样式、交互、动效、目录与配置的字节一致性。发布包仅包含首页、站点资源、新导航、十三篇文章、robots 和 sitemap；报告、编辑源与设计记录不进入发布包。
+1. 在 Google Search Console 与百度搜索资源平台验证域名，提交 `https://gettoken.cc/sitemap.xml`。
+2. 第 7 天检查抓取与收录；排查 robots、重定向、CDN 拦截。
+3. 第 14 天起按平台、地区、设备记录曝光；有曝光但点击少时，优化与正文一致的标题和摘要。
+4. 按 `ranking-tracker.csv` 里排在 10–30 名的查询补充对应文章，而不是新开重复页面。
+5. 首页导航、产品卡、“最新动态”和页脚都链到产品页与指南，新文章发布后会自动出现在首页，有助于更快被抓取。
 
-## 百度与 Google 的共同技术基础
-
-新增内容直接出现在 HTML 中，包括标题、目录、表格、FAQ、来源和普通链接；两家爬虫与用户读取相同内容。每页有独立 title、description、H1、正式 HTTPS canonical、社交分享元数据和面包屑。结构化数据包括 Organization、WebSite、CollectionPage、ItemList、BreadcrumbList、Article，与可见作者、正文和日期对应。不编造价格、库存、评价、授权、交付保障或 Offer 数据，不承诺 FAQ 富结果。
-
-robots 允许 Googlebot 与 Baiduspider，指向含首页及十四个新增页面的 sitemap。部署模板为新增页的 `index.html` 和无末尾斜线地址提供保留查询参数的相对 301；不存在的规范路径返回 404；开启 gzip。HTTPS、DNS、CDN 与实际服务器配置仍须在生产域名验证。
-
-## 发布验收与提交
-
-默认域名来自原站 canonical：`https://gettoken.cc`。实际域名不同，需要统一原站与 SEO 配置后重新生成。安装脚本仍提供 HTTP 80；正式 HTTPS 需要真实证书及域名入口配置，见 `DEPLOYMENT.md`。
-
-在能访问正式域名的环境执行：
-
-```bash
-node scripts/check-live-seo.mjs --output /tmp/gettoken-live-seo.json
-```
-
-检查全部规范页的 HTTP/MIME/title/description/canonical、正文与构建一致、noindex、作者日期、结构化数据、相关阅读、Googlebot 与 Baiduspider robots 规则、sitemap、资源、404、别名及 HTTP→HTTPS。可加 `--revision 完整提交SHA` 校验实际域名的部署版本，发布流程自动执行此项验收。传输失败报告 incomplete，不把代理阻断当成网站错误。即使通过，也不代表已经收录、有排名或达到真实用户 Core Web Vitals。
-
-`node scripts/seo-report.mjs` 输出本地 `.impeccable/review/seo/`：
-
-- `submit-urls.txt`：15 个正式 URL，用于检查与平台提交。
-- `ranking-tracker.csv`：百度与 Google 各 32 个查询；日期、地区、设备、排名、曝光、点击、咨询及成交留空，等待测量。
-- `content-report.json`：页面体积和关键词目标，明确标记生产未验证。
-
-验证 Google Search Console 与百度搜索资源平台后提交 sitemap，并使用账号实际提供的 URL 提交入口。私密 token 不放入代码，也不用 Google Indexing API 提交普通文章。[Google sitemap 说明](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)；[百度链接提交](https://ziyuan.baidu.com/linksubmit)。
-
-按用户要求，原首页没有新增导航入口。新页依靠 sitemap、平台提交及真实外部链接发现；文章彼此互链并链接回首页。如以后允许首页加一个普通入口，可加强站内发现。本轮不安排虚构外链、批量灌水或未经授权的推广。
-
-## 首月执行与判断
-
-| 时间 | 操作与判断 |
-| --- | --- |
-| 第 1–3 天 | 发布，验证 HTTPS 与爬取响应；验证两家站长账号；提交 sitemap 与重要 URL；确认实际套餐、价格和咨询入口 |
-| 第 7 天 | 检查抓取与收录；排查 robots、noindex、重定向、CDN 拦截及 URL 发现问题 |
-| 第 14 天 | 按平台、地区、设备记录真实曝光；有曝光但点击弱时，改善与正文一致的标题和摘要 |
-| 第 21 天 | 优先补充接近前 30 位且符合真实服务的页面，加入确认后的报价、交付细节或问题答案 |
-| 第 30 天 | 比较收录、排名、点击、咨询与成交；依据数据调整，避免发布重复文章 |
-
-品牌主词与购买长尾分别记录。排名受竞争、网站信誉、实际服务信息和搜索平台抓取影响，30 天进入前三页不能保证。代码验收后，下一轮有效优化需要真实数据，不应继续堆关键词。
-
-## 本轮验收与限制
-
-见 `SEO-AUDIT.md`。后续通过实际服务器和 GitHub runner 检查正式域名，确认新页面已上线；首页未添加入口，因此其内容不直接出现在首页。原重定向规则只安装在 IP 站点，本轮将共享规则加入现有域名站点，并添加完整域名发布校验，结果以该修复版本的 Actions 为准。开发环境仍无法直连该域名；站长账号、真实报价和收录排名数据仍需确认。
+排名受竞争、网站信誉和抓取影响，无法保证。私密 token 不放进代码，也不用 Google Indexing API 提交普通文章。

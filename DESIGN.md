@@ -1,6 +1,6 @@
 ---
 name: GetToken
-description: Existing dark Chinese storefront with independent subscription navigation and articles.
+description: Existing dark Chinese storefront with an independent /guides/ library of topic pages and articles.
 colors:
   bg: "#0b0b10"
   bg-tint: "#0e0e14"
@@ -50,8 +50,8 @@ spacing:
   card-padding: "22px"
   storefront-section: "88px"
   storefront-section-mobile: "64px"
-  topic-section: "48px"
-  topic-section-mobile: "34px"
+  topic-section: "56px"
+  topic-section-mobile: "40px"
 components:
   button-light:
     backgroundColor: "{colors.button-light}"
@@ -102,20 +102,20 @@ components:
 
 The Chinese interface, GetToken wordmark and existing raster logo remain the visual authority. The preserved homepage uses a compact dark storefront with glass surfaces, blue/violet emphasis, pale text and white pill actions. This name describes the incumbent design rather than a newly selected identity.
 
-The independent subscription navigation and its thirteen articles inherit the same canvas and font stack. Their information uses open sections, fine separators and a wider reading rhythm. This record describes assets/gettoken/home.css, assets/gettoken/pages.css and the markup in scripts/build-site.mjs; page strategy stays in .impeccable/surfaces/seo-pages.md.
+The /guides/ library (hub, topic pages, articles) keeps the same canvas, ink and font stack in a standalone stylesheet, assets/guides/guides.css, so guide pages never load the homepage CSS or scripts. Each topic carries an accent tone. This record describes assets/gettoken/home.css, assets/guides/guides.css and the markup in scripts/build-site.mjs; page strategy stays in .impeccable/surfaces/seo-pages.md.
 
 **Key Characteristics:**
 
 - Dark tonal surfaces with fine separators.
 - White pill actions and softly rounded storefront cards.
 - Glass and ambient depth on the preserved storefront.
-- Open navigation and article layouts with native HTML links and disclosure.
+- Guide lists, topic cards and an open article column with native HTML links and disclosure.
 
 The shipping raster assets/gettoken/logo.png is a pre-existing repository asset in the restored baseline. This extension introduces no raster artwork. External authorship or license details are not established by that provenance.
 
 ## Colors
 
-The frontmatter preserves the reusable source values from home.css. pages.css defines no new color primitives and does not load on the homepage.
+The frontmatter preserves the reusable source values from home.css. guides.css repeats those neutrals as its own tokens and adds one accent per topic (`--tone` with a matching `--rgb`): blue (Codex), violet (Claude), orange (Claude Code), cyan (Gemini), silver (Grok) and green (buying basics). It does not load on the homepage.
 
 ### Primary
 
@@ -124,7 +124,7 @@ The frontmatter preserves the reusable source values from home.css. pages.css de
 
 ### Secondary
 
-- **Violet / pale violet** (`violet`, `violet-2`): existing Claude treatments and ambient action glow. The homepage's second headline line retains its original violet-to-pink gradient from `--grad`; pages.css does not override it.
+- **Violet / pale violet** (`violet`, `violet-2`): existing Claude treatments and ambient action glow. The homepage's second headline line retains its original violet-to-pink gradient from `--grad`.
 - **Green / pale green** (`green`, `green-2`): existing live status and residential-IP treatments.
 - **Soft red** (`red`): existing warning and emphasis text.
 
@@ -135,7 +135,7 @@ The frontmatter preserves the reusable source values from home.css. pages.css de
 - **Primary / secondary ink** (`ink`, `ink-2`): titles and substantial reading text.
 - **Muted / faint text** (`muted`, `faint`): auxiliary copy, labels and notes.
 
-**The Shared Canvas Rule.** Navigation and articles inherit the homepage palette; their links use the existing pale blue.
+**The Shared Canvas Rule.** Guide pages inherit the homepage neutrals; prose links use a pale blue and topic accents mark only chips, marks, list hovers and topic headers.
 
 ## Typography
 
@@ -144,12 +144,12 @@ The frontmatter preserves the reusable source values from home.css. pages.css de
 ### Hierarchy
 
 - **Storefront body:** the body role in the frontmatter.
-- **Navigation body:** the navigation-body role; longer explanatory paragraphs use line-height 1.85–1.9.
-- **Article body:** the reading-body role, capped at 74ch; its mobile size is 15px with the same line-height.
-- **Introductions:** navigation and article leads use 17px with line-height 1.9, reducing to 15px below 700px. Navigation introduction width is 66ch; article lead width is 70ch.
+- **Guide body:** 15px with line-height 1.7 for lists and chrome; explanatory paragraphs use 1.8–1.9.
+- **Article body:** 16px with line-height 1.95 in a column of at most 720px; 15.5px below 720px.
+- **Introductions:** hub, topic and article leads use 17px with line-height 1.85 and a 62ch measure, reducing to 15px below 720px.
 - **Labels and actions:** auxiliary labels commonly use 13px; standard actions use the button role. Compact header actions use 13px, weight 600.
 
-Observed heading geometry: the original hero uses weight 800, line-height 1.15 and `clamp(36px, 4.6vw, 60px)`; its second line uses `clamp(28px, 3.9vw, 52px)`. Below 640px these become `clamp(24px, 7.2vw, 34px)` and `clamp(21px, 6.4vw, 30px)`. Navigation titles use `clamp(30px, 3.5vw, 46px)` with line-height 1.35; article titles use `clamp(30px, 3.5vw, 44px)` with line-height 1.4 and become 29px below 700px. Article titles use `text-wrap: balance` to distribute wrapped lines more evenly on narrow screens. Article section titles use 24px, becoming 22px on mobile. These are extracted geometry; the inherited system display face is recorded as legacy drift rather than a newly endorsed display choice.
+Observed heading geometry: the original hero uses weight 800, line-height 1.15 and `clamp(36px, 4.6vw, 60px)`; its second line uses `clamp(28px, 3.9vw, 52px)`. Below 640px these become `clamp(24px, 7.2vw, 34px)` and `clamp(21px, 6.4vw, 30px)`. Guide hub and topic titles use `clamp(32px, 4.2vw, 52px)` with line-height 1.18; article titles use `clamp(28px, 3.4vw, 42px)` with line-height 1.3. Chinese titles are not balanced, so lines never break inside a word. Article section titles use 23px, becoming 21px on mobile. These are extracted geometry; the inherited system display face is recorded as legacy drift rather than a newly endorsed display choice.
 
 **The Reading Rhythm Rule.** Keep substantial article text in the open reading column with its generous line-height; reserve muted text for auxiliary material.
 
@@ -157,13 +157,18 @@ Observed heading geometry: the original hero uses weight 800, line-height 1.15 a
 
 The shared shell is `min(1200px, 100% - 2 × gutter)`. home.css supplies the recorded desktop gutter and switches to the mobile gutter at 640px. The preserved homepage retains its 1100px, 960px, 640px and 370px adaptations, compact grids and purchase dialogs.
 
-The independent /navigation/ page uses a wrapping row of topic anchors, two explanatory columns with a 64px gap, open topic sections and two columns of reading links with a 48px gap. Topic facts pair a 160px label column with a flexible description, separated by 32px. At 700px these structures become single columns and the header links move to a full-width row.
+Guide pages use a 1180px shell (16px side gutters below 720px) under a sticky 64px glass header with the brand, a "指南" pill, every topic and a "查看套餐" action; below 720px the topics move to a sideways-scrolling row.
 
-The thirteen articles use an open reading column and a 240px sticky contents column with a 72px gap. At 960px the aside narrows to 200px with a 36px gap. At 700px it moves into normal flow before the article; its links form two columns. Comparison tables scroll inside a bordered wrapper on narrow screens. Each article includes two native FAQ disclosures and three related article links. Related reading reuses the two-column reading-link layout below a fine separator, with 36px/52px vertical padding that becomes 28px/38px on mobile. New pages have no runtime JavaScript, inquiry form or product selection workflow.
+- **Hub:** tinted hero with breadcrumbs, eyebrow, H1, lead and stat pills beside a 400px glass "新手先读" list; a three-column grid of topic cards (mark, name, one-line scope, three guide links, "全部 N 篇"); the eight most recent guides as rows; FAQ and editorial sections with a 300px heading column; a closing call to action.
+- **Topic:** a header glowing in the topic tone with a 64px mark, H1, intro and official source; three ruled facts; every guide of the topic as rows (own guides first, shared ones after), paginated at 20; other topics as pills; a call to action.
+- **Article:** breadcrumbs, topic chip, H1, lead and a byline with the logo, update date and reading time; a 720px prose column beside a 260px sticky contents list and purchase card. At 1000px the aside disappears and the contents fold into a `details` block at the top of the article. Tables scroll inside a bordered wrapper. FAQ, sources and three related guides (as cards) follow.
+- **Rows:** a 200px meta column (topic chip, date and reading time) beside the title and summary; one column below 720px.
+
+Guide pages have no runtime JavaScript, forms or product selection.
 
 ## Elevation & Depth
 
-The homepage retains glass fills, blur and faint top highlights alongside ambient shadows. Shared storefront cards deepen on hover-capable devices without tilt or position change. White pill actions gain violet ambient shadow on hover. The SEO header, navigation sections, reading links and article contents remain open and separated by thin rules.
+The homepage retains glass fills, blur and faint top highlights alongside ambient shadows. Shared storefront cards deepen on hover-capable devices without tilt or position change. White pill actions gain violet ambient shadow on hover. Guide topic cards, related cards and calls to action use a dark card fill with a fine border that turns to the topic tone on hover; lists and article text stay open and separated by thin rules.
 
 ### Shadow Vocabulary
 
@@ -171,7 +176,7 @@ The homepage retains glass fills, blur and faint top highlights alongside ambien
 - **White-action hover:** `0 8px 28px -8px rgba(168, 85, 247, .6)` supplies the shared full-size light action glow.
 - **Storefront-card hover:** `var(--glass-highlight), 0 22px 48px -24px rgba(0, 0, 0, .9), 0 12px 36px -18px rgba(var(--rgb), .35)` supplies ambient card depth.
 
-**The Open Reading Rule.** Navigation rows and article sections use spacing and separators; they do not inherit the storefront card enclosure.
+**The Open Reading Rule.** Article text and list rows use spacing and separators; only topic cards, related guides and calls to action are enclosed.
 
 ## Shapes
 
@@ -187,21 +192,17 @@ The shared full-size light and ghost actions have a minimum 44px height; compact
 
 Feature, product, tier and scene cards share the original layered dark fill, fine translucent border and glass top highlight. Feature and product cards use the recorded card padding; responsive feature layouts reduce it to 18px. Tags remain small bordered labels, with existing product accent color controlling their tint. They are not navigation filters.
 
-### Storefront radio choices
+### Pricing cards and radio choices
 
-The existing homepage pricing choices use native radio inputs over styled labels. Checked tier options gain a product-colored border and a soft tinted fill; checked period options use the solid product accent. Keyboard focus outlines the visible sibling label. These describe the preserved homepage controls; new navigation and articles contain no form controls.
+Pricing lives on the product pages (`/codex/`, `/claude/` …), not the homepage. Each page shows three cards copied from the original homepage pricing module: the first tier uses the blue scheme, the second is featured with the violet-pink gradient border and 推荐 flag, the third uses the green scheme. Choices are native radio inputs over styled labels: the delivery choice (代充 / 独立账号) gains a tier-colored border and soft fill when checked; the checked period uses the solid tier accent. Keyboard focus outlines the visible sibling label. Guide pages contain no form controls.
 
 ### Navigation and contents
 
-The preserved storefront keeps its original desktop dropdown, mobile menu and glass header. The independent SEO header is a simple bordered row with the existing brand, two links and a return-home ghost action. Pale blue marks its current navigation link and hover state. Topic anchors use open underlined boundaries; article contents uses a sticky bordered list until mobile reflow.
+The homepage keeps its original desktop dropdown (now linking to the five product pages), mobile menu and glass header. Product pages use the guide header with product links and an 选购方案 action. The guide header is sticky with a translucent blurred fill; the current topic uses a faint filled pill. Article contents is a sticky list with a left rule whose hover marker takes the topic tone.
 
-### Reading links and disclosure
+### Lists, disclosure and metadata
 
-Reading entries use a fine top separator, 22px vertical padding, a 17px title at weight 550 and a muted 14px description. Hover turns the title pale blue. The navigation and article FAQs use native details/summary with 20px summary padding and open body paragraphs. Article FAQ summaries use primary ink; their text size is 15px. Source and prose links are visibly underlined. These elements inherit the global keyboard-focus treatment. Reduced-motion styles disable transitions and animations in SEO pages; the original homepage retains its existing reduced-motion behavior.
-
-### Editorial metadata
-
-Article headers and the navigation editorial-policy section show GetToken content attribution and a semantic update date. This auxiliary line uses 13px type, muted text, line-height 1.8 and 20px top spacing. Its attribution link uses secondary ink with an underline offset of 4px. The currently shipped date is 2026-10-09, held in content metadata rather than generated on every build; dates describe substantive content updates. Related-reading headings use the existing 24px article-section size, reducing to 22px on mobile. These remain open reading elements in the established Read surface.
+Guide rows, topic-card links and contents links brighten on hover; row titles take the topic tone. FAQs use native details/summary with a rotating plus marker. Prose, source and metadata links are underlined with a 4px offset. Every page shows the GetToken editorial byline with a semantic `time`; article dates come from Markdown front matter (`updated`, optional `published`) and topic or hub dates are the newest of their own copy and their guides, never the build time. Reduced-motion settings disable transitions on guide pages.
 
 ## Do's and Don'ts
 
@@ -214,7 +215,7 @@ Article headers and the navigation editorial-policy section show GetToken conten
 ### Don't:
 
 - **Don't** replace the incumbent logo or treat this extension as approval for a new identity.
-- **Don't** turn the navigation reading links or article paragraphs into promotional cards.
+- **Don't** turn guide cards or article paragraphs into promotional cards: no prices, badges or purchase claims on reading entries. Prices appear only in product-page pricing cards.
 - **Don't** introduce new product colors or page-specific accents without an established source.
 
-Pre-existing drift not canonized or repaired: homepage eyebrow labels, text-glyph product marks and system display faces remain in the restored baseline. Their presence is not a rule for future surfaces; repairing them would exceed the user's explicit homepage-preservation scope.
+Pre-existing drift not canonized or repaired: homepage eyebrow labels, text-glyph product marks and system display faces remain in the baseline. Their presence is not a rule for future surfaces; the homepage was changed only where the 2026-10-14 product-page plan required it.

@@ -3,9 +3,8 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { ROOT, ROUTES, generateSite } from './build-site.mjs';
+import { ROOT, ROUTES, PAGES, generateSite } from './build-site.mjs';
 import { SITE } from '../content/site.mjs';
-import { GUIDES } from '../content/guides.mjs';
 import { KEYWORDS } from '../content/keywords.mjs';
 const csv = value => `"${String(value).replace(/"/g,'""')}"`;
 export async function exportSeoReport(output = resolve(ROOT,'.impeccable/review/seo')) {
@@ -13,7 +12,7 @@ export async function exportSeoReport(output = resolve(ROOT,'.impeccable/review/
   const pages = [];
   for (const route of ROUTES) {
     const html = await readFile(resolve(ROOT,route,'index.html'),'utf8');
-    pages.push({url:new URL(route,`${SITE.origin}/`).href,title:html.match(/<title>(.*?)<\/title>/s)[1],bytes:Buffer.byteLength(html),gzipBytes:gzipSync(html).length,modified:GUIDES.find(g=>route===`guides/${g.slug}/`)?.modified});
+    pages.push({url:new URL(route,`${SITE.origin}/`).href,title:html.match(/<title>(.*?)<\/title>/s)[1],bytes:Buffer.byteLength(html),gzipBytes:gzipSync(html).length,modified:PAGES.find(p=>p.route===route).modified});
   }
   const mapped = [];
   for (const row of KEYWORDS) {
@@ -26,7 +25,7 @@ export async function exportSeoReport(output = resolve(ROOT,'.impeccable/review/
     mapped.push({...row,url:address.href});
   }
   await mkdir(output,{recursive:true});
-  const report={kind:'static-content-report',productionVerified:false,scope:'Original homepage preserved; independent SEO navigation and articles',pages,keywords:mapped};
+  const report={kind:'static-content-report',productionVerified:false,scope:'Homepage (brand and product entry), five product pages with pricing, and the /guides/ library with hub, topic pages and articles',pages,keywords:mapped};
   await writeFile(resolve(output,'content-report.json'),`${JSON.stringify(report,null,2)}\n`);
   await writeFile(resolve(output,'submit-urls.txt'),`${pages.map(p=>p.url).join('\n')}\n`);
   const columns=['平台','关键词','目标URL','搜索意图','优先级','检查日期','地区/语言','设备','自然排名','曝光','点击','咨询','成交'];

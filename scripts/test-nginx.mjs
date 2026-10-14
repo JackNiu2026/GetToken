@@ -72,13 +72,29 @@ try {
     }
     domainChecks+=2;
   }
-  const query=await curlRequest(base+'/navigation/index.html?utm_source=qa');
-  assert.equal(query.status,301);
-  assert.equal(query.headers.get('location'),'/navigation/?utm_source=qa');
+  for(const path of ['/navigation','/navigation/','/navigation/index.html']) {
+    const retired=await curlRequest(base+path+'?utm_source=qa');
+    assert.equal(retired.status,301);
+    assert.equal(retired.headers.get('location'),'/guides/?utm_source=qa');
+  }
+  const hub=await curlRequest(base+'/guides?utm_source=qa');
+  assert.equal(hub.status,301);
+  assert.equal(hub.headers.get('location'),'/guides/?utm_source=qa');
+  for(const slug of ['codex','claude','gemini','grok','ip']) {
+    const product=await curlRequest(base+'/'+slug+'?utm_source=qa');
+    assert.equal(product.status,301);
+    assert.equal(product.headers.get('location'),'/'+slug+'/?utm_source=qa');
+  }
+  const module=await curlRequest(base+'/assets/gettoken/product.mjs');
+  assert.equal(module.status,200);
+  assert.match(module.headers.get('content-type')||'',/javascript/);
+  const feed=await curlRequest(base+'/guides/feed.xml');
+  assert.equal(feed.status,200);
   const slash=await curlRequest(base+'/guides/claude-code-cost-checklist?utm_source=qa');
   assert.equal(slash.status,301);
   assert.equal(slash.headers.get('location'),'/guides/claude-code-cost-checklist/?utm_source=qa');
-  const headers=(await run('curl',['--silent','--show-error','--max-time','5','--header','Accept-Encoding: gzip','--dump-header','-','--output','/dev/null',base+'/navigation/'])).stdout;
+  // /navigation/ is now a bodiless 301, so check compression on a real HTML page.
+  const headers=(await run('curl',['--silent','--show-error','--max-time','5','--header','Accept-Encoding: gzip','--dump-header','-','--output','/dev/null',base+'/claude/'])).stdout;
   assert.match(headers,/content-encoding:\s*gzip/i);
   assert.match(headers,/vary:\s*Accept-Encoding/i);
   const result={...report,domainChecks,originalDomainContentPreserved:true,gzipVerified:true,queryPreservationVerified:true,nginxImage:image};

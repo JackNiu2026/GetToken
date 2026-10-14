@@ -87,14 +87,87 @@ function buyLink(route, topicSlug) {
   return p ? { href: href(route, productRoute(p)), label: `${PRODUCTS[p.slug].name} 价格与方案`, name: PRODUCTS[p.slug].name } : { href: `${href(route)}#products`, label: '选择产品', name: null };
 }
 
-// `product` pages and the /verify/ section share the store navigation; guide pages list topics.
+/* ---------- Site header and footer ---------- */
+// One header and one footer for every page, the homepage included (between its HEADER and FOOTER
+// markers). Styles: home.css on the homepage, chrome.css elsewhere (kept identical by tests).
+// `current`: 'home' | 'product' | 'verify' | 'guides'. `contact`: 'dialog' opens the page's
+// customer-service dialog; 'link' goes to the homepage, which opens it (/#contact).
+const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg>';
+const GLYPH_CLASS = { codex: 'codex', claude: 'claude', gemini: 'gemini', grok: 'grok', ip: 'ip' };
+const SOON = VERIFY.open ? '' : '<em class="nav-soon">即将开放</em>';
+const linkTo = (route, to = '') => (route === null ? `./${to}` : href(route, to));
+const anchor = (route, id) => (route === null ? `#${id}` : `${linkTo(route)}#${id}`);
+
+export function siteHeader({ route = null, current = 'home', product = null, cta, contact = 'dialog' }) {
+  const isHome = route === null;
+  const contactButton = cls => (contact === 'dialog'
+    ? `<button${cls ? ` class="${cls}"` : ''} type="button" data-open-query>联系客服</button>`
+    : `<a${cls ? ` class="${cls}"` : ''} href="${anchor(route, 'contact')}">联系客服</a>`);
+  const products = PRODUCT_PAGES.map(p => `<a href="${linkTo(route, productRoute(p))}"${p === product ? ' aria-current="page"' : ''}><span class="glyph glyph--${GLYPH_CLASS[p.slug]}">${esc(PRODUCTS[p.slug].glyph)}</span><span><strong>${esc(PRODUCTS[p.slug].name)}</strong><small>${esc(p.navHint)}</small></span></a>`);
+  const mark = name => (current === name ? ' class="is-current" aria-current="page"' : '');
+  return `<header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="${isHome ? '#top' : linkTo(route)}" aria-label="GetToken 首页">
+        <img class="brand-logo" src="${linkTo(route, 'assets/gettoken/logo.png')}" alt="" width="28" height="28">
+        <span class="brand-word">GetToken</span>
+      </a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <details class="nav-products">
+          <summary${current === 'product' ? ' class="is-current"' : ''}>产品服务 ${CHEVRON}</summary>
+          <div class="nav-dropdown">
+            ${products.join('\n            ')}
+          </div>
+        </details>
+        <a href="${anchor(route, 'how')}">购买流程</a>
+        <a href="${anchor(route, 'faq')}">常见问题</a>
+        <a href="${linkTo(route, VERIFY_ROUTE)}"${mark('verify')}>审核验证${SOON}</a>
+        <a href="${linkTo(route, 'guides/')}"${mark('guides')}>AI 指南</a>
+      </nav>
+      <div class="header-actions">
+        ${contactButton('ghost-button')}
+        <a class="pill-button" href="${cta.href}">${esc(cta.label)}</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单"><span></span><span></span></button>
+      </div>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="移动端主导航" hidden>
+      <a href="${anchor(route, 'products')}">产品服务</a>
+      <a href="${anchor(route, 'how')}">购买流程</a>
+      <a href="${anchor(route, 'faq')}">常见问题</a>
+      <a href="${linkTo(route, VERIFY_ROUTE)}">审核验证${SOON}</a>
+      <a href="${linkTo(route, 'guides/')}">AI 指南</a>
+      ${contactButton('')}
+    </nav>
+  </header>`;
+}
+
+export function siteFooter({ route = null, contact = 'dialog' }) {
+  const contactLink = contact === 'dialog' ? '<button type="button" data-open-query>联系客服</button>' : `<a href="${anchor(route, 'contact')}">联系客服</a>`;
+  return `<footer class="site-footer" id="contact">
+    <div class="shell footer-main">
+      <div class="footer-brand">
+        <a class="brand" href="${route === null ? '#top' : linkTo(route)}"><img class="brand-logo" src="${linkTo(route, 'assets/gettoken/logo.png')}" alt="" width="28" height="28" loading="lazy"><span class="brand-word">GetToken</span></a>
+        <p>Codex、Claude、Gemini、Grok 与住宅 IP 一站选购。<br>更好的工具，更自由的创造。</p>
+      </div>
+      <div class="footer-links">
+        <div><span>产品</span>${PRODUCT_PAGES.map(p => `<a href="${linkTo(route, productRoute(p))}">${esc(PRODUCTS[p.slug].name)}</a>`).join('')}</div>
+        <div><span>指南</span><a href="${linkTo(route, 'guides/')}">AI 订阅指南</a><a href="${anchor(route, 'news')}">最新动态</a><a href="${linkTo(route, 'guides/basics/')}">选购基础</a><a href="${linkTo(route, FEED_ROUTE)}">RSS 订阅</a></div>
+        <div><span>购买</span><a href="${anchor(route, 'products')}">选择产品</a><a href="${anchor(route, 'how')}">购买流程</a><a href="${anchor(route, 'scenes')}">使用场景</a><a href="${linkTo(route, VERIFY_ROUTE)}">审核验证</a></div>
+        <div><span>支持</span><a href="${anchor(route, 'faq')}">常见问题</a><a href="${linkTo(route, VERIFY_ROUTE)}#query">审核进度查询</a>${contactLink}</div>
+      </div>
+    </div>
+    <p class="shell footer-note">GetToken 是独立第三方服务品牌，与 OpenAI、Google、xAI、Anthropic 无隶属关系。具体可售方案、价格与交付条件以付款页和客服确认为准；产品权益以当前官方说明与实际账号状态为准。</p>
+    <div class="shell footer-bottom"><span>© 2026 GetToken. All rights reserved.</span><span>独立服务品牌 · 非第三方官方平台</span></div>
+  </footer>`;
+}
+
+// `current` picks the highlighted header item; guide pages add the topic bar under the header.
 // `head` adds page-specific stylesheets and scripts; `robots` marks private pages noindex.
-function layout({ route, title, description, body, schema, type = 'website', modified, published, prev, next, tone, topic, product, store = !!product, head = '', robots = '', buy: buyOverride, tail = '' }) {
-  const verifyCurrent = route.startsWith(VERIFY_ROUTE);
-  const nav = store
-    ? `${PRODUCT_PAGES.map(p => `<a href="${href(route, productRoute(p))}"${p === product ? ' aria-current="page"' : ''}>${esc(PRODUCTS[p.slug].name)}</a>`).join('')}<a href="${href(route, VERIFY_ROUTE)}"${verifyCurrent ? ' aria-current="page"' : ''}>审核验证</a><a href="${href(route, 'guides/')}">AI 指南</a>`
-    : TOPICS.map(t => `<a href="${href(route, topicRoute(t))}"${route.startsWith(`guides/${t.slug}/`) ? ' aria-current="page"' : ''}>${esc(t.name)}</a>`).join('');
-  const buy = buyOverride || (product ? { href: '#plans', label: '选购方案' } : buyLink(route, topic));
+function layout({ route, title, description, body, schema, type = 'website', modified, published, prev, next, tone, topic, product, current = product ? 'product' : 'guides', contact = product ? 'dialog' : 'link', head = '', robots = '', buy: buyOverride, tail = '' }) {
+  const guide = buyLink(route, topic);
+  const cta = buyOverride || (product ? { href: '#plans', label: '选购方案' } : { href: guide.href, label: guide.name ? `购买 ${guide.name}` : '选购产品' });
+  const subnav = current === 'guides'
+    ? `<nav class="g-subnav" aria-label="指南专题"><div class="g-shell"><a href="${href(route, 'guides/')}"${route === 'guides/' ? ' aria-current="page"' : ''}>全部指南</a>${TOPICS.map(t => `<a href="${href(route, topicRoute(t))}"${route.startsWith(`guides/${t.slug}/`) ? ' aria-current="page"' : topic === t.slug ? ' aria-current="true"' : ''}>${esc(t.name)}</a>`).join('')}</div></nav>\n`
+    : '';
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -114,25 +187,15 @@ ${prev ? `<link rel="prev" href="${url(prev)}">\n` : ''}${next ? `<link rel="nex
 ${type === 'article' ? `${published ? `<meta property="article:published_time" content="${published}">\n` : ''}<meta property="article:modified_time" content="${modified}">\n` : ''}<link rel="alternate" type="application/rss+xml" title="GetToken AI 订阅指南" href="${href(route, FEED_ROUTE)}">
 <link rel="icon" href="${href(route, 'assets/gettoken/favicon.svg')}" type="image/svg+xml">
 <link rel="stylesheet" href="${href(route, 'assets/guides/guides.css')}">
+<link rel="stylesheet" href="${href(route, 'assets/gettoken/chrome.css')}">
+<script type="module" src="${href(route, 'assets/gettoken/chrome.mjs')}"></script>
 ${product ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/product.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/product.mjs')}"></script>\n` : ''}${head}<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website, ...schema] })}</script>
 </head>
 <body${tone ? ` data-tone="${tone}"` : ''}>
 <a class="g-skip" href="#main">跳到正文</a>
-<header class="g-header"><div class="g-shell g-header__row">
-<a class="g-brand" href="${href(route)}"><img src="${href(route, 'assets/gettoken/logo.png')}" width="28" height="28" alt=""><span>GetToken</span></a>
-${store ? '' : `<a class="g-brand__section${route === 'guides/' ? ' is-current' : ''}" href="${href(route, 'guides/')}"${route === 'guides/' ? ' aria-current="page"' : ''}>指南</a>\n`}<nav class="g-nav" aria-label="${store ? '产品' : '指南专题'}">${nav}</nav>
-<a class="g-btn g-btn--light g-header__cta" href="${buy.href}">${store ? buy.label : buy.name ? `购买 ${esc(buy.name)}` : '选购产品'}</a>
-</div></header>
-${body}
-<footer class="g-footer"><div class="g-shell">
-<div class="g-footer__grid">
-<div class="g-footer__brand"><a class="g-brand" href="${href(route)}"><img src="${href(route, 'assets/gettoken/logo.png')}" width="24" height="24" alt="" loading="lazy"><span>GetToken</span></a><p>好工具，让想法更进一步。扫码付款，人工核对交付，售后有人跟进；购买前可先读 AI 订阅指南。</p></div>
-<nav aria-label="产品"><h2>产品</h2><ul>${PRODUCT_PAGES.map(p => `<li><a href="${href(route, productRoute(p))}">${esc(PRODUCTS[p.slug].name)}</a></li>`).join('')}</ul></nav>
-<nav aria-label="指南"><h2>指南</h2><ul><li><a href="${href(route, 'guides/')}">AI 订阅指南</a></li><li><a href="${href(route, 'guides/')}#start">新手先读</a></li><li><a href="${href(route, 'guides/')}#editorial">内容与更新原则</a></li><li><a href="${href(route, FEED_ROUTE)}">RSS 订阅</a></li></ul></nav>
-<nav aria-label="购买"><h2>购买</h2><ul><li><a href="${href(route)}#how">购买流程</a></li><li><a href="${href(route, VERIFY_ROUTE)}">审核验证</a></li><li><a href="${href(route)}#faq">购买常见问题</a></li><li><a href="${href(route)}">返回首页</a></li></ul></nav>
-</div>
-<p class="g-footer__note">GetToken 是独立第三方服务品牌，与 OpenAI、Google、xAI、Anthropic 无隶属关系。具体可售方案、价格与交付条件以付款页和客服确认为准；产品权益以当前官方说明与实际账号状态为准。</p>
-</div></footer>
+${siteHeader({ route, current, product, cta, contact })}
+${subnav}${body}
+${siteFooter({ route, contact })}
 ${tail}</body>
 </html>
 `;
@@ -420,9 +483,9 @@ function verifyPage() {
   const body = `<div class="v-hero"><div class="g-shell">
 ${crumbNav(route, crumbs)}
 <div class="v-hero__text">
-<p class="g-eyebrow">审核验证 · 人工审核</p>
+<p class="g-eyebrow">审核验证 · ${VERIFY.open ? '人工审核' : '即将开放'}</p>
 <h1>提交代码，查看审核结果</h1>
-<p class="g-lead">填写你的代码并在线付款，审核员逐单人工审核，${VERIFY.reviewHours} 小时内出结果。审核中可以看到预计剩余时间，通过或未通过都在本页显示；未通过的订单自动退回审核费。</p>
+<p class="g-lead">填写你的代码并在线付款，审核员逐单人工审核，${VERIFY.reviewHours} 小时内出结果。审核中可以看到预计剩余时间，通过或未通过都在本页显示；未通过的订单自动退回审核费。${VERIFY.open ? '' : '在线支付即将开放，开通后即可提交。'}</p>
 <ul class="v-facts"><li><b>${tech}</b>人工技术费 · 不退</li><li><b>${audit}</b>审核费 · 未通过退</li><li><b>${VERIFY.reviewHours} 小时</b>内出结果</li></ul>
 </div></div></div>
 <main id="main" class="g-shell">
@@ -447,7 +510,7 @@ ${crumbNav(route, crumbs)}
 </div></div>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>选择付款方式</h3><div class="v-step__body">
 <div class="v-channels" role="radiogroup" aria-label="付款方式" data-channels><p class="v-hint">正在读取可用的付款方式…</p></div>
-<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit>付款并提交审核 · ${total}</button>
+<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit${VERIFY.open ? '' : ' disabled'}>${VERIFY.open ? `付款并提交审核 · ${total}` : '即将开放'}</button>
 <p class="v-error" data-form-error role="alert" hidden></p>
 <p class="v-hint v-center">在线付款，到账后自动开始审核计时。</p></div>
 </div></div>
@@ -486,7 +549,7 @@ ${crumbNav(route, crumbs)}
 </main>
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
-    route, store: true, title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交审核' },
+    route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交审核' },
     head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}"></script>\n`,
     schema: [crumbList(crumbs), {
       '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: '审核验证', description: VERIFY_DESCRIPTION,
@@ -521,7 +584,7 @@ function verifyAdminPage() {
 </main>
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
-    route, store: true, robots: 'noindex, nofollow', title: '审核后台 - GetToken', description: '审核验证订单管理，仅限管理员。', body,
+    route, current: 'verify', robots: 'noindex, nofollow', title: '审核后台 - GetToken', description: '审核验证订单管理，仅限管理员。', body,
     buy: { href: href(route, VERIFY_ROUTE), label: '返回审核页' },
     head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}"></script>\n`,
     schema: [],
@@ -540,7 +603,19 @@ function homepage() {
     const t = topicOf(a.topic);
     return `          <li data-reveal><a class="news-card news-card--${t.tone}" href="./${articleRoute(a)}"><span class="news-card__meta"><b>${esc(t.name)}</b>${a.type === 'news' ? '<span>动态</span>' : ''}<time datetime="${a.updated}">${a.updated}</time></span><h3>${esc(a.title)}</h3><p>${esc(a.summary)}</p><span class="news-card__more">阅读全文 <span aria-hidden="true">→</span></span></a></li>`;
   }).join('\n');
-  return `${html.slice(0, start + LATEST_START.length)}\n        <ol class="news-grid">\n${items}\n        </ol>\n        ${html.slice(end)}`;
+  const withLatest = `${html.slice(0, start + LATEST_START.length)}\n        <ol class="news-grid">\n${items}\n        </ol>\n        ${html.slice(end)}`;
+  const header = siteHeader({ route: null, current: 'home', cta: { href: '#products', label: '立即选购' } });
+  return between(between(withLatest, 'HEADER', header), 'FOOTER', siteFooter({ route: null }));
+}
+
+// Replaces what sits between <!-- NAME:START … --> and <!-- NAME:END --> in index.html.
+function between(html, name, content) {
+  const open = `<!-- ${name}:START (generated by scripts/build-site.mjs) -->`;
+  const close = `<!-- ${name}:END -->`;
+  const start = html.indexOf(open);
+  const end = html.indexOf(close);
+  if (start < 0 || end < start) throw new Error(`index.html must keep the ${name}:START / ${name}:END markers`);
+  return `${html.slice(0, start + open.length)}\n  ${content}\n  ${html.slice(end)}`;
 }
 
 const rfc822 = date => new Date(`${date}T00:00:00+08:00`).toUTCString();

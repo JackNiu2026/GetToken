@@ -91,6 +91,8 @@ try {
   // No review API runs in this container: a 502 proves /api/verify/ is proxied, not served as files.
   const api=await curlRequest(base+'/api/verify/health');
   assert.equal(api.status,502);
+  const shared=await curlRequest(base+'/assets/gettoken/chrome.mjs');
+  assert.match(shared.headers.get('content-type')||'',/javascript/);
   const module=await curlRequest(base+'/assets/gettoken/product.mjs');
   assert.equal(module.status,200);
   assert.match(module.headers.get('content-type')||'',/javascript/);

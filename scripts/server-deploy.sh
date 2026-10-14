@@ -90,6 +90,7 @@ test -f "$stage/claude/index.html"
 test -f "$stage/verify/index.html"
 test -f "$stage/verify/admin/index.html"
 test -f "$stage/assets/gettoken/verify.mjs"
+test -f "$stage/assets/gettoken/chrome.mjs"
 test -f "$stage/guides/index.html"
 test -f "$stage/guides/feed.xml"
 test -f "$stage/robots.txt"
@@ -165,7 +166,7 @@ curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127
 for route in "${seo_paths[@]}"; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1$route" -o /dev/null
 done
-for resource in robots.txt sitemap.xml assets/guides/guides.css assets/gettoken/product.css assets/gettoken/product.mjs assets/gettoken/shop.mjs assets/gettoken/verify.css assets/gettoken/verify.mjs assets/gettoken/qr.mjs verify/admin/ guides/feed.xml; do
+for resource in robots.txt sitemap.xml assets/guides/guides.css assets/gettoken/product.css assets/gettoken/product.mjs assets/gettoken/shop.mjs assets/gettoken/chrome.css assets/gettoken/chrome.mjs assets/gettoken/verify.css assets/gettoken/verify.mjs assets/gettoken/qr.mjs verify/admin/ guides/feed.xml; do
   curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" "http://127.0.0.1/$resource" -o /dev/null
 done
 missing_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Host: $site_host" http://127.0.0.1/__gettoken_seo_missing_page__/)

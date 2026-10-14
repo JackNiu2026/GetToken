@@ -20,7 +20,7 @@ jobs:
       - name: Check JavaScript and deployment scripts
         run: |
           for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs server/verify/*.mjs server/verify/pay/*.mjs; do node --check "$file"; done
-          bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh scripts/install-verify.sh
+          bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh scripts/install-verify.sh scripts/configure-payments.sh scripts/set-payment-opening.sh
           python3 -m py_compile scripts/configure-seo-routing.py scripts/inspect-live.py
       - name: Check generated static pages
         run: node scripts/build-site.mjs --check
@@ -34,6 +34,8 @@ jobs:
           node scripts/package-verify.mjs
       - name: Verify packaged site with Nginx
         run: node scripts/test-nginx.mjs
+      - name: Verify packaged review API with Nginx and TLS
+        run: node scripts/test-verify-api.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: gettoken-${{ github.sha }}
@@ -43,6 +45,9 @@ jobs:
             scripts/server-deploy.sh
             scripts/deploy-ssh.sh
             scripts/install-verify.sh
+            scripts/configure-payments.sh
+            scripts/set-payment-opening.sh
+            docs/payment-merchant.example.json
             scripts/configure-seo-routing.py
             scripts/nginx-seo-locations.conf
           retention-days: 7

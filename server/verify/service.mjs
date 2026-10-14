@@ -1,6 +1,6 @@
 // Order lifecycle. Results come only from decide(), which only the admin API calls:
 // nothing here passes or fails an order on a timer.
-import { VERIFY, totalMinor, codeProblem, normalizeCode, maskTail } from '../../assets/gettoken/verify-rules.mjs';
+import { VERIFY, codeProblem, normalizeCode, maskTail } from '../../assets/gettoken/verify-rules.mjs';
 import { orderId, compactId, sealCode, openCode, fingerprint, sha256, beijingDayStart } from './secure.mjs';
 
 const HOUR = 3600_000;
@@ -18,26 +18,47 @@ export function createService({ store, config, providers, now = () => Date.now()
     store.run('insert into events(order_id, at, actor, kind, detail) values(?, ?, ?, ?, ?)', orderIdValue, now(), actor, kind, detail);
   const getOrder = id => store.get('select * from orders where id = ?', id);
   const channels = () => Object.keys(providers);
+  const acceptingNewOrders = () => channels().length > 0 && (config.mode === 'mock' || (config.mode === 'live' && (config.acceptNewOrders ?? VERIFY.open)));
   const providerFor = channel => {
     if (!Object.hasOwn(providers, channel)) throw new UserError('不支持的付款方式');
     return providers[channel];
   };
 
   /* ---------- payments ---------- */
-  async function openPayment(order, channel) {
+  const opening = new Map();
+  const syncing = new Map();
+  const unsettled = payment => payment.status === 'pending' || (payment.status === 'closed' && payment.reconciled_at === null);
+
+  async function createPayment(order, channel) {
     const provider = providerFor(channel);
     const t = now();
-    const existing = store.get("select * from payments where order_id = ? and channel = ? and status = 'pending' and expires_at > ? order by created_at desc limit 1", order.id, channel, t + MINUTE);
-    if (existing) return existing;
-    const attempt = store.get('select count(*) as n from payments where order_id = ?', order.id).n + 1;
-    if (attempt > 12) throw new UserError('付款二维码获取次数过多，请重新提交订单', 429);
-    const id = `${compactId(order.id)}P${attempt}`;
-    const amount = order.tech_fee + order.audit_fee;
-    const expiresAt = t + VERIFY.paymentMinutes * MINUTE;
-    const { qr } = await provider.precreate({ outTradeNo: id, amountMinor: amount, subject: `GetToken 审核验证 ${order.id}`, expiresAt });
-    store.run("insert into payments(id, order_id, channel, status, amount, qr, created_at, expires_at) values(?, ?, ?, 'pending', ?, ?, ?, ?)", id, order.id, channel, amount, qr, t, expiresAt);
-    event(order.id, 'system', 'payment_opened', `${channel} ${id}`);
-    return store.get('select * from payments where id = ?', id);
+    const payment = store.transaction(() => {
+      const existing = store.get("select * from payments where order_id = ? and channel = ? and status = 'pending' and expires_at > ? order by created_at desc limit 1", order.id, channel, t + MINUTE);
+      if (existing) return existing;
+      const attempt = store.get('select count(*) as n from payments where order_id = ?', order.id).n + 1;
+      if (attempt > 12) throw new UserError('付款二维码获取次数过多，请重新提交订单', 429);
+      const id = `${compactId(order.id)}P${attempt}`;
+      store.run("insert into payments(id, order_id, channel, status, amount, created_at, expires_at) values(?, ?, ?, 'pending', ?, ?, ?)",
+        id, order.id, channel, order.tech_fee + order.audit_fee, t, t + VERIFY.paymentMinutes * MINUTE);
+      return store.get('select * from payments where id = ?', id);
+    });
+    if (payment.qr) return payment;
+    // Reserve before the network request: retries reuse the same platform id, and
+    // even a notification arriving before precreate returns can find its payment.
+    const { qr } = await provider.precreate({ outTradeNo: payment.id, amountMinor: payment.amount, subject: `GetToken 审核验证 ${order.id}`, expiresAt: payment.expires_at });
+    if (typeof qr !== 'string' || !qr) throw new Error('Payment platform returned no QR code');
+    store.run('update payments set qr = ? where id = ?', qr, payment.id);
+    event(order.id, 'system', 'payment_opened', `${channel} ${payment.id}`);
+    return store.get('select * from payments where id = ?', payment.id);
+  }
+
+  async function openPayment(order, channel) {
+    providerFor(channel);
+    const key = `${order.id}:${channel}`;
+    if (opening.has(key)) return opening.get(key);
+    const task = createPayment(order, channel);
+    opening.set(key, task);
+    try { return await task; } finally { opening.delete(key); }
   }
 
   // Called from a verified payment notification or a verified query result.
@@ -48,16 +69,20 @@ export function createService({ store, config, providers, now = () => Date.now()
       event(known.order_id, 'system', 'payment_amount_mismatch', `${paymentId} ${amountMinor} != ${known.amount}`);
       throw new Error(`Amount mismatch for ${paymentId}`);
     }
+    if (typeof tradeNo !== 'string' || !tradeNo.trim()) throw new Error(`Missing trade number for ${paymentId}`);
     return store.transaction(() => {
       const payment = store.get('select * from payments where id = ?', paymentId);
+      if (payment.trade_no && payment.trade_no !== tradeNo) throw new Error(`Trade number mismatch for ${paymentId}`);
+      if (store.get('select id from payments where channel = ? and trade_no = ? and id != ?', payment.channel, tradeNo, paymentId)) throw new Error(`Trade number already used for ${paymentId}`);
       if (payment.status === 'paid' || payment.status === 'duplicate') return payment;
       const t = now();
       const order = getOrder(payment.order_id);
-      const first = order.status === 'unpaid' || order.status === 'expired';
+      // A very late payment for a code already purged cannot be reviewed. Return
+      // it in full through the same idempotent compensation path as an overpayment.
+      const first = (order.status === 'unpaid' || order.status === 'expired') && !!order.code_sealed;
       store.run('update payments set status = ?, trade_no = ?, paid_at = ? where id = ?', first ? 'paid' : 'duplicate', tradeNo || null, t, paymentId);
       if (first) {
         store.run("update orders set status = 'reviewing', paid_at = ?, due_at = ?, paid_payment = ? where id = ?", t, t + VERIFY.reviewHours * HOUR, paymentId, order.id);
-        store.run("update payments set status = 'closed' where order_id = ? and status = 'pending'", order.id);
         event(order.id, 'system', 'paid', `${payment.channel} ${paymentId}`);
       } else {
         // Paid twice (two QR codes): the second payment goes straight back in full.
@@ -69,23 +94,39 @@ export function createService({ store, config, providers, now = () => Date.now()
     });
   }
 
-  async function syncPayment(payment, { force = false } = {}) {
-    if (payment.status !== 'pending' || !Object.hasOwn(providers, payment.channel)) return payment;
+  async function reconcilePayment(id, { force = false } = {}) {
+    const payment = store.get('select * from payments where id = ?', id);
+    if (!payment || !unsettled(payment) || !Object.hasOwn(providers, payment.channel)) return payment;
     const t = now();
-    if (!force && payment.checked_at && t - payment.checked_at < 5000) return payment;
+    if (!force && payment.checked_at !== null && t - payment.checked_at < 5000) return payment;
     store.run('update payments set checked_at = ? where id = ?', t, payment.id);
     try {
-      const result = await providers[payment.channel].query(payment.id);
+      const provider = providers[payment.channel];
+      const result = await provider.query(payment.id);
       if (result.paid) return markPaid(payment.id, result);
+      const order = getOrder(payment.order_id);
+      const shouldClose = payment.expires_at <= now() || !['unpaid', 'expired'].includes(order.status);
+      const closed = result.closed || (shouldClose && provider.close && (await provider.close(payment.id)).closed);
+      if (closed) {
+        // The callback may have marked this row paid while we awaited close().
+        store.run("update payments set status = 'closed', reconciled_at = ? where id = ? and status in ('pending', 'closed')", now(), payment.id);
+      }
     } catch (error) {
       log(`payment query ${payment.id}: ${error.message}`);
     }
-    return payment;
+    return store.get('select * from payments where id = ?', id);
+  }
+
+  async function syncPayment(payment, options = {}) {
+    if (syncing.has(payment.id)) return syncing.get(payment.id);
+    const task = reconcilePayment(payment.id, options);
+    syncing.set(payment.id, task);
+    try { return await task; } finally { syncing.delete(payment.id); }
   }
 
   /* ---------- public API ---------- */
   async function createOrder({ code: raw, showPublic, agree, channel, ip }) {
-    if (!channels().length) throw new UserError('在线支付暂未开通，请稍后再来', 503);
+    if (!acceptingNewOrders()) throw new UserError('在线支付暂未开通，请稍后再来', 503);
     const code = normalizeCode(raw);
     const problem = codeProblem(code);
     if (problem) throw new UserError(problem);
@@ -126,10 +167,9 @@ export function createService({ store, config, providers, now = () => Date.now()
   async function lookup(id, channel) {
     let order = getOrder(id);
     if (!order) throw new UserError('找不到这个订单，请核对订单号', 404);
-    if (order.status === 'unpaid') {
-      for (const payment of store.all("select * from payments where order_id = ? and status = 'pending'", id)) await syncPayment(payment);
-      order = getOrder(id);
-    }
+    // Paid orders can still have other paid QR codes whose notifications were lost.
+    for (const payment of store.all("select * from payments where order_id = ? and (status = 'pending' or (status = 'closed' and reconciled_at is null))", id)) await syncPayment(payment);
+    order = getOrder(id);
     return view(order, channel);
   }
 
@@ -151,7 +191,7 @@ export function createService({ store, config, providers, now = () => Date.now()
       out.refund = { status: order.refund_status, amount: order.audit_fee, dueAt: order.refund_due_at, refundedAt: order.refunded_at };
     }
     if (order.status === 'unpaid') {
-      const pending = store.all("select * from payments where order_id = ? and status = 'pending' and expires_at > ? order by created_at desc", order.id, t);
+      const pending = store.all("select * from payments where order_id = ? and status = 'pending' and qr is not null and expires_at > ? order by created_at desc", order.id, t);
       const payment = pending.find(p => p.channel === channel) || pending[0];
       out.payment = payment ? { id: payment.id, channel: payment.channel, qr: payment.qr, amount: payment.amount, expiresAt: payment.expires_at } : null;
     }
@@ -191,35 +231,57 @@ export function createService({ store, config, providers, now = () => Date.now()
     return getOrder(id);
   }
 
-  async function runRefund(refund, actor = 'system') {
+  // Success is monotonic: a delayed response, callback replay or failed query
+  // cannot roll a completed refund back to processing.
+  function markRefund(id, result, actor = 'system', failedAttempt = 0) {
+    if (!['pending', 'processing', 'success', 'error'].includes(result.status)) throw new Error('Invalid refund status');
+    return store.transaction(() => {
+      const refund = store.get('select * from refunds where id = ?', id);
+      if (!refund) throw new Error(`Unknown refund ${id}`);
+      const payment = store.get('select * from payments where id = ?', refund.payment_id);
+      if ((result.channel && result.channel !== refund.channel) || (result.outTradeNo && result.outTradeNo !== payment.id) ||
+          (result.tradeNo && result.tradeNo !== payment.trade_no) ||
+          (result.amountMinor !== undefined && result.amountMinor !== refund.amount) ||
+          (result.totalMinor !== undefined && result.totalMinor !== payment.amount)) throw new Error(`Refund mismatch for ${id}`);
+      if (refund.status === 'success') return refund;
+      const t = now();
+      const error = result.error ? String(result.error).slice(0, 300) : null;
+      store.run('update refunds set status = ?, error = ?, attempts = attempts + ?, updated_at = ? where id = ?', result.status, error, failedAttempt, t, id);
+      if (refund.kind === 'audit') store.run('update orders set refund_status = ?, refunded_at = ? where id = ?', result.status, result.status === 'success' ? t : null, refund.order_id);
+      if (result.status !== refund.status || error) event(refund.order_id, actor, `refund_${result.status}`, `${refund.kind} ${id}${error ? ` · ${error}` : ''}`);
+      return store.get('select * from refunds where id = ?', id);
+    });
+  }
+
+  const refunding = new Map();
+  async function settleRefund(id, actor) {
+    const refund = store.get('select * from refunds where id = ?', id);
+    if (!refund || refund.status === 'success') return refund;
     const provider = providers[refund.channel];
     if (!provider) return refund;
     const payment = store.get('select * from payments where id = ?', refund.payment_id);
-    const t = now();
     const querying = refund.status === 'processing';
-    let status;
-    let error = null;
+    const params = { outTradeNo: payment.id, refundId: refund.id, amountMinor: refund.amount, totalMinor: payment.amount,
+      reason: refund.kind === 'audit' ? '审核未通过，退回审核费' : '重复付款退回' };
+    // Persist uncertainty before calling the platform. After a process crash we
+    // query this exact refund id rather than issuing another blind request.
+    if (!querying) markRefund(id, { status: 'processing' }, actor);
     try {
-      const result = querying
-        ? await provider.refundQuery({ outTradeNo: payment.id, refundId: refund.id })
-        : await provider.refund({ outTradeNo: payment.id, refundId: refund.id, amountMinor: refund.amount, totalMinor: payment.amount, reason: refund.kind === 'audit' ? '审核未通过，退回审核费' : '重复付款退回' });
-      status = result.status;
-      error = result.error || null;
+      let result = querying ? await provider.refundQuery(params) : await provider.refund(params);
+      if (querying && result.status === 'not_found') result = { status: 'pending' };
+      // An unsuccessful query is not proof that the original request failed.
+      else if (querying && result.status === 'error') result = { ...result, status: 'processing' };
+      return markRefund(id, result, actor, !querying && result.status === 'error' ? 1 : 0);
     } catch (err) {
-      // A failed status check says nothing about the refund itself: keep checking.
-      status = querying ? 'processing' : 'error';
-      error = err.message.slice(0, 300);
+      return markRefund(id, { status: 'processing', error: err.message }, actor, querying ? 0 : 1);
     }
-    // Only failed refund requests count as attempts; status checks of a processing refund do not.
-    const failed = status === 'error' ? 1 : 0;
-    store.transaction(() => {
-      store.run('update refunds set status = ?, error = ?, attempts = attempts + ?, updated_at = ? where id = ?', status, error, failed, t, refund.id);
-      if (refund.kind === 'audit') {
-        store.run('update orders set refund_status = ?, refunded_at = ? where id = ?', status, status === 'success' ? t : null, refund.order_id);
-      }
-      if (status !== refund.status || (error && !querying)) event(refund.order_id, actor, `refund_${status}`, `${refund.kind} ${refund.id}${error ? ` · ${error}` : ''}`);
-    });
-    return store.get('select * from refunds where id = ?', refund.id);
+  }
+
+  async function runRefund(refund, actor = 'system') {
+    if (refunding.has(refund.id)) return refunding.get(refund.id);
+    const task = settleRefund(refund.id, actor);
+    refunding.set(refund.id, task);
+    try { return await task; } finally { refunding.delete(refund.id); }
   }
 
   async function retryRefund(id) {
@@ -286,10 +348,12 @@ export function createService({ store, config, providers, now = () => Date.now()
   /* ---------- background work ---------- */
   async function tick() {
     const t = now();
-    for (const payment of store.all("select * from payments where status = 'pending' and created_at > ? and (checked_at is null or checked_at < ?)", t - 30 * MINUTE, t - MINUTE)) {
+    // QR expiry is not proof that no money moved. Old or legacy closed records
+    // remain queryable until the platform confirms a terminal status; slow the
+    // oldest unresolved payments to hourly queries without abandoning them.
+    for (const payment of store.all("select * from payments where (status = 'pending' or (status = 'closed' and reconciled_at is null)) and (checked_at is null or checked_at < ? - case when created_at < ? then ? else ? end) order by coalesce(checked_at, 0), created_at limit 100", t, t - 24 * HOUR, HOUR, MINUTE)) {
       await syncPayment(payment, { force: true });
     }
-    store.run("update payments set status = 'closed' where status = 'pending' and expires_at < ?", t - 30 * MINUTE);
     for (const o of store.all("select id from orders where status = 'unpaid' and created_at < ?", t - 24 * HOUR)) {
       store.run("update orders set status = 'expired' where id = ? and status = 'unpaid'", o.id);
       event(o.id, 'system', 'expired');
@@ -304,8 +368,9 @@ export function createService({ store, config, providers, now = () => Date.now()
       store.run('update orders set code_sealed = null, purged_at = ? where id = ?', t, o.id);
       event(o.id, 'system', 'code_purged');
     }
+    store.db.exec('pragma wal_checkpoint(truncate)');
     store.run('delete from sessions where expires_at < ?', t);
   }
 
-  return { createOrder, requestPayment, lookup, feed, markPaid, syncPayment, decide, retryRefund, runRefund, adminList, adminDetail, stats, tick, channels, sha256, event };
+  return { createOrder, requestPayment, lookup, feed, markPaid, markRefund, syncPayment, decide, retryRefund, runRefund, adminList, adminDetail, stats, tick, channels, acceptingNewOrders, sha256, event };
 }

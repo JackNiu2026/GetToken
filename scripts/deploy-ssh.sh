@@ -43,16 +43,18 @@ scp "${ssh_options[@]}" -P "$DEPLOY_PORT" scripts/configure-seo-routing.py scrip
 # Upload Node.js only when the server does not have this version yet.
 runtime="/opt/gettoken/runtime/node-$node_version-linux-x64/bin/node"
 remote_arch=$(ssh "${ssh_options[@]}" -p "$DEPLOY_PORT" "$target" "test -x '$runtime' && echo present || uname -m")
-# A failed download only skips the review API; the website is still deployed.
+# The remote deployment refuses to publish if this required API runtime is unavailable.
 if [[ "$remote_arch" == x86_64 ]]; then
   if curl --fail --silent --show-error --location --retry 3 --max-time 300 -o "$ssh_dir/node.tar.xz" "https://nodejs.org/dist/$node_version/node-$node_version-linux-x64.tar.xz" \
     && echo "$node_sha256  $ssh_dir/node.tar.xz" | sha256sum --check --quiet -; then
     scp "${ssh_options[@]}" -P "$DEPLOY_PORT" "$ssh_dir/node.tar.xz" "$target:$remote_dir/node-runtime.tar.xz"
   else
-    echo 'WARNING: could not download Node.js; the review API is skipped in this deploy.' >&2
+    echo 'Could not download the required payment API runtime.' >&2
+    exit 1
   fi
 elif [[ "$remote_arch" != present ]]; then
-  echo "Server architecture $remote_arch has no bundled Node.js; the review API will not be installed." >&2
+  echo "Server architecture $remote_arch has no bundled Node.js runtime." >&2
+  exit 1
 fi
 ssh "${ssh_options[@]}" -p "$DEPLOY_PORT" "$target" \
   "bash '$remote_dir/server-deploy.sh' '$remote_dir/site.tar.gz' '$DEPLOY_REVISION' '$DEPLOY_HOST' '$node_version'"

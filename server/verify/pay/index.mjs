@@ -9,6 +9,6 @@ export function createProviders(config, options = {}) {
   const providers = {};
   const notify = channel => `${config.origin}/api/verify/notify/${channel}`;
   if (config.alipay) providers.alipay = alipayProvider(config.alipay, { ...options, notifyUrl: notify('alipay') });
-  if (config.wechat) providers.wechat = wechatProvider(config.wechat, { ...options, notifyUrl: notify('wechat') });
+  if (config.wechat) providers.wechat = wechatProvider(config.wechat, { ...options, notifyUrl: notify('wechat'), refundNotifyUrl: `${config.origin}/api/verify/notify/wechat/refund` });
   return providers;
 }

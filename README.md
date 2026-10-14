@@ -38,7 +38,7 @@ scripts/            生成、打包、部署与线上检查脚本
 tests/
 ```
 
-没有 React、Next.js、node_modules 或第三方字体。首页手写，只有“最新动态”一块由脚本填入；产品页和指南用 Node 原生脚本生成静态 HTML。
+没有 React、Next.js、node_modules 或第三方字体。首页主体手写，导航、页脚与“最新动态”由脚本同步；产品页、指南与审核页面用 Node 原生脚本生成静态 HTML。审核订单由 `server/verify/` 中的 Node.js + SQLite 服务处理。
 
 ## 页面结构
 
@@ -48,7 +48,7 @@ tests/
 
 产品页（如 `/claude/`）：卖点与购买保障 → 三档价格卡（蓝 / 紫粉推荐 / 绿，可选交付方式与月付、季付、年付）→ 怎么买、怎么验收 → 最新动态与选购指南 → 常见问题 → 其他产品。价格卡在生成时就写进 HTML，不开脚本也能看到价格与说明。
 
-审核验证页（`/verify/`，导航栏“审核验证”）：填写以 sk 开头的代码 → 确认费用（人工技术费 ¥30 不退，审核费 ¥300 未通过时 24 小时内退回）→ 支付宝或微信在线付款 → 到账后进入审核，页面显示 24 小时倒计时 → 审核员在后台录入结果，页面显示“恭喜，审核通过”或“很遗憾，没有通过”及退款进度。倒计时只表示预计时间，结果只来自后台录入。右侧“最新通过”只展示真实通过且本人同意展示的订单，代码打码为末 4 位，满 5 条才滚动。用户可凭订单号在任何设备查询，本机也会记住最近的订单。费用和时长在 `assets/gettoken/verify-rules.mjs`，改完执行 `node scripts/build-site.mjs`。在线支付开通前，`open: false` 让导航栏和审核页显示“即将开放”；接入支付宝 / 微信并验收后改为 `true` 再生成页面。后端部署、支付商户配置和后台密码见 [DEPLOYMENT.md](DEPLOYMENT.md#审核验证服务verify-与-apiverify)。
+审核验证页（`/verify/`，导航栏“审核验证”）：填写以 sk 开头的代码 → 确认费用（人工技术费 ¥30 不退，审核费 ¥300 未通过时 24 小时内退回）→ 支付宝或微信在线付款 → 到账后进入审核，页面显示 24 小时倒计时 → 审核员在后台录入结果，页面显示“恭喜，审核通过”或“很遗憾，没有通过”及退款进度。倒计时只表示预计时间，结果只来自后台录入。右侧“最新通过”只展示真实通过且本人同意展示的订单，代码打码为末 4 位，满 5 条才滚动。用户可凭订单号在任何设备查询，本机也会记住最近的订单。费用和时长在 `assets/gettoken/verify-rules.mjs`，改完执行 `node scripts/build-site.mjs`。在线支付开通前，`open: false` 让导航栏和审核页显示“即将开放”；接入支付宝 / 微信并验收后，可用服务器 `VERIFY_ACCEPT_NEW_ORDERS` 开启原有表单，无需修改前端文件。双渠道资料与自动导入见 [支付上线交付文档](docs/payment-launch.md)。后端部署、支付商户配置和后台密码见 [DEPLOYMENT.md](DEPLOYMENT.md#审核验证服务verify-与-apiverify)。
 
 ## 上线前需要配置
 
@@ -97,6 +97,8 @@ node --test tests/*.test.mjs
 node scripts/seo-report.mjs
 # Linux + Docker 环境可验证真实 Nginx 发布包：
 node scripts/test-nginx.mjs
+# 同时验收实际审核发布包、Nginx/TLS、模拟订单、退款和重启恢复：
+node scripts/test-verify-api.mjs
 ```
 
 ## 说明

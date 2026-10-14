@@ -1,0 +1,56 @@
+diff --git a/assets/gettoken/verify-admin.mjs b/assets/gettoken/verify-admin.mjs
+--- a/assets/gettoken/verify-admin.mjs
++++ b/assets/gettoken/verify-admin.mjs
+@@ -31,6 +31,7 @@
+   refund_error: '退款失败', refund_pending: '等待退款', expired: '订单过期', code_purged: '代码已删除', mock_paid: '模拟收款',
+ };
+ let state = { status: 'reviewing', q: '', page: 1, selected: null, mode: 'off' };
++let detailRequest = 0;
+
+ async function api(path, options = {}) {
+   const response = await fetch(new URL(path, API), {
+@@ -140,16 +141,23 @@
+
+ /* ---------- detail ---------- */
+ async function openDetail(id) {
++  const request = ++detailRequest;
+   state.selected = id;
++  delete detail.dataset.orderId;
++  detail.replaceChildren();
+   for (const tr of rows.querySelectorAll('tr')) tr.classList.toggle('is-selected', !!tr.querySelector(`[data-open="${CSS.escape(id)}"]`));
+   try {
+-    renderDetail(await api(`admin/orders/${encodeURIComponent(id)}`));
++    const order = await api(`admin/orders/${encodeURIComponent(id)}`);
++    if (request !== detailRequest || state.selected !== id) return;
++    renderDetail(order);
+   } catch (error) {
++    if (request !== detailRequest || state.selected !== id) return;
+     detail.innerHTML = `<p class="v-error">${esc(error.message)}</p>`;
+   }
+ }
+
+ function renderDetail(o) {
++  detail.dataset.orderId = o.id;
+   const now = Date.now();
+   const code = o.code
+     ? `<div class="a-code" data-code-text>${esc(o.code)}</div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy-code>复制完整代码</button>`
+@@ -183,7 +191,8 @@
+ detail.addEventListener('click', async event => {
+   const button = event.target.closest('button');
+   if (!button || !state.selected) return;
+-  const id = state.selected;
++  const id = detail.dataset.orderId;
++  if (!id || id !== state.selected) return;
+   if (button.hasAttribute('data-copy-code')) {
+     try {
+       await navigator.clipboard.writeText($('[data-code-text]', detail).textContent);
+@@ -208,7 +217,8 @@
+   if (!request) return;
+   button.disabled = true;
+   try {
+-    renderDetail(await api(request[0], { method: 'POST', body: request[1] }));
++    const saved = await api(request[0], { method: 'POST', body: request[1] });
++    if (state.selected === id && detail.dataset.orderId === id) renderDetail(saved);
+     showToast('已保存');
+     await Promise.all([loadStats(), loadList()]);
+   } catch (error) {

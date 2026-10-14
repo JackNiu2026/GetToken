@@ -3,7 +3,7 @@
 # Node.js service on 127.0.0.1:8790, data in /var/lib/gettoken-verify. Secrets live in
 # /etc/gettoken/verify.env (created once, never overwritten) and /etc/gettoken/keys/.
 # Exit 0: running and healthy. Exit 3: skipped (no runtime for this server). Other: failed, and
-# the previous release is running again. The website deploy continues in every case.
+# the previous release is running again. A bundled API failure blocks website deployment.
 set -euo pipefail
 
 package=${1:?Usage: install-verify.sh PACKAGE REVISION NODE_VERSION [RUNTIME_ARCHIVE]}
@@ -73,6 +73,7 @@ tar -xzf "$package" --no-same-owner -C "$release"
 test -f "$release/server/verify/server.mjs"
 find "$release" -type d -exec chmod 755 {} +
 find "$release" -type f -exec chmod 644 {} +
+chmod 755 "$release/scripts/configure-payments.sh" "$release/scripts/set-payment-opening.sh"
 
 cat > /etc/systemd/system/gettoken-verify.service <<UNIT
 [Unit]
@@ -99,13 +100,15 @@ WantedBy=multi-user.target
 UNIT
 cat > /usr/local/bin/gettoken-verify <<WRAP
 #!/bin/sh
-# Admin tool for the review API: gettoken-verify passwd | status
+# Admin tool for the review API: passwd | status | doctor | reconcile | decision
 set -a
 . /etc/gettoken/verify.env
 set +a
 exec runuser -u gettoken-verify -- $runtime/bin/node --disable-warning=ExperimentalWarning $root/current/server/verify/cli.mjs "\$@"
 WRAP
 chmod 755 /usr/local/bin/gettoken-verify
+ln -sfn "$root/current/scripts/configure-payments.sh" /usr/local/sbin/gettoken-configure-payments
+ln -sfn "$root/current/scripts/set-payment-opening.sh" /usr/local/sbin/gettoken-payment-opening
 
 ln -sfn "$release" "$root/.current-$$"
 mv -Tf "$root/.current-$$" "$root/current"

@@ -42,7 +42,7 @@ async function api(path, options = {}) {
   }
   let data = {};
   try { data = await response.json(); } catch { /* proxy error pages are not JSON */ }
-  if (!response.ok) throw Object.assign(new Error(data.error || (response.status >= 500 ? '审核服务暂时无法连接，请稍后再试' : '请求失败，请稍后再试')), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(data.error || (response.status >= 500 ? '认证协助服务暂时无法连接，请稍后再试' : '请求失败，请稍后再试')), { status: response.status });
   return data;
 }
 
@@ -133,17 +133,17 @@ function setFormError(message) {
 
 function renderChannels() {
   if (!config) {
-    channelBox.innerHTML = '<p class="v-hint">审核服务暂时无法连接，请稍后刷新页面。</p>';
+    channelBox.innerHTML = '<p class="v-hint">认证协助服务暂时无法连接，请稍后刷新页面。</p>';
     submit.disabled = true;
     return;
   }
   if (!config.channels.length) {
-    channelBox.innerHTML = '<p class="v-hint">在线支付即将开放，开通后即可在本页提交审核。已经提交过的订单仍可在右侧查询。</p>';
+    channelBox.innerHTML = '<p class="v-hint">在线支付即将开放，开通后即可提交 Claude KYC认证协助。已有订单仍可在右侧查询。</p>';
     submit.disabled = true;
     submit.textContent = '即将开放';
     return;
   }
-  submit.textContent = `付款并提交审核 · ${yuan(totalMinor())}`;
+  submit.textContent = `付款并提交认证协助 · ${yuan(totalMinor())}`;
   channelBox.innerHTML = config.channels.map((c, i) => `<label class="v-channel"><input type="radio" name="channel" value="${esc(c.key)}"${i === 0 ? ' checked' : ''}><span>${esc(c.label)}</span></label>`).join('');
   submit.disabled = false;
 }
@@ -158,7 +158,7 @@ form.addEventListener('submit', async event => {
     return;
   }
   if (!$('[data-agree]').checked) {
-    setFormError('请先勾选，确认已了解费用与退款规则');
+    setFormError('请先勾选，确认账户归属、访问授权及费用与退款规则');
     $('[data-agree]').focus();
     return;
   }
@@ -176,18 +176,18 @@ form.addEventListener('submit', async event => {
     setFormError(error.message);
   } finally {
     submit.disabled = !config?.channels.length;
-    submit.textContent = `付款并提交审核 · ${yuan(totalMinor())}`;
+    submit.textContent = `付款并提交认证协助 · ${yuan(totalMinor())}`;
   }
 });
 
 /* ---------- order panel ---------- */
-const TRACK = ['已提交', '付款', '审核中', '出结果'];
+const TRACK = ['已提交', '付款', '处理中', '出结果'];
 const track = step => `<ol class="v-track" aria-label="进度">${TRACK.map((name, i) => `<li class="${i < step ? 'is-done' : i === step ? 'is-now' : ''}">${name}</li>`).join('')}</ol>`;
 const top = (order, tag) => `<div class="v-order__top"><span class="v-mono">订单 ${esc(order.id)}</span>${tag}</div>`;
 const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
 const CROSS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
 const ownRef = order => `<div class="v-ref"><div><span>订单号（凭它查询进度）</span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(order.id)}">复制</button></div>`;
-const again = (label = '提交新的审核') => `<button class="v-btn v-btn--ghost" type="button" data-new>${label}</button>`;
+const again = (label = '提交新的认证协助') => `<button class="v-btn v-btn--ghost" type="button" data-new>${label}</button>`;
 
 function unpaidView(order) {
   const p = order.payment;
@@ -201,7 +201,7 @@ function unpaidView(order) {
     : p?.channel === 'wechat' ? '<p class="v-hint" style="margin-top:10px">微信付款需要用另一部设备扫描这个二维码；只有这一部手机时，请换成支付宝。</p>' : '';
   return `${top(order, '<span class="v-tag v-tag--amber">待付款</span>')}
 <h2>扫码付款 ${yuan(order.fees.total)}</h2>
-<p class="v-sub">请用${esc(channelLabel(channel))}扫码。付款成功后本页自动更新，并开始 ${VERIFY.reviewHours} 小时审核计时。</p>
+<p class="v-sub">请用${esc(channelLabel(channel))}扫码。到账后本页自动更新，开始本站 ${VERIFY.reviewHours} 小时预计处理计时。</p>
 ${track(1)}
 <div class="v-pay">
 <div class="v-qr${expired ? ' v-qr--expired' : ''}">${qr}</div>
@@ -211,18 +211,18 @@ ${tabs}${mobile}
 <p class="v-hint" style="margin-top:10px" data-expiry>${expired ? '二维码已过期，请重新获取。' : ''}</p>
 </div></div>
 ${ownRef(order)}
-<div class="v-acts">${expired ? (channel ? `<button class="v-btn v-btn--light" type="button" data-renew="${esc(channel)}">重新获取二维码</button>` : '') : '<button class="v-btn v-btn--light" type="button" data-refresh>我已付款，刷新状态</button>'}${again('换一个代码')}</div>`;
+<div class="v-acts">${expired ? (channel ? `<button class="v-btn v-btn--light" type="button" data-renew="${esc(channel)}">重新获取二维码</button>` : '') : '<button class="v-btn v-btn--light" type="button" data-refresh>我已付款，刷新状态</button>'}${again('更换 Session Key')}</div>`;
 }
 
 function reviewingView(order) {
-  return `${top(order, '<span class="v-tag v-tag--violet">审核中</span>')}
+  return `${top(order, '<span class="v-tag v-tag--violet">处理中</span>')}
 ${track(2)}
 <div class="v-ring" data-ring><svg viewBox="0 0 232 232" aria-hidden="true"><defs><linearGradient id="v-ring-grad"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle class="v-ring__track" cx="116" cy="116" r="104"/><circle class="v-ring__bar" cx="116" cy="116" r="104" data-ring-bar/></svg><div class="v-ring__text"><b class="v-num" data-ring-time>--:--:--</b><span data-ring-label>预计剩余时间</span></div></div>
-<p class="v-sub v-center" style="margin-top:10px" data-ring-note>审核员正在处理，结果出来后本页自动更新</p>
-<dl class="v-kv"><div><dt>审核代码</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>付款时间</dt><dd class="v-num">${esc(stamp(order.paidAt))}</dd></div><div><dt>预计出结果</dt><dd class="v-num">${esc(stamp(order.dueAt))} 前</dd></div></dl>
+<p class="v-sub v-center" style="margin-top:10px" data-ring-note>正在处理认证协助订单，本站结果录入后自动更新</p>
+<dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>付款时间</dt><dd class="v-num">${esc(stamp(order.paidAt))}</dd></div><div><dt>预计出结果</dt><dd class="v-num">${esc(stamp(order.dueAt))} 前</dd></div></dl>
 ${ownRef(order)}
-<p class="v-note">可以关闭页面，审核不受影响。本机会记住这个订单；换设备时输入订单号即可查询。</p>
-<div class="v-acts">${again('提交另一个代码')}</div>`;
+<p class="v-note">关闭页面不影响本站处理。可凭订单号查询；官方认证状态请在 Claude 账户内核对。</p>
+<div class="v-acts">${again('提交另一个 Session Key')}</div>`;
 }
 
 function confetti() {
@@ -232,12 +232,12 @@ function confetti() {
 }
 
 function passedView(order) {
-  return `<div class="v-result">${top(order, '<span class="v-tag v-tag--green">已通过</span>')}${confetti()}
+  return `<div class="v-result">${top(order, '<span class="v-tag v-tag--green">处理通过</span>')}${confetti()}
 <div class="v-badge v-badge--ok">${CHECK}</div>
-<h2 style="margin-top:16px">恭喜，审核通过！</h2>
-<p class="v-sub">${esc(stamp(order.decidedAt))} 出结果</p>
+<h2 style="margin-top:16px">本站认证协助处理通过</h2>
+<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，官方认证状态请在 Claude 内核对</p>
 ${track(4)}
-<dl class="v-kv"><div><dt>审核代码</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>审核用时</dt><dd>${esc(duration(order.decidedAt - order.paidAt))}</dd></div><div><dt>费用</dt><dd>${yuan(order.fees.total)}（已完成）</dd></div></dl>
+<dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>处理用时</dt><dd>${esc(duration(order.decidedAt - order.paidAt))}</dd></div><div><dt>费用</dt><dd>${yuan(order.fees.total)}（已完成）</dd></div></dl>
 ${ownRef(order)}
 <div class="v-acts">${again('再提交一单')}</div></div>`;
 }
@@ -250,12 +250,12 @@ function failedView(order) {
     : `${VERIFY.refundHours} 小时内原路退回 · ${esc(stamp(refund.dueAt))} 前`;
   return `<div class="v-result">${top(order, '<span class="v-tag v-tag--rose">未通过</span>')}
 <div class="v-badge v-badge--no">${CROSS}</div>
-<h2 style="margin-top:16px">很遗憾，没有通过</h2>
-<p class="v-sub">${esc(stamp(order.decidedAt))} 出结果</p>
+<h2 style="margin-top:16px">本站认证协助未通过</h2>
+<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，审核费按原规则退回</p>
 ${order.reason ? `<p class="v-reason"><b>未通过原因</b>${esc(order.reason)}</p>` : ''}
 <div class="v-refund">
 <div class="v-refund__row"><b>审核费 <span class="v-tag ${done ? 'v-tag--green' : 'v-tag--amber'}">${esc(REFUND_NAMES[refund.status] || '退款中')}</span></b><span>${refundLine}</span><strong>${yuan(refund.amount ?? order.fees.audit)}</strong></div>
-<div class="v-refund__row"><b>人工技术费 <span class="v-tag v-tag--rose">不退</span></b><span>人工核对与提交已完成</span><strong>${yuan(order.fees.tech)}</strong></div>
+<div class="v-refund__row"><b>人工技术费 <span class="v-tag v-tag--rose">不退</span></b><span>人工核对与认证协助已处理</span><strong>${yuan(order.fees.tech)}</strong></div>
 </div>
 ${ownRef(order)}
 <div class="v-acts">${again('重新提交')}</div></div>`;
@@ -328,7 +328,7 @@ function tick() {
       ring.classList.toggle('v-ring--late', late);
       $('[data-ring-time]', panel).textContent = clock(left);
       $('[data-ring-label]', panel).textContent = late ? '比预计稍久' : '预计剩余时间';
-      $('[data-ring-note]', panel).textContent = late ? '仍在审核中，结果出来后本页自动更新' : '审核员正在处理，结果出来后本页自动更新';
+      $('[data-ring-note]', panel).textContent = late ? '仍在处理本站订单，结果录入后本页自动更新' : '正在处理认证协助订单，本站结果录入后自动更新';
     }
   }
   if (current.status === 'unpaid' && current.payment) {
@@ -433,7 +433,7 @@ async function loadFeed() {
     const data = await api('feed');
     $('[data-stat="processed"]').textContent = data.today.processed;
     $('[data-stat="passed"]').textContent = data.today.passed;
-    const item = (row, hidden) => `<li class="v-feed__item"${hidden ? ' aria-hidden="true"' : ''}><span class="v-feed__ok">${CHECK}</span><div><b>${esc(row.code)}</b><span>审核通过</span></div><time datetime="${new Date(row.at).toISOString()}">${esc(ago(row.at, data.now))}</time></li>`;
+    const item = (row, hidden) => `<li class="v-feed__item"${hidden ? ' aria-hidden="true"' : ''}><span class="v-feed__ok">${CHECK}</span><div><b>${esc(row.code)}</b><span>本站处理通过</span></div><time datetime="${new Date(row.at).toISOString()}">${esc(ago(row.at, data.now))}</time></li>`;
     const rolling = data.items.length >= 5;
     feedWin.classList.toggle('is-rolling', rolling);
     feedWin.style.setProperty('--v-roll', `${data.items.length * 3}s`);
@@ -457,7 +457,7 @@ async function start() {
   renderChannels();
   const banner = $('[data-mode-banner]');
   if (config?.mode === 'mock') {
-    banner.textContent = '测试模式：付款不会真实扣款，管理员在后台点「模拟收款」后进入审核。';
+    banner.textContent = '测试模式：不会真实扣款或完成官方认证，后台模拟收款后进入本站处理流程。';
     banner.hidden = false;
   }
   const fromUrl = new URL(location.href).searchParams.get('order');

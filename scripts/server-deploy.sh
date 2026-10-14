@@ -45,6 +45,8 @@ keep_routing_backup=false
 had_config=false
 [[ ! -f "$config" ]] || { cp "$config" "$config_backup"; had_config=true; }
 switched=false
+verify_previous=$(readlink -f /opt/gettoken/verify/current || true)
+verify_updated=false
 config_changed=false
 cleanup() {
   rm -f "$config_backup"
@@ -68,6 +70,15 @@ rollback() {
     if ! python3 "$script_dir/configure-seo-routing.py" restore --state-dir "$routing_state"; then
       keep_routing_backup=true
       echo "Routing restore failed; private backups retained at $routing_state" >&2
+    fi
+  fi
+  if $verify_updated; then
+    if [[ -n "$verify_previous" && -d "$verify_previous" ]]; then
+      ln -sfn "$verify_previous" /opt/gettoken/verify/.rollback-deploy-$$
+      mv -Tf /opt/gettoken/verify/.rollback-deploy-$$ /opt/gettoken/verify/current
+      systemctl restart gettoken-verify
+    else
+      systemctl stop gettoken-verify
     fi
   fi
   nginx -t && systemctl reload nginx
@@ -111,14 +122,15 @@ find "$stage" -type d -exec chmod 755 {} +
 find "$stage" -type f -exec chmod 644 {} +
 if command -v restorecon >/dev/null; then restorecon -RF "$site_root"; fi
 
-# Review API (/api/verify/). A separate process so its own rollback works; a failure there
-# is reported but never blocks the website release.
+# A bundled payment API must be healthy before publishing the website.
 verify_ready=false
 if [[ -n "$node_version" && -f "$script_dir/verify-api.tar.gz" && -f "$script_dir/install-verify.sh" ]]; then
   if bash "$script_dir/install-verify.sh" "$script_dir/verify-api.tar.gz" "$revision" "$node_version" "$script_dir/node-runtime.tar.xz"; then
     verify_ready=true
+    verify_updated=true
   else
-    echo 'WARNING: the review API was not updated; see the messages above.' >&2
+    echo 'Payment API installation failed; stopping deployment.' >&2
+    false
   fi
 fi
 
@@ -181,7 +193,7 @@ js_headers=$(curl --fail --silent --show-error --max-time 15 -I -H "Host: $site_
 [[ "$js_headers" == *'Content-Type: application/javascript'* ]]
 if $verify_ready; then
   api_health=$(curl --silent --max-time 15 -H "Host: $site_host" http://127.0.0.1/api/verify/health || true)
-  [[ "$api_health" == *'"ok":true'* ]] || echo "WARNING: Nginx does not forward /api/verify/ for $site_host yet; check the domain vhost includes $site_root/seo-locations.conf" >&2
+  [[ "$api_health" == *'"ok":true'* ]] || { echo "Nginx payment API health check failed for $site_host" >&2; false; }
 fi
 deployed_version=$(curl --fail --silent --show-error --max-time 15 -H "Host: $site_host" http://127.0.0.1/deployment.json)
 [[ "$deployed_version" == "{\"commit\":\"$revision\"}" ]]

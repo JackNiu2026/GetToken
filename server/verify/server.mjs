@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // Entry point for the gettoken-verify systemd service.
 import { createServer } from 'node:http';
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadConfig } from './config.mjs';
 import { openStore } from './store.mjs';
 import { createService } from './service.mjs';
 import { createApp } from './app.mjs';
 import { createProviders } from './pay/index.mjs';
+import { maintainBackups } from './backup.mjs';
 
 const log = message => console.log(`[verify] ${message}`);
 const config = loadConfig();
@@ -19,23 +20,13 @@ const server = createServer(createApp({ service, store, providers, config, log }
 server.requestTimeout = 30_000;
 server.headersTimeout = 15_000;
 
-// Daily copy of the database; the last 14 are kept.
-function backup() {
-  const dir = join(config.dataDir, 'backups');
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const name = `verify-${new Date().toISOString().slice(0, 10)}.db`;
-  const files = readdirSync(dir).filter(f => /^verify-\d{4}-\d{2}-\d{2}\.db$/.test(f)).sort();
-  if (!files.includes(name)) store.db.exec(`vacuum into '${join(dir, name).replaceAll("'", "''")}'`);
-  for (const old of readdirSync(dir).filter(f => /^verify-\d{4}-\d{2}-\d{2}\.db$/.test(f)).sort().slice(0, -14)) rmSync(join(dir, old));
-}
-
 let busy = false;
 async function tick() {
   if (busy) return;
   busy = true;
   try {
     await service.tick();
-    backup();
+    maintainBackups({ store, dataDir: config.dataDir });
   } catch (error) {
     log(`background work failed: ${error.stack || error.message}`);
   } finally {

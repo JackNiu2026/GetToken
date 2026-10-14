@@ -11,7 +11,7 @@ import tempfile
 
 domains = ['gettoken.cc', 'www.gettoken.cc']
 release = pathlib.Path('/var/www/gettoken/current')
-paths = ['/', '/claude/', '/guides/', '/navigation/', '/guides/claude-code-subscription-api/', '/robots.txt', '/sitemap.xml', '/deployment.json', '/assets/guides/guides.css', '/assets/gettoken/product.css']
+paths = ['/', '/claude/', '/verify/', '/api/verify/health', '/guides/', '/navigation/', '/guides/claude-code-subscription-api/', '/robots.txt', '/sitemap.xml', '/deployment.json', '/assets/guides/guides.css', '/assets/gettoken/product.css']
 
 def files_at(root):
     result = {}
@@ -92,6 +92,15 @@ dns = {}
 for domain in domains:
     try: dns[domain] = sorted(set(info[4][0] for info in socket.getaddrinfo(domain, None)))
     except OSError as error: dns[domain] = str(error)
-report = {'kind': 'read-only-routing-inspection', 'releasePath': str(release.resolve()), 'releaseFiles': files_at(release),
+def host_facts():
+    facts = {}
+    for key, cmd in [('arch', ['uname', '-m']), ('glibc', ['ldd', '--version']), ('verifyService', ['systemctl', 'is-active', 'gettoken-verify'])]:
+        try: facts[key] = subprocess.run(cmd, text=True, capture_output=True, timeout=5).stdout.splitlines()[0][:120]
+        except (OSError, IndexError, subprocess.SubprocessError): facts[key] = None
+    try: facts['os'] = re.search(r'^PRETTY_NAME="?([^"\n]*)', pathlib.Path('/etc/os-release').read_text(), re.M).group(1)
+    except (OSError, AttributeError): facts['os'] = None
+    return facts
+
+report = {'kind': 'read-only-routing-inspection', 'host': host_facts(), 'releasePath': str(release.resolve()), 'releaseFiles': files_at(release),
           'nginxConfigValid': config.returncode == 0, 'siteBlocks': blocks, 'dns': dns, 'responses': responses}
 print('GETTOKEN_ROUTING_REPORT=' + json.dumps(report, ensure_ascii=False))

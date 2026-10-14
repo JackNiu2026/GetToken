@@ -79,12 +79,13 @@ test('articles expose honest update dates, sources and contextual related links'
   assert.equal(await readFile(join(ROOT,'sitemap.xml'),'utf8'),before,'Builds must not refresh dates');
 });
 
-test('guide pages stay readable without runtime JavaScript and product pages load only their module',async()=>{
+test('guide pages stay readable without runtime JavaScript; product and verify pages load only their module',async()=>{
   for(const page of PAGES.filter(p=>p.route)) {
     const route=page.route;
     const html=await readFile(resolve(ROOT,route,'index.html'),'utf8');
     const scripts=[...html.matchAll(/<script\b(?![^>]*type="application\/ld\+json")[^>]*>/gi)].map(m=>m[0]);
-    assert.deepEqual(scripts,page.kind==='product'?['<script type="module" src="../assets/gettoken/product.mjs">']:[],`Scripts on ${route}`);
+    const modules={product:['<script type="module" src="../assets/gettoken/product.mjs">'],verify:['<script type="module" src="../assets/gettoken/verify.mjs">']};
+    assert.deepEqual(scripts,modules[page.kind]||[],`Scripts on ${route}`);
     assert.ok(Buffer.byteLength(html)<64*1024,route);
     assert.ok(gzipSync(html).length<16*1024,route);
     assert.doesNotMatch(html,/"@type":"(?:Offer|AggregateRating|Review)"/);
@@ -92,6 +93,7 @@ test('guide pages stay readable without runtime JavaScript and product pages loa
   }
   assert.ok((await readFile(join(ROOT,'assets/guides/guides.css'))).length<24*1024);
   assert.ok((await readFile(join(ROOT,'assets/gettoken/product.css'))).length<24*1024);
+  assert.ok((await readFile(join(ROOT,'assets/gettoken/verify.css'))).length<32*1024);
 });
 
 test('keyword exports contain usable URLs and blank measured ranking fields',async()=>{

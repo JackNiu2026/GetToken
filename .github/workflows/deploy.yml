@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - name: Check JavaScript and deployment scripts
         run: |
-          for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs; do node --check "$file"; done
+          for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs server/verify/*.mjs server/verify/pay/*.mjs; do node --check "$file"; done
           bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh
           python3 -m py_compile scripts/configure-seo-routing.py scripts/inspect-live.py
       - name: Check generated static pages
@@ -28,8 +28,10 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Test domain configuration preservation and rollback
         run: python3 -m unittest discover -s tests -p 'test_*.py'
-      - name: Package website
-        run: node scripts/package-site.mjs
+      - name: Package website and review API
+        run: |
+          node scripts/package-site.mjs
+          node scripts/package-verify.mjs
       - name: Verify packaged site with Nginx
         run: node scripts/test-nginx.mjs
       - uses: actions/upload-artifact@v4
@@ -37,6 +39,7 @@ jobs:
           name: gettoken-${{ github.sha }}
           path: |
             site.tar.gz
+            verify-api.tar.gz
             scripts/server-deploy.sh
             scripts/deploy-ssh.sh
             scripts/configure-seo-routing.py

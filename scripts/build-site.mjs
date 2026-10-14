@@ -11,6 +11,7 @@ import { TOPICS } from '../content/topics.mjs';
 import { HUB } from '../content/hub.mjs';
 import { PRODUCT_PAGES } from '../content/products.mjs';
 import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney, totalLabel } from '../assets/gettoken/catalog.mjs';
+import { VERIFY, yuan, totalMinor } from '../assets/gettoken/verify-rules.mjs';
 import { ROOT, loadArticles, validateLibrary, inline, esc, dateIsValid } from './content.mjs';
 
 export { ROOT };
@@ -32,7 +33,7 @@ for (const p of PRODUCT_PAGES) {
 export const PAGE_SIZE = 20;
 export const FEED_ROUTE = 'guides/feed.xml';
 // Generated output lives only in these directories; anything else in them is removed as stale.
-const MANAGED_DIRS = ['guides', 'navigation', ...PRODUCT_PAGES.map(p => p.slug)];
+const MANAGED_DIRS = ['guides', 'navigation', 'verify', ...PRODUCT_PAGES.map(p => p.slug)];
 
 const latest = dates => dates.filter(Boolean).sort().at(-1);
 const topicOf = slug => TOPICS.find(t => t.slug === slug);
@@ -42,6 +43,9 @@ export const chunk = (items, size) => Array.from({ length: Math.max(1, Math.ceil
 const topicRoute = (t, page = 1) => `guides/${t.slug}/${page > 1 ? `page/${page}/` : ''}`;
 const articleRoute = a => `guides/${a.slug}/`;
 const productRoute = p => `${p.slug}/`;
+export const VERIFY_ROUTE = 'verify/';
+export const VERIFY_ADMIN_ROUTE = 'verify/admin/';
+const VERIFY_UPDATED = '2026-10-14';
 // The product page that sells what a topic covers; shared topics (选购基础) have none.
 const productFor = topicSlug => PRODUCT_PAGES.find(p => p.topics.includes(topicSlug));
 // The product's own articles first, then shared guides that also cover it; each group newest first.
@@ -55,6 +59,7 @@ const topicModified = t => latest([t.updated, ...topicArticles(t).map(a => a.upd
 export const PAGES = [
   { route: '', kind: 'home' },
   ...PRODUCT_PAGES.map(p => ({ route: productRoute(p), kind: 'product', modified: productModified(p), product: p.slug })),
+  { route: VERIFY_ROUTE, kind: 'verify', modified: VERIFY_UPDATED },
   { route: 'guides/', kind: 'hub', modified: HUB_MODIFIED },
   ...TOPICS.flatMap(t => chunk(topicArticles(t), PAGE_SIZE).map((_, i) => ({ route: topicRoute(t, i + 1), kind: 'topic', modified: topicModified(t), topic: t.slug, page: i + 1 }))),
   ...ARTICLES.map(a => ({ route: articleRoute(a), kind: 'article', modified: a.updated, article: a })),
@@ -82,11 +87,14 @@ function buyLink(route, topicSlug) {
   return p ? { href: href(route, productRoute(p)), label: `${PRODUCTS[p.slug].name} 价格与方案`, name: PRODUCTS[p.slug].name } : { href: `${href(route)}#products`, label: '选择产品', name: null };
 }
 
-function layout({ route, title, description, body, schema, type = 'website', modified, published, prev, next, tone, topic, product, tail = '' }) {
-  const nav = product
-    ? `${PRODUCT_PAGES.map(p => `<a href="${href(route, productRoute(p))}"${p === product ? ' aria-current="page"' : ''}>${esc(PRODUCTS[p.slug].name)}</a>`).join('')}<a href="${href(route, 'guides/')}">AI 指南</a>`
+// `product` pages and the /verify/ section share the store navigation; guide pages list topics.
+// `head` adds page-specific stylesheets and scripts; `robots` marks private pages noindex.
+function layout({ route, title, description, body, schema, type = 'website', modified, published, prev, next, tone, topic, product, store = !!product, head = '', robots = '', buy: buyOverride, tail = '' }) {
+  const verifyCurrent = route.startsWith(VERIFY_ROUTE);
+  const nav = store
+    ? `${PRODUCT_PAGES.map(p => `<a href="${href(route, productRoute(p))}"${p === product ? ' aria-current="page"' : ''}>${esc(PRODUCTS[p.slug].name)}</a>`).join('')}<a href="${href(route, VERIFY_ROUTE)}"${verifyCurrent ? ' aria-current="page"' : ''}>审核验证</a><a href="${href(route, 'guides/')}">AI 指南</a>`
     : TOPICS.map(t => `<a href="${href(route, topicRoute(t))}"${route.startsWith(`guides/${t.slug}/`) ? ' aria-current="page"' : ''}>${esc(t.name)}</a>`).join('');
-  const buy = product ? { href: '#plans', label: '选购方案' } : buyLink(route, topic);
+  const buy = buyOverride || (product ? { href: '#plans', label: '选购方案' } : buyLink(route, topic));
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -95,7 +103,7 @@ function layout({ route, title, description, body, schema, type = 'website', mod
 <meta name="theme-color" content="#0b0b10">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="canonical" href="${url(route)}">
+${robots ? `<meta name="robots" content="${robots}">\n` : ''}<link rel="canonical" href="${url(route)}">
 ${prev ? `<link rel="prev" href="${url(prev)}">\n` : ''}${next ? `<link rel="next" href="${url(next)}">\n` : ''}<meta property="og:type" content="${type}">
 <meta property="og:site_name" content="GetToken">
 <meta property="og:locale" content="zh_CN">
@@ -106,14 +114,14 @@ ${prev ? `<link rel="prev" href="${url(prev)}">\n` : ''}${next ? `<link rel="nex
 ${type === 'article' ? `${published ? `<meta property="article:published_time" content="${published}">\n` : ''}<meta property="article:modified_time" content="${modified}">\n` : ''}<link rel="alternate" type="application/rss+xml" title="GetToken AI 订阅指南" href="${href(route, FEED_ROUTE)}">
 <link rel="icon" href="${href(route, 'assets/gettoken/favicon.svg')}" type="image/svg+xml">
 <link rel="stylesheet" href="${href(route, 'assets/guides/guides.css')}">
-${product ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/product.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/product.mjs')}"></script>\n` : ''}<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website, ...schema] })}</script>
+${product ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/product.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/product.mjs')}"></script>\n` : ''}${head}<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website, ...schema] })}</script>
 </head>
 <body${tone ? ` data-tone="${tone}"` : ''}>
 <a class="g-skip" href="#main">跳到正文</a>
 <header class="g-header"><div class="g-shell g-header__row">
 <a class="g-brand" href="${href(route)}"><img src="${href(route, 'assets/gettoken/logo.png')}" width="28" height="28" alt=""><span>GetToken</span></a>
-${product ? '' : `<a class="g-brand__section${route === 'guides/' ? ' is-current' : ''}" href="${href(route, 'guides/')}"${route === 'guides/' ? ' aria-current="page"' : ''}>指南</a>\n`}<nav class="g-nav" aria-label="${product ? '产品' : '指南专题'}">${nav}</nav>
-<a class="g-btn g-btn--light g-header__cta" href="${buy.href}">${product ? buy.label : buy.name ? `购买 ${esc(buy.name)}` : '选购产品'}</a>
+${store ? '' : `<a class="g-brand__section${route === 'guides/' ? ' is-current' : ''}" href="${href(route, 'guides/')}"${route === 'guides/' ? ' aria-current="page"' : ''}>指南</a>\n`}<nav class="g-nav" aria-label="${store ? '产品' : '指南专题'}">${nav}</nav>
+<a class="g-btn g-btn--light g-header__cta" href="${buy.href}">${store ? buy.label : buy.name ? `购买 ${esc(buy.name)}` : '选购产品'}</a>
 </div></header>
 ${body}
 <footer class="g-footer"><div class="g-shell">
@@ -121,7 +129,7 @@ ${body}
 <div class="g-footer__brand"><a class="g-brand" href="${href(route)}"><img src="${href(route, 'assets/gettoken/logo.png')}" width="24" height="24" alt="" loading="lazy"><span>GetToken</span></a><p>好工具，让想法更进一步。扫码付款，人工核对交付，售后有人跟进；购买前可先读 AI 订阅指南。</p></div>
 <nav aria-label="产品"><h2>产品</h2><ul>${PRODUCT_PAGES.map(p => `<li><a href="${href(route, productRoute(p))}">${esc(PRODUCTS[p.slug].name)}</a></li>`).join('')}</ul></nav>
 <nav aria-label="指南"><h2>指南</h2><ul><li><a href="${href(route, 'guides/')}">AI 订阅指南</a></li><li><a href="${href(route, 'guides/')}#start">新手先读</a></li><li><a href="${href(route, 'guides/')}#editorial">内容与更新原则</a></li><li><a href="${href(route, FEED_ROUTE)}">RSS 订阅</a></li></ul></nav>
-<nav aria-label="购买"><h2>购买</h2><ul><li><a href="${href(route)}#how">购买流程</a></li><li><a href="${href(route)}#faq">购买常见问题</a></li><li><a href="${href(route)}">返回首页</a></li></ul></nav>
+<nav aria-label="购买"><h2>购买</h2><ul><li><a href="${href(route)}#how">购买流程</a></li><li><a href="${href(route, VERIFY_ROUTE)}">审核验证</a></li><li><a href="${href(route)}#faq">购买常见问题</a></li><li><a href="${href(route)}">返回首页</a></li></ul></nav>
 </div>
 <p class="g-footer__note">GetToken 是独立第三方服务品牌，与 OpenAI、Google、xAI、Anthropic 无隶属关系。具体可售方案、价格与交付条件以付款页和客服确认为准；产品权益以当前官方说明与实际账号状态为准。</p>
 </div></footer>
@@ -391,6 +399,135 @@ ${feed}
   });
 }
 
+/* ---------- /verify/ and its admin page ---------- */
+// The page is static; assets/gettoken/verify.mjs talks to the API under /api/verify/.
+const VERIFY_TITLE = '审核验证：提交代码，查看人工审核结果 - GetToken';
+const VERIFY_DESCRIPTION = `GetToken 审核验证：填写以 sk 开头的代码并在线付款，审核员人工审核，${VERIFY.reviewHours} 小时内出结果。人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退，审核费 ${yuan(VERIFY.auditFeeMinor)} 未通过时 ${VERIFY.refundHours} 小时内原路退回。`;
+const VERIFY_FAQS = [
+  ['倒计时结束了还没有结果？', `倒计时按付款时间加 ${VERIFY.reviewHours} 小时计算，只是预计时间。个别订单需要更久时，页面会显示「仍在审核中」，结果出来后本页自动更新。`],
+  ['关掉页面会影响审核吗？', '不会。审核在后台进行，本机会记住你最近的订单；换了设备也可以输入订单号查询进度和结果。结果只在本页显示，不会另外发短信或邮件。'],
+  ['审核费怎么退？', `未通过的订单，审核费 ${yuan(VERIFY.auditFeeMinor)} 在出结果后 ${VERIFY.refundHours} 小时内原路退回到付款账户；人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退。退款进度在结果里可以看到。`],
+  ['代码提交错了怎么办？', '付款前请仔细核对。代码提交后不能修改，如需更正请重新提交一单；已付款的订单请联系客服处理。'],
+  ['提交的代码会保存多久？', '代码加密保存，只有审核员在后台能看到。出结果 7 天后自动删除，之后只保留末 4 位用于查询。'],
+];
+
+function verifyPage() {
+  const route = VERIFY_ROUTE;
+  const crumbs = [['首页', ''], ['审核验证', route]];
+  const tech = yuan(VERIFY.techFeeMinor);
+  const audit = yuan(VERIFY.auditFeeMinor);
+  const total = yuan(totalMinor());
+  const body = `<div class="v-hero"><div class="g-shell">
+${crumbNav(route, crumbs)}
+<div class="v-hero__text">
+<p class="g-eyebrow">审核验证 · 人工审核</p>
+<h1>提交代码，查看审核结果</h1>
+<p class="g-lead">填写你的代码并在线付款，审核员逐单人工审核，${VERIFY.reviewHours} 小时内出结果。审核中可以看到预计剩余时间，通过或未通过都在本页显示；未通过的订单自动退回审核费。</p>
+<ul class="v-facts"><li><b>${tech}</b>人工技术费 · 不退</li><li><b>${audit}</b>审核费 · 未通过退</li><li><b>${VERIFY.reviewHours} 小时</b>内出结果</li></ul>
+</div></div></div>
+<main id="main" class="g-shell">
+<p class="v-banner" data-mode-banner hidden></p>
+<div class="v-main">
+<div class="v-primary">
+<form class="v-card v-form" id="submit" data-form novalidate aria-labelledby="submit-title">
+<h2 class="g-visually-hidden" id="submit-title">提交审核</h2>
+<div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写审核代码</label></h3><div class="v-step__body">
+<p class="v-hint" id="v-code-hint">粘贴完整代码：以 sk 开头，字母、数字与符号组合，约 ${VERIFY.codeMin}–${VERIFY.codeMax} 位。提交后不能修改，请先核对。</p>
+<div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
+<div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
+</div></div>
+<div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3>确认费用</h3><div class="v-step__body">
+<div class="v-fees">
+<div class="v-fee"><b>人工技术费<span class="v-tag v-tag--rose">不退</span></b><span>人工核对与提交，提交后即产生成本</span><strong>${tech}</strong></div>
+<div class="v-fee"><b>审核费<span class="v-tag v-tag--green">未通过可退</span></b><span>审核未通过时，${VERIFY.refundHours} 小时内原路退回</span><strong>${audit}</strong></div>
+<div class="v-fee v-fee--total"><b>合计</b><span>未通过时实际支出 ${tech}</span><strong>${total}</strong></div>
+</div>
+<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我已了解：技术费 ${tech} 不退；审核费 ${audit} 仅在未通过时退回。</span></label>
+<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>通过后，同意以打码形式出现在「最新通过」列表（只显示代码末 4 位）</span></label>
+</div></div>
+<div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>选择付款方式</h3><div class="v-step__body">
+<div class="v-channels" role="radiogroup" aria-label="付款方式" data-channels><p class="v-hint">正在读取可用的付款方式…</p></div>
+<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit>付款并提交审核 · ${total}</button>
+<p class="v-error" data-form-error role="alert" hidden></p>
+<p class="v-hint v-center">在线付款，到账后自动开始审核计时。</p></div>
+</div></div>
+<noscript><p class="v-error">提交审核需要启用 JavaScript。</p></noscript>
+</form>
+<section class="v-card v-order" id="order" data-order aria-live="polite" hidden></section>
+</div>
+<div class="v-side">
+<aside class="v-card v-feed" aria-labelledby="feed-title" data-feed>
+<div class="v-feed__head"><h2 id="feed-title">最新通过</h2><span class="v-live">实时</span></div>
+<div class="v-feed__stats"><div><b data-stat="processed">—</b><span>今日处理</span></div><div><b data-stat="passed">—</b><span>今日通过</span></div></div>
+<div class="v-feed__win" data-feed-win><ul class="v-feed__list" data-feed-list><li class="v-feed__empty">正在加载…</li></ul></div>
+<p class="v-feed__foot">只展示真实通过、且本人同意展示的订单，代码已打码。</p>
+</aside>
+<section class="v-card v-query" id="query" aria-labelledby="query-title">
+<h2 id="query-title">已经提交过？</h2><p>输入订单号，查看审核进度与结果。</p>
+<form data-query><label class="g-visually-hidden" for="v-query-id">订单号</label><input id="v-query-id" name="order" placeholder="例如 GT-VF-1014-7KQ2AB" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
+<p class="v-error" data-query-error role="alert" hidden></p>
+<ul class="v-recent" data-recent hidden></ul>
+</section>
+</div>
+</div>
+<section class="g-section" id="flow" aria-labelledby="flow-title"><div class="g-section__head"><h2 id="flow-title">审核怎么进行</h2><p>从提交到出结果，每一步都能在本页看到。</p></div>
+<ol class="v-flow">
+<li><em>01</em><h3>填写并付款</h3><p>填写代码，确认费用，用支付宝或微信在线付款。</p></li>
+<li><em>02</em><h3>自动确认到账</h3><p>付款成功后订单立即进入审核，开始 ${VERIFY.reviewHours} 小时倒计时。</p></li>
+<li><em>03</em><h3>人工审核</h3><p>审核员逐单处理，页面显示预计剩余时间。</p></li>
+<li><em>04</em><h3>查看结果</h3><p>通过显示恭喜通过；未通过显示原因，并自动退回审核费。</p></li>
+</ol></section>
+<section class="g-section" id="rules" aria-labelledby="rules-title"><div class="g-section__head"><h2 id="rules-title">费用与退款规则</h2><p>付款前请确认，提交即视为同意以下规则。</p></div>
+<div class="v-rules">
+<div class="v-rule v-rule--keep"><h3><span>人工技术费 <span class="v-tag v-tag--rose">不退</span></span><strong>${tech}</strong></h3><ul><li>用于人工核对、整理与提交</li><li>提交后即产生成本，无论结果如何都不退</li></ul></div>
+<div class="v-rule v-rule--back"><h3><span>审核费 <span class="v-tag v-tag--green">未通过可退</span></span><strong>${audit}</strong></h3><ul><li>审核通过：不退</li><li>审核未通过：出结果后 ${VERIFY.refundHours} 小时内原路退回</li><li>退款进度在结果里可以看到</li></ul></div>
+</div></section>
+<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">审核验证常见问题</h2><div class="g-faq">${VERIFY_FAQS.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
+</main>
+<div class="toast" role="status" aria-live="polite" data-toast></div>`;
+  return layout({
+    route, store: true, title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交审核' },
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}"></script>\n`,
+    schema: [crumbList(crumbs), {
+      '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: '审核验证', description: VERIFY_DESCRIPTION,
+      dateModified: VERIFY_UPDATED, inLanguage: 'zh-CN', isPartOf: { '@id': website['@id'] },
+      mainEntity: { '@type': 'Service', name: '审核验证', serviceType: '人工审核', provider: { '@id': organization['@id'] }, areaServed: 'CN', description: VERIFY_DESCRIPTION },
+    }],
+  });
+}
+
+function verifyAdminPage() {
+  const route = VERIFY_ADMIN_ROUTE;
+  const body = `<main id="main" class="g-shell a-main">
+<div class="a-top"><h1 class="a-title">审核后台</h1><p class="v-banner" data-mode-banner hidden></p><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-logout hidden>退出登录</button></div>
+<form class="v-card a-login" data-login hidden>
+<h2>登录</h2><p class="v-hint" data-login-hint>输入在服务器上设置的后台密码。</p>
+<label class="g-visually-hidden" for="a-password">后台密码</label><input id="a-password" type="password" name="password" autocomplete="current-password" required placeholder="后台密码">
+<button class="v-btn v-btn--light v-btn--block" type="submit">登录</button>
+<p class="v-error" data-login-error role="alert" hidden></p>
+</form>
+<div class="a-app" data-app hidden>
+<div class="a-kpis" data-stats></div>
+<div class="a-body">
+<section class="a-list" aria-label="订单列表">
+<div class="a-filters"><div class="a-tabs" role="tablist" aria-label="按状态筛选" data-filters></div>
+<form class="a-search" data-search><label class="g-visually-hidden" for="a-q">搜索</label><input id="a-q" name="q" placeholder="订单号 / 代码末 4 位" autocomplete="off"></form></div>
+<div class="a-table-wrap"><table class="a-table"><thead><tr><th>订单号</th><th>代码</th><th>状态</th><th>付款</th><th>剩余</th></tr></thead><tbody data-rows></tbody></table></div>
+<div class="a-pager" data-pager></div>
+</section>
+<aside class="v-card a-detail" data-detail aria-live="polite"><p class="v-hint">点选左侧订单查看详情。</p></aside>
+</div>
+</div>
+</main>
+<div class="toast" role="status" aria-live="polite" data-toast></div>`;
+  return layout({
+    route, store: true, robots: 'noindex, nofollow', title: '审核后台 - GetToken', description: '审核验证订单管理，仅限管理员。', body,
+    buy: { href: href(route, VERIFY_ROUTE), label: '返回审核页' },
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}"></script>\n`,
+    schema: [],
+  });
+}
+
 /* ---------- Homepage latest block ---------- */
 const LATEST_START = '<!-- LATEST:START (generated by scripts/build-site.mjs) -->';
 const LATEST_END = '<!-- LATEST:END -->';
@@ -428,6 +565,8 @@ export function buildOutputs() {
   const outputs = new Map();
   outputs.set('index.html', homepage());
   for (const p of PRODUCT_PAGES) outputs.set(`${productRoute(p)}index.html`, productPage(p));
+  outputs.set(`${VERIFY_ROUTE}index.html`, verifyPage());
+  outputs.set(`${VERIFY_ADMIN_ROUTE}index.html`, verifyAdminPage());
   outputs.set('guides/index.html', hubPage());
   for (const t of TOPICS) {
     const pages = chunk(topicArticles(t), PAGE_SIZE);
@@ -435,7 +574,7 @@ export function buildOutputs() {
   }
   for (const a of ARTICLES) outputs.set(`${articleRoute(a)}index.html`, articlePage(a));
   outputs.set(FEED_ROUTE, feed());
-  outputs.set('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${url('sitemap.xml')}\n`);
+  outputs.set('robots.txt', `User-agent: *\nAllow: /\nDisallow: /${VERIFY_ADMIN_ROUTE}\n\nSitemap: ${url('sitemap.xml')}\n`);
   outputs.set('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PAGES.map(p => `  <url><loc>${esc(url(p.route))}</loc>${p.modified ? `<lastmod>${p.modified}</lastmod>` : ''}</url>`).join('\n')}\n</urlset>\n`);
   return outputs;
 }

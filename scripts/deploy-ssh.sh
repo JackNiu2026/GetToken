@@ -12,7 +12,11 @@ set -Eeuo pipefail
 [[ "$DEPLOY_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] || { echo 'Invalid SSH user'; exit 1; }
 [[ "$DEPLOY_PORT" =~ ^[0-9]+$ ]] && (( DEPLOY_PORT >= 1 && DEPLOY_PORT <= 65535 )) || { echo 'Invalid SSH port'; exit 1; }
 [[ "$DEPLOY_REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid commit SHA'; exit 1; }
-[[ -f site.tar.gz && -f scripts/server-deploy.sh && -f scripts/configure-seo-routing.py && -f scripts/nginx-seo-locations.conf ]] || { echo 'Missing deployment artifact'; exit 1; }
+[[ -f site.tar.gz && -f verify-api.tar.gz && -f scripts/server-deploy.sh && -f scripts/configure-seo-routing.py && -f scripts/nginx-seo-locations.conf ]] || { echo 'Missing deployment artifact'; exit 1; }
+
+# The review API runs on this pinned Node.js build (official linux-x64 binary, checksum below).
+node_version=v22.22.0
+node_sha256=9aa8e9d2298ab68c600bd6fb86a6c13bce11a4eca1ba9b39d79fa021755d7c37
 
 ssh_dir=$(mktemp -d)
 trap 'rm -rf "$ssh_dir"' EXIT
@@ -35,9 +39,19 @@ trap cleanup EXIT
 
 scp "${ssh_options[@]}" -P "$DEPLOY_PORT" site.tar.gz "$target:$remote_dir/site.tar.gz"
 scp "${ssh_options[@]}" -P "$DEPLOY_PORT" scripts/server-deploy.sh "$target:$remote_dir/server-deploy.sh"
-scp "${ssh_options[@]}" -P "$DEPLOY_PORT" scripts/configure-seo-routing.py scripts/nginx-seo-locations.conf "$target:$remote_dir/"
+scp "${ssh_options[@]}" -P "$DEPLOY_PORT" scripts/configure-seo-routing.py scripts/nginx-seo-locations.conf verify-api.tar.gz "$target:$remote_dir/"
+# Upload Node.js only when the server does not have this version yet.
+runtime="/opt/gettoken/runtime/node-$node_version-linux-x64/bin/node"
+remote_arch=$(ssh "${ssh_options[@]}" -p "$DEPLOY_PORT" "$target" "test -x '$runtime' && echo present || uname -m")
+if [[ "$remote_arch" == x86_64 ]]; then
+  curl --fail --silent --show-error --location --retry 3 --max-time 300 -o "$ssh_dir/node.tar.xz" "https://nodejs.org/dist/$node_version/node-$node_version-linux-x64.tar.xz"
+  echo "$node_sha256  $ssh_dir/node.tar.xz" | sha256sum --check --quiet -
+  scp "${ssh_options[@]}" -P "$DEPLOY_PORT" "$ssh_dir/node.tar.xz" "$target:$remote_dir/node-runtime.tar.xz"
+elif [[ "$remote_arch" != present ]]; then
+  echo "Server architecture $remote_arch has no bundled Node.js; the review API will not be installed." >&2
+fi
 ssh "${ssh_options[@]}" -p "$DEPLOY_PORT" "$target" \
-  "bash '$remote_dir/server-deploy.sh' '$remote_dir/site.tar.gz' '$DEPLOY_REVISION' '$DEPLOY_HOST'"
+  "bash '$remote_dir/server-deploy.sh' '$remote_dir/site.tar.gz' '$DEPLOY_REVISION' '$DEPLOY_HOST' '$node_version'"
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   printf 'Deployed commit `%s`. Server checks passed.\n\nURL: http://%s/\n' "$DEPLOY_REVISION" "$DEPLOY_HOST" >> "$GITHUB_STEP_SUMMARY"
 fi

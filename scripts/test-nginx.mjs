@@ -93,7 +93,8 @@ try {
   const slash=await curlRequest(base+'/guides/claude-code-cost-checklist?utm_source=qa');
   assert.equal(slash.status,301);
   assert.equal(slash.headers.get('location'),'/guides/claude-code-cost-checklist/?utm_source=qa');
-  const headers=(await run('curl',['--silent','--show-error','--max-time','5','--header','Accept-Encoding: gzip','--dump-header','-','--output','/dev/null',base+'/navigation/'])).stdout;
+  // /navigation/ is now a bodiless 301, so check compression on a real HTML page.
+  const headers=(await run('curl',['--silent','--show-error','--max-time','5','--header','Accept-Encoding: gzip','--dump-header','-','--output','/dev/null',base+'/claude/'])).stdout;
   assert.match(headers,/content-encoding:\s*gzip/i);
   assert.match(headers,/vary:\s*Accept-Encoding/i);
   const result={...report,domainChecks,originalDomainContentPreserved:true,gzipVerified:true,queryPreservationVerified:true,nginxImage:image};

@@ -1,6 +1,6 @@
 # 云服务器部署
 
-部署目标：`39.97.40.89`，SSH 用户：`root`。网站为纯静态页面；服务器需要 Nginx、curl 和 Python 3，不需要 Node.js、数据库或构建工具。Python 只用于更新域名的 SEO 路由与回滚，不运行网站服务。安装脚本支持 apt、dnf、yum 和 systemd。Node.js 用于本地和 GitHub Actions 的生成、打包与验证。
+部署目标：`39.97.40.89`，SSH 用户：`root`。网站页面是静态文件，审核验证 API 使用独立的 Node.js + SQLite 服务。服务器需要 Nginx、curl 和 Python 3；审核 API 的 Node.js 运行时由发布脚本单独安装，不需要全局 Node.js、独立数据库服务或构建工具。Python 用于更新域名的 SEO 路由与回滚。安装脚本支持 apt、dnf、yum 和 systemd；审核 API 的运行时要求见下文。
 
 ## 首次配置
 
@@ -55,6 +55,7 @@ git pull --ff-only
 node --test tests/*.test.mjs
 node scripts/build-site.mjs --check
 node scripts/package-site.mjs
+node scripts/package-verify.mjs
 export DEPLOY_HOST=39.97.40.89 DEPLOY_USER=root DEPLOY_PORT=22
 export DEPLOY_REVISION="$(git rev-parse HEAD)"
 export DEPLOY_SSH_KEY="$(cat /安全目录/GetToken.pem)"
@@ -95,11 +96,11 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 `/verify/` 是静态页面，订单、付款、审核结果由同一台服务器上的小后端处理：
 
 - 代码在 `server/verify/`，用 Node.js 自带的 SQLite，没有第三方依赖。每次发布随网站一起安装到 `/opt/gettoken/verify/releases/<提交 SHA>/`，`current` 软链接指向当前版本，保留最近 5 个版本。
-- Node.js 固定为 v22.22.0 官方 linux-x64 版本（校验 SHA-256），首次发布时由 GitHub runner 下载后上传到 `/opt/gettoken/runtime/`。服务器需要 x86_64、glibc 2.28 以上；不满足时发布会给出警告并跳过后端，网站照常更新，审核页显示“服务暂时无法连接”。
+- Node.js 固定为 v22.22.0 官方 linux-x64 版本（校验 SHA-256），首次发布时由 GitHub runner 下载后上传到 `/opt/gettoken/runtime/`。服务器需要 x86_64、glibc 2.28 以上；不满足时阻止发布，避免发布缺少支付 API 的版本。
 - systemd 服务 `gettoken-verify` 以专用用户 `gettoken-verify` 运行，只监听 `127.0.0.1:8790`；Nginx 通过 `seo-locations.conf` 中的 `location ^~ /api/verify/` 转发。发布时先检查服务健康，失败则恢复上一个版本。
-- 数据库：`/var/lib/gettoken-verify/verify.db`，每天自动备份到同目录 `backups/`，保留 14 天。用户提交的代码加密保存，出结果 7 天后自动删除（天数在 `assets/gettoken/verify-rules.mjs` 的 `purgeDays`，页面常见问题会同步）。
+- 数据库：`/var/lib/gettoken-verify/verify.db`，每天自动备份到同目录 `backups/`，保留最近 14 份财务与订单记录。用户提交的代码加密保存，出结果 7 天后自动删除（天数在 `assets/gettoken/verify-rules.mjs` 的 `purgeDays`）。每分钟维护会同步清理所有受管历史备份中的到期代码，并清理 SQLite 空闲页与 WAL；旧备份即使记录的是审核前状态，也不能恢复已删除的代码。未完成审核的代码仍可恢复。
 - 日志：`journalctl -u gettoken-verify -f`。
-- 安装由 `scripts/install-verify.sh` 单独完成：新版本健康检查不通过时自动恢复上一个版本，并在发布日志里给出警告；网站本身照常发布，不会因为后端失败而中断。
+- 安装由 `scripts/install-verify.sh` 单独完成：新版本健康检查不通过时恢复上一个版本并阻止发布；网站或 Nginx 代理验收失败时，网站和 API 一起恢复上一版，保留财务数据库。
 
 ### 第一次上线后
 
@@ -118,11 +119,13 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 - 支付宝：`https://gettoken.cc/api/verify/notify/alipay`
 - 微信支付：`https://gettoken.cc/api/verify/notify/wechat`
+- 微信退款：`https://gettoken.cc/api/verify/notify/wechat/refund`
 
 **支付宝（当面付，公钥模式）**：在支付宝开放平台创建应用并签约“当面付”，接口加签方式选“公钥”、RSA2，上传应用公钥，下载支付宝公钥。
 
 ```ini
 ALIPAY_APP_ID=2021xxxxxxxxxxxx
+ALIPAY_SELLER_ID=2088xxxxxxxxxxxx
 ALIPAY_PRIVATE_KEY_FILE=/etc/gettoken/keys/alipay_app_private.pem
 ALIPAY_PUBLIC_KEY_FILE=/etc/gettoken/keys/alipay_public.pem
 ```
@@ -133,6 +136,7 @@ ALIPAY_PUBLIC_KEY_FILE=/etc/gettoken/keys/alipay_public.pem
 WECHAT_MCHID=1900000000
 WECHAT_APPID=wx0000000000000000
 WECHAT_SERIAL_NO=商户 API 证书序列号
+WECHAT_CERT_FILE=/etc/gettoken/keys/apiclient_cert.pem
 WECHAT_APIV3_KEY=32 位 APIv3 密钥
 WECHAT_PRIVATE_KEY_FILE=/etc/gettoken/keys/apiclient_key.pem
 WECHAT_PAY_PUBLIC_KEY_FILE=/etc/gettoken/keys/wechatpay_public.pem
@@ -141,7 +145,15 @@ WECHAT_PAY_PUBLIC_KEY_ID=PUB_KEY_ID_xxxxxxxx
 
 配置完成后把 `VERIFY_PAY_MODE` 改为 `live` 并重启。只配置了一种时，页面只显示那一种；两种都配置时用户可以切换。`sudo gettoken-verify status` 会列出可用的付款方式。
 
-付款成功由支付平台的异步通知确认，页面每 3 秒查询一次订单，并在需要时主动向平台查单，所以通知偶尔丢失也不影响。审核结果只能在后台录入：点“未通过”会立即原路退回审核费 ¥300（技术费 ¥30 不退），退款失败时后台显示原因，可以点“重试”；同一订单被重复付款时，多付的一笔自动全额退回。
+正式模式的新订单优先受服务器 `VERIFY_ACCEPT_NEW_ORDERS=true/false` 控制，未设置时沿用共享规则的 `open`。未开放时 `/config` 返回空通道列表，原页面禁用提交，直接调用创建订单接口也返回 503。商户齐备后用 `sudo gettoken-payment-opening open` 或 `close` 切换，无需修改前端文件；静态页面原有“即将开放”文案保留。历史查单及退款继续处理，mock 模式允许隔离测试。
+
+双渠道资料、导入、密钥生成及真实验收见 [支付上线交付文档](docs/payment-launch.md)。`sudo gettoken-configure-payments 资料.json` 自动校验微信证书与私钥，生成只有 root 可读的配置，保留数据库加密密钥，服务失败恢复旧配置。`sudo gettoken-verify doctor` 检查双渠道配置与后台密码，不能证明真实到账。
+
+付款成功由支付平台的异步通知或查单确认。二维码过期与平台关闭分开处理：超时、网络错误和旧版在本地标记关闭的付款仍会补偿查单，只有平台确认终态才停止；未确认款项超过一天后按小时查询，不因回调丢失而丢弃。同订单的第二笔付款也会查单并自动全额退款。付款编号在请求平台前原子预留，同通道的并发获取合并；请求超时重试复用同一编号。升级会自动为旧数据库添加付款终态确认字段。
+
+审核结果只能在后台录入：点“未通过”会立即原路退回审核费 ¥300（技术费 ¥30 不退），退款失败时后台显示原因，可以点“重试”。如果非常迟到的款项确认时对应代码已经按规则删除，该笔款项会进入全额退款补偿，避免对不存在的代码开启审核。
+
+本地验收可运行 `node scripts/test-verify-api.mjs`：它在临时目录中运行发布包、Node 22.22.0、真实 Nginx 与本地受信任 TLS，验证登录、订单、模拟到账、通过／未通过、退款与重启恢复；不接触生产服务器或真实资金。GitHub Actions 同样执行这一检查。
 
 ## SEO 发布验收
 

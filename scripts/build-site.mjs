@@ -464,97 +464,97 @@ ${feed}
 
 /* ---------- /verify/ and its admin page ---------- */
 // The page is static; assets/gettoken/verify.mjs talks to the API under /api/verify/.
-const VERIFY_TITLE = '审核验证：提交代码，查看人工审核结果 - GetToken';
-const VERIFY_DESCRIPTION = `GetToken 审核验证：填写以 sk 开头的代码并在线付款，审核员人工审核，${VERIFY.reviewHours} 小时内出结果。人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退，审核费 ${yuan(VERIFY.auditFeeMinor)} 未通过时 ${VERIFY.refundHours} 小时内原路退回。`;
+const VERIFY_TITLE = 'Claude KYC认证：Session Key 提交与进度查询 - GetToken';
+const VERIFY_DESCRIPTION = `GetToken Claude KYC认证协助：提交本人账户的 Session Key，查看第三方人工处理进度。Claude 官方身份验证通过 Persona 完成，本服务不保证官方认证结果。人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退，审核费 ${yuan(VERIFY.auditFeeMinor)} 未通过时 ${VERIFY.refundHours} 小时内原路退回。`;
 const VERIFY_FAQS = [
-  ['倒计时结束了还没有结果？', `倒计时按付款时间加 ${VERIFY.reviewHours} 小时计算，只是预计时间。个别订单需要更久时，页面会显示「仍在审核中」，结果出来后本页自动更新。`],
-  ['关掉页面会影响审核吗？', '不会。审核在后台进行，本机会记住你最近的订单；换了设备也可以输入订单号查询进度和结果。结果只在本页显示，不会另外发短信或邮件。'],
-  ['审核费怎么退？', `未通过的订单，审核费 ${yuan(VERIFY.auditFeeMinor)} 在出结果后 ${VERIFY.refundHours} 小时内原路退回到付款账户；人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退。退款进度在结果里可以看到。`],
-  ['代码提交错了怎么办？', '付款前请仔细核对。代码提交后不能修改，如需更正请重新提交一单；已付款的订单请联系客服处理。'],
-  ['提交的代码会保存多久？', `代码加密保存，只有审核员在后台能看到。出结果 ${VERIFY.purgeDays} 天后自动删除，之后只保留末 4 位用于查询。`],
+  ['Claude 官方 KYC需要准备什么？', '官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。'],
+  ['关闭页面或倒计时结束会怎样？', `关闭页面不影响本站订单处理，可凭订单号查询。${VERIFY.reviewHours} 小时是本服务的预计处理时间，不是 Claude 官方认证时限；超时仍会显示处理中，不会自动判定通过。`],
+  ['认证协助未通过如何退款？', `本站订单未通过时，审核费 ${yuan(VERIFY.auditFeeMinor)} 在出结果后 ${VERIFY.refundHours} 小时内原路退回；人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退。退款进度在结果中显示。`],
+  ['Session Key 提交错了怎么办？', '付款前请核对本人账户的 Session Key。提交后不能修改；如需更正请重新提交，已付款订单请联系客服处理。请勿提交他人账户的会话凭据。'],
+  ['Session Key 会如何处理？', `Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。请确认服务范围并授权后再提交。本站加密保存，审核员可在后台查看；出结果 ${VERIFY.purgeDays} 天后自动删除完整值，仅保留末 4 位用于识别。`],
 ];
 
 function verifyPage() {
   const route = VERIFY_ROUTE;
-  const crumbs = [['首页', ''], ['审核验证', route]];
+  const crumbs = [['首页', ''], ['Claude KYC认证', route]];
   const tech = yuan(VERIFY.techFeeMinor);
   const audit = yuan(VERIFY.auditFeeMinor);
   const total = yuan(totalMinor());
   const body = `<div class="v-hero"><div class="g-shell">
 ${crumbNav(route, crumbs)}
 <div class="v-hero__text">
-<p class="g-eyebrow">审核验证 · ${VERIFY.open ? '人工审核' : '即将开放'}</p>
-<h1>提交代码，查看审核结果</h1>
-<p class="g-lead">填写你的代码并在线付款，审核员逐单人工审核，${VERIFY.reviewHours} 小时内出结果。审核中可以看到预计剩余时间，通过或未通过都在本页显示；未通过的订单自动退回审核费。${VERIFY.open ? '' : '在线支付即将开放，开通后即可提交。'}</p>
-<ul class="v-facts"><li><b>${tech}</b>人工技术费 · 不退</li><li><b>${audit}</b>审核费 · 未通过退</li><li><b>${VERIFY.reviewHours} 小时</b>内出结果</li></ul>
+<p class="g-eyebrow">Claude KYC认证 · ${VERIFY.open ? '人工协助' : '即将开放'}</p>
+<h1>Claude KYC认证</h1>
+<p class="g-lead">提交本人账户的 Session Key，查询认证协助进度。GetToken 为第三方服务，非 Anthropic 官方认证入口；官方 KYC须由本人按 Claude 内的 Persona 提示完成。本页显示本站处理结果，不保证官方认证通过。${VERIFY.open ? '' : '在线支付即将开放，开通后即可提交。'}</p>
+<ul class="v-facts"><li><b>${tech}</b>人工技术费 · 不退</li><li><b>${audit}</b>审核费 · 未通过退</li><li><b>${VERIFY.reviewHours} 小时</b>预计处理时间</li></ul>
 </div></div></div>
 <main id="main" class="g-shell">
 <p class="v-banner" data-mode-banner hidden></p>
 <div class="v-main">
 <div class="v-primary">
 <form class="v-card v-form" id="submit" data-form novalidate aria-labelledby="submit-title">
-<h2 class="g-visually-hidden" id="submit-title">提交审核</h2>
-<div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写审核代码</label></h3><div class="v-step__body">
-<p class="v-hint" id="v-code-hint">粘贴完整代码：以 sk 开头，字母、数字与符号组合，约 ${VERIFY.codeMin}–${VERIFY.codeMax} 位。提交后不能修改，请先核对。</p>
+<h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
+<div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
+<p class="v-hint" id="v-code-hint">Session Key 是 Claude 登录会话凭据，不是 API Key 或身份证明。仅提交本人账户的完整值，确认已授权本站在约定范围内访问账户；提交后不能修改，请先核对。</p>
 <div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
 </div></div>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3>确认费用</h3><div class="v-step__body">
 <div class="v-fees">
-<div class="v-fee"><b>人工技术费<span class="v-tag v-tag--rose">不退</span></b><span>人工核对与提交，提交后即产生成本</span><strong>${tech}</strong></div>
+<div class="v-fee"><b>人工技术费<span class="v-tag v-tag--rose">不退</span></b><span>人工核对与认证协助，提交后产生成本</span><strong>${tech}</strong></div>
 <div class="v-fee"><b>审核费<span class="v-tag v-tag--green">未通过可退</span></b><span>审核未通过时，${VERIFY.refundHours} 小时内原路退回</span><strong>${audit}</strong></div>
 <div class="v-fee v-fee--total"><b>合计</b><span>未通过时实际支出 ${tech}</span><strong>${total}</strong></div>
 </div>
-<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我已了解：技术费 ${tech} 不退；审核费 ${audit} 仅在未通过时退回。</span></label>
-<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>通过后，同意以打码形式出现在「最新通过」列表（只显示代码末 4 位）</span></label>
+<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我确认账户归本人所有并授权约定范围的认证协助；已了解 Session Key 的访问权限，技术费 ${tech} 不退，审核费 ${audit} 未通过时退回。</span></label>
+<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
 </div></div>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>选择付款方式</h3><div class="v-step__body">
 <div class="v-channels" role="radiogroup" aria-label="付款方式" data-channels><p class="v-hint">正在读取可用的付款方式…</p></div>
-<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit${VERIFY.open ? '' : ' disabled'}>${VERIFY.open ? `付款并提交审核 · ${total}` : '即将开放'}</button>
+<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit${VERIFY.open ? '' : ' disabled'}>${VERIFY.open ? `付款并提交认证协助 · ${total}` : '即将开放'}</button>
 <p class="v-error" data-form-error role="alert" hidden></p>
-<p class="v-hint v-center">在线付款，到账后自动开始审核计时。</p></div>
+<p class="v-hint v-center">到账后开始本站处理计时，官方认证以 Claude 账户显示为准。</p></div>
 </div></div>
-<noscript><p class="v-error">提交审核需要启用 JavaScript。</p></noscript>
+<noscript><p class="v-error">提交认证协助需要启用 JavaScript。</p></noscript>
 </form>
 <section class="v-card v-order" id="order" data-order aria-live="polite" hidden></section>
 </div>
 <div class="v-side">
 <aside class="v-card v-feed" aria-labelledby="feed-title" data-feed>
-<div class="v-feed__head"><h2 id="feed-title">最新通过</h2><span class="v-live">实时</span></div>
+<div class="v-feed__head"><h2 id="feed-title">最新处理通过</h2><span class="v-live">实时</span></div>
 <div class="v-feed__stats"><div><b data-stat="processed">—</b><span>今日处理</span></div><div><b data-stat="passed">—</b><span>今日通过</span></div></div>
 <div class="v-feed__win" data-feed-win><ul class="v-feed__list" data-feed-list><li class="v-feed__empty">正在加载…</li></ul></div>
-<p class="v-feed__foot">只展示真实通过、且本人同意展示的订单，代码已打码。</p>
+<p class="v-feed__foot">仅展示同意公开的本站订单；Session Key 已打码，不代表官方认证结果。</p>
 </aside>
 <section class="v-card v-query" id="query" aria-labelledby="query-title">
-<h2 id="query-title">已经提交过？</h2><p>输入订单号，查看审核进度与结果。</p>
+<h2 id="query-title">已经提交过？</h2><p>输入订单号，查看认证协助进度与本站处理结果。</p>
 <form data-query><label class="g-visually-hidden" for="v-query-id">订单号</label><input id="v-query-id" name="order" placeholder="例如 GT-VF-1014-7KQ2AB" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
 <p class="v-error" data-query-error role="alert" hidden></p>
 <ul class="v-recent" data-recent hidden></ul>
 </section>
 </div>
 </div>
-<section class="g-section" id="flow" aria-labelledby="flow-title"><div class="g-section__head"><h2 id="flow-title">审核怎么进行</h2><p>从提交到出结果，每一步都能在本页看到。</p></div>
+<section class="g-section" id="flow" aria-labelledby="flow-title"><div class="g-section__head"><h2 id="flow-title">认证协助怎么进行</h2><p>本页跟踪本站订单，官方 KYC按 Claude 提示由本人完成。</p></div>
 <ol class="v-flow">
-<li><em>01</em><h3>填写并付款</h3><p>填写代码，确认费用，用支付宝或微信在线付款。</p></li>
-<li><em>02</em><h3>自动确认到账</h3><p>付款成功后订单立即进入审核，开始 ${VERIFY.reviewHours} 小时倒计时。</p></li>
-<li><em>03</em><h3>人工审核</h3><p>审核员逐单处理，页面显示预计剩余时间。</p></li>
-<li><em>04</em><h3>查看结果</h3><p>通过显示恭喜通过；未通过显示原因，并自动退回审核费。</p></li>
+<li><em>01</em><h3>提交 Session Key</h3><p>确认本人账户与授权范围，了解费用后在线付款。</p></li>
+<li><em>02</em><h3>自动确认到账</h3><p>到账后进入本站处理流程，显示 ${VERIFY.reviewHours} 小时预计倒计时。</p></li>
+<li><em>03</em><h3>人工认证协助</h3><p>逐单核对与处理；官方证件和自拍验证须本人完成。</p></li>
+<li><em>04</em><h3>查看处理结果</h3><p>本站订单未通过时退回审核费；官方状态请在 Claude 核对。</p></li>
 </ol></section>
 <section class="g-section" id="rules" aria-labelledby="rules-title"><div class="g-section__head"><h2 id="rules-title">费用与退款规则</h2><p>付款前请确认，提交即视为同意以下规则。</p></div>
 <div class="v-rules">
-<div class="v-rule v-rule--keep"><h3><span>人工技术费 <span class="v-tag v-tag--rose">不退</span></span><strong>${tech}</strong></h3><ul><li>用于人工核对、整理与提交</li><li>提交后即产生成本，无论结果如何都不退</li></ul></div>
+<div class="v-rule v-rule--keep"><h3><span>人工技术费 <span class="v-tag v-tag--rose">不退</span></span><strong>${tech}</strong></h3><ul><li>用于人工核对与认证流程协助</li><li>提交后即产生成本，无论结果如何都不退</li></ul></div>
 <div class="v-rule v-rule--back"><h3><span>审核费 <span class="v-tag v-tag--green">未通过可退</span></span><strong>${audit}</strong></h3><ul><li>审核通过：不退</li><li>审核未通过：出结果后 ${VERIFY.refundHours} 小时内原路退回</li><li>退款进度在结果里可以看到</li></ul></div>
 </div></section>
-<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">审核验证常见问题</h2><div class="g-faq">${VERIFY_FAQS.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
+<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq">${VERIFY_FAQS.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
 </main>
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
-    route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交审核' },
+    route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交认证协助' },
     head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}"></script>\n`,
     schema: [crumbList(crumbs), {
-      '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: '审核验证', description: VERIFY_DESCRIPTION,
+      '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: 'Claude KYC认证', description: VERIFY_DESCRIPTION,
       dateModified: VERIFY_UPDATED, inLanguage: 'zh-CN', isPartOf: { '@id': website['@id'] },
-      mainEntity: { '@type': 'Service', name: '审核验证', serviceType: '人工审核', provider: { '@id': organization['@id'] }, areaServed: 'CN', description: VERIFY_DESCRIPTION },
+      mainEntity: { '@type': 'Service', name: 'Claude KYC认证协助', serviceType: '第三方人工认证协助', provider: { '@id': organization['@id'] }, areaServed: 'CN', description: VERIFY_DESCRIPTION },
     }],
   });
 }

@@ -20,11 +20,11 @@ export const normalizeCode = value => String(value ?? '').replace(/\s+/g, '');
 
 // Returns null when the code is acceptable, otherwise a message for the person typing it.
 export function codeProblem(code) {
-  if (!code) return '请填写审核代码';
-  if (!code.startsWith('sk')) return '代码应以 sk 开头';
-  if (!/^[A-Za-z0-9_-]+$/.test(code)) return '代码只能包含字母、数字、- 和 _';
-  if (code.length < VERIFY.codeMin) return `代码太短，请确认是否完整（至少 ${VERIFY.codeMin} 位）`;
-  if (code.length > VERIFY.codeMax) return `代码太长，请确认是否多复制了内容（最多 ${VERIFY.codeMax} 位）`;
+  if (!code) return '请填写 Session Key';
+  if (!code.startsWith('sk')) return 'Session Key 应以 sk 开头，请核对完整值';
+  if (!/^[A-Za-z0-9_-]+$/.test(code)) return 'Session Key 只能包含字母、数字、- 和 _';
+  if (code.length < VERIFY.codeMin) return `Session Key 太短，请确认是否完整（至少 ${VERIFY.codeMin} 位）`;
+  if (code.length > VERIFY.codeMax) return `Session Key 太长，请确认是否多复制了内容（最多 ${VERIFY.codeMax} 位）`;
   return null;
 }
 

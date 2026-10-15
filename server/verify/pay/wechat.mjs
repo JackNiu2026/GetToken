@@ -14,7 +14,7 @@ export function decryptResource(apiV3Key, { ciphertext, nonce, associated_data: 
   return JSON.parse(Buffer.concat([decipher.update(raw.subarray(0, raw.length - 16)), decipher.final()]).toString('utf8'));
 }
 
-export function wechatProvider(config, { fetch = globalThis.fetch, now = () => Date.now(), notifyUrl }) {
+export function wechatProvider(config, { fetch = globalThis.fetch, now = () => Date.now(), notifyUrl, refundNotifyUrl = `${notifyUrl}/refund` }) {
   const merchantKey = privateKey(config.privateKey);
   const platformKey = publicKey(config.platformKey);
   const header = (headers, name) => (typeof headers.get === 'function' ? headers.get(name) : headers[name.toLowerCase()]) || '';
@@ -48,7 +48,9 @@ export function wechatProvider(config, { fetch = globalThis.fetch, now = () => D
       signal: AbortSignal.timeout(15000),
     });
     const text = await response.text();
-    if (response.ok) verifySignature(response.headers, text);
+    // Close-order success has no body (204). Confirm it with a signed query below
+    // instead of treating an unsigned empty response as proof of settlement.
+    if (response.ok && response.status !== 204) verifySignature(response.headers, text);
     const data = text ? JSON.parse(text) : {};
     return { status: response.status, ok: response.ok, data };
   }
@@ -58,6 +60,21 @@ export function wechatProvider(config, { fetch = globalThis.fetch, now = () => D
     if (data.status === 'PROCESSING') return { status: 'processing' };
     return { status: 'error', error: `退款状态 ${data.status}` };
   };
+  function refundMatches(data, { outTradeNo, refundId, amountMinor, totalMinor }) {
+    if (data.out_refund_no !== refundId || (outTradeNo && data.out_trade_no !== outTradeNo)) throw new Error('WeChat Pay: wrong refund identifiers');
+    if ((amountMinor !== undefined && data.amount?.refund !== amountMinor) || (totalMinor !== undefined && data.amount?.total !== totalMinor)) throw new Error('WeChat Pay: wrong refund amount');
+    if (data.amount?.currency && data.amount.currency !== 'CNY') throw new Error('WeChat Pay: wrong currency');
+  }
+
+  async function query(outTradeNo) {
+    const result = await call('GET', `/v3/pay/transactions/out-trade-no/${encodeURIComponent(outTradeNo)}?mchid=${encodeURIComponent(config.mchid)}`);
+    if (result.status === 404) return { paid: false };
+    if (!result.ok) throw new Error(`WeChat Pay query: ${result.data.message || result.status}`);
+    if (result.data.out_trade_no !== outTradeNo || result.data.mchid !== config.mchid || result.data.appid !== config.appid) throw new Error('WeChat Pay query: wrong merchant or order');
+    if (result.data.amount?.currency && result.data.amount.currency !== 'CNY') throw new Error('WeChat Pay query: wrong currency');
+    if (['CLOSED', 'REVOKED'].includes(result.data.trade_state)) return { paid: false, closed: true };
+    return { paid: result.data.trade_state === 'SUCCESS', tradeNo: result.data.transaction_id, amountMinor: result.data.amount?.total };
+  }
 
   return {
     name: 'wechat',
@@ -70,22 +87,29 @@ export function wechatProvider(config, { fetch = globalThis.fetch, now = () => D
       if (!result.ok || !result.data.code_url) throw new Error(`WeChat Pay native: ${result.data.message || result.status}`);
       return { qr: result.data.code_url };
     },
-    async query(outTradeNo) {
-      const result = await call('GET', `/v3/pay/transactions/out-trade-no/${encodeURIComponent(outTradeNo)}?mchid=${encodeURIComponent(config.mchid)}`);
-      if (result.status === 404) return { paid: false };
-      if (!result.ok) throw new Error(`WeChat Pay query: ${result.data.message || result.status}`);
-      return { paid: result.data.trade_state === 'SUCCESS', tradeNo: result.data.transaction_id, amountMinor: result.data.amount?.total };
+    query,
+    async close(outTradeNo) {
+      const result = await call('POST', `/v3/pay/transactions/out-trade-no/${encodeURIComponent(outTradeNo)}/close`, { mchid: config.mchid });
+      if (result.status !== 204) throw new Error(`WeChat Pay close: ${result.data.message || result.status}`);
+      const confirmed = await query(outTradeNo);
+      return { closed: confirmed.closed === true };
     },
     async refund({ outTradeNo, refundId, amountMinor, totalMinor, reason }) {
       const result = await call('POST', '/v3/refund/domestic/refunds', {
         out_trade_no: outTradeNo, out_refund_no: refundId, reason, amount: { refund: amountMinor, total: totalMinor, currency: 'CNY' },
+        notify_url: refundNotifyUrl,
       });
+      if (result.status >= 500) throw new Error(`WeChat Pay refund: HTTP ${result.status}`);
       if (!result.ok) return { status: 'error', error: result.data.message || `HTTP ${result.status}` };
+      refundMatches(result.data, { outTradeNo, refundId, amountMinor, totalMinor });
       return refundStatus(result.data);
     },
-    async refundQuery({ refundId }) {
+    async refundQuery(params) {
+      const { refundId } = params;
       const result = await call('GET', `/v3/refund/domestic/refunds/${encodeURIComponent(refundId)}`);
+      if (result.status === 404 && result.data.code === 'RESOURCE_NOT_EXISTS') return { status: 'not_found' };
       if (!result.ok) return { status: 'error', error: result.data.message || `HTTP ${result.status}` };
+      refundMatches(result.data, params);
       return refundStatus(result.data);
     },
     parseNotify(rawBody, headers) {
@@ -94,8 +118,20 @@ export function wechatProvider(config, { fetch = globalThis.fetch, now = () => D
       if (message.event_type !== 'TRANSACTION.SUCCESS') return null;
       const tx = decryptResource(config.apiV3Key, message.resource);
       if (tx.mchid !== config.mchid || tx.appid !== config.appid) throw new Error('WeChat Pay notify: wrong merchant');
+      if (tx.amount?.currency && tx.amount.currency !== 'CNY') throw new Error('WeChat Pay notify: wrong currency');
       if (tx.trade_state !== 'SUCCESS') return null;
       return { outTradeNo: tx.out_trade_no, tradeNo: tx.transaction_id, amountMinor: tx.amount?.total };
+    },
+    parseRefundNotify(rawBody, headers) {
+      verifySignature(headers, rawBody);
+      const message = JSON.parse(rawBody);
+      if (!['REFUND.SUCCESS', 'REFUND.CLOSED', 'REFUND.ABNORMAL'].includes(message.event_type)) return null;
+      const data = decryptResource(config.apiV3Key, message.resource);
+      if (data.mchid !== config.mchid) throw new Error('WeChat Pay refund notify: wrong merchant');
+      if (message.event_type !== `REFUND.${data.refund_status}`) throw new Error('WeChat Pay refund notify: inconsistent status');
+      if (!data.out_trade_no || !data.out_refund_no || !data.transaction_id || !Number.isSafeInteger(data.amount?.refund) || !Number.isSafeInteger(data.amount?.total)) throw new Error('WeChat Pay refund notify: incomplete refund');
+      return { outTradeNo: data.out_trade_no, tradeNo: data.transaction_id, refundId: data.out_refund_no,
+        amountMinor: data.amount?.refund, totalMinor: data.amount?.total, ...refundStatus({ status: data.refund_status }) };
     },
     notifyReply: { ok: [204, null, ''], fail: [500, 'application/json', JSON.stringify({ code: 'FAIL', message: '处理失败' })] },
   };

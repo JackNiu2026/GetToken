@@ -1,0 +1,18 @@
+{
+  "origin": "https://gettoken.cc",
+  "alipay": {
+    "appId": "填写支付宝应用APPID",
+    "sellerId": "填写2088开头16位收款商户PID",
+    "privateKeyFile": "./alipay_app_private.pem",
+    "platformPublicKeyFile": "./alipay_public.pem"
+  },
+  "wechat": {
+    "mchid": "填写微信支付商户号",
+    "appid": "填写已绑定商户号的wx开头APPID",
+    "apiV3Key": "填写32位APIv3密钥",
+    "privateKeyFile": "./apiclient_key.pem",
+    "certificateFile": "./apiclient_cert.pem",
+    "platformPublicKeyFile": "./wechatpay_public.pem",
+    "platformPublicKeyId": "PUB_KEY_ID_填写数字部分"
+  }
+}

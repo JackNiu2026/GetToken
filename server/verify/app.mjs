@@ -54,7 +54,9 @@ export function createApp({ service, store, providers, config, now = () => Date.
   const json = async req => {
     if (!String(req.headers['content-type'] || '').startsWith('application/json')) throw new UserError('请求格式不正确', 415);
     try {
-      return JSON.parse((await readBody(req, 16 * 1024)) || '{}');
+      const data = JSON.parse((await readBody(req, 16 * 1024)) || '{}');
+      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new UserError('请求格式不正确');
+      return data;
     } catch (error) {
       if (error instanceof UserError) throw error;
       throw new UserError('请求格式不正确');
@@ -77,16 +79,17 @@ export function createApp({ service, store, providers, config, now = () => Date.
   };
   const cookie = (value, maxAge) => `${COOKIE}=${value}; Path=${PREFIX}/admin; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
 
-  async function notify(req, res, channel) {
+  async function notify(req, res, channel, refund = false) {
     const provider = providers[channel];
-    if (!provider?.parseNotify) return send(res, 404, { error: '未找到' });
+    if (!provider || !(refund ? provider.parseRefundNotify : provider.parseNotify)) return send(res, 404, { error: '未找到' });
     const raw = await readBody(req, 64 * 1024);
     try {
-      const paid = provider.parseNotify(raw, req.headers);
+      const paid = refund ? provider.parseRefundNotify(raw, req.headers) : provider.parseNotify(raw, req.headers);
       if (paid) {
         const payment = store.get('select * from payments where id = ?', paid.outTradeNo);
         if (!payment || payment.channel !== channel) throw new Error(`notify for unknown payment ${paid.outTradeNo}`);
-        service.markPaid(payment.id, paid);
+        if (refund) service.markRefund(paid.refundId, { ...paid, channel });
+        else service.markPaid(payment.id, paid);
       }
       const [status, type, body] = provider.notifyReply.ok;
       res.writeHead(status, type ? { 'Content-Type': type } : {});
@@ -103,7 +106,9 @@ export function createApp({ service, store, providers, config, now = () => Date.
     ['GET', /^\/health$/, (req, res) => send(res, 200, { ok: true, mode: config.mode })],
     ['GET', /^\/config$/, (req, res) => send(res, 200, {
       mode: config.mode,
-      channels: Object.values(providers).map(p => ({ key: p.name, label: p.label })),
+      // The existing frontend disables submission when this list is empty.
+      // Configured providers stay active for old payments and refunds in the service.
+      channels: service.acceptingNewOrders() ? Object.values(providers).map(p => ({ key: p.name, label: p.label })) : [],
       fees: { tech: VERIFY.techFeeMinor, audit: VERIFY.auditFeeMinor },
       reviewHours: VERIFY.reviewHours, refundHours: VERIFY.refundHours,
     })],
@@ -127,6 +132,7 @@ export function createApp({ service, store, providers, config, now = () => Date.
       send(res, 200, await service.requestPayment(orderId, body.channel));
     }],
     ['POST', /^\/notify\/(alipay|wechat)$/, (req, res, [channel]) => notify(req, res, channel)],
+    ['POST', /^\/notify\/wechat\/refund$/, (req, res) => notify(req, res, 'wechat', true)],
 
     ['POST', /^\/admin\/login$/, async (req, res) => {
       limit(req, 'login', 8, 15 * 60_000);

@@ -10,6 +10,9 @@ export function mockProvider() {
     async query() {
       return { paid: false };
     },
+    async close() {
+      return { closed: true };
+    },
     async refund() {
       return { status: 'success' };
     },

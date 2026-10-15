@@ -149,12 +149,15 @@ function alipayFixture() {
       node = { code: '10000', msg: 'Success', out_trade_no: biz.out_trade_no, qr_code: 'https://qr.alipay.com/bax0test' };
     } else if (params.method === 'alipay.trade.query') {
       const trade = state.trades.get(biz.out_trade_no);
-      node = trade ? { code: '10000', trade_status: trade.status, total_amount: trade.amount, trade_no: '2026TRADE' } : { code: '40004', sub_code: 'ACQ.TRADE_NOT_EXIST' };
+      node = trade ? { code: '10000', out_trade_no: biz.out_trade_no, trade_status: trade.status, total_amount: trade.amount, trade_no: '2026TRADE' } : { code: '40004', sub_code: 'ACQ.TRADE_NOT_EXIST' };
+    } else if (params.method === 'alipay.trade.close') {
+      state.trades.get(biz.out_trade_no).status = 'TRADE_CLOSED';
+      node = { code: '10000', out_trade_no: biz.out_trade_no };
     } else if (params.method === 'alipay.trade.refund') {
       state.refunds.push(biz);
-      node = { code: '10000', fund_change: state.refunds.length === 1 ? 'Y' : 'N' };
+      node = { code: '10000', out_trade_no: biz.out_trade_no, refund_fee: biz.refund_amount, fund_change: state.refunds.length === 1 ? 'Y' : 'N' };
     } else if (params.method === 'alipay.trade.fastpay.refund.query') {
-      node = { code: '10000', refund_status: 'REFUND_SUCCESS' };
+      node = { code: '10000', out_trade_no: biz.out_trade_no, out_request_no: biz.out_request_no, refund_amount: '300.00', refund_status: 'REFUND_SUCCESS' };
     }
     const key = `${params.method.replaceAll('.', '_')}_response`;
     const raw = JSON.stringify(node);
@@ -212,11 +215,12 @@ function wechatFixture() {
     let status = 200;
     let data;
     if (path === '/v3/pay/transactions/native') { state.native = JSON.parse(body); data = { code_url: 'weixin://wxpay/bizpayurl?pr=test' }; }
-    else if (path.startsWith('/v3/pay/transactions/out-trade-no/')) { data = { trade_state: 'SUCCESS', transaction_id: '4200TX', amount: { total: 33000 } }; }
-    else if (path === '/v3/refund/domestic/refunds') { state.refund = JSON.parse(body); data = { status: 'PROCESSING' }; }
+    else if (method === 'POST' && path.endsWith('/close')) { state.close = JSON.parse(body); state.closed = true; status = 204; data = null; }
+    else if (path.startsWith('/v3/pay/transactions/out-trade-no/')) { data = { mchid: config.mchid, appid: config.appid, out_trade_no: path.split('/').at(-1).split('?')[0], trade_state: state.closed ? 'CLOSED' : state.tradeState || 'SUCCESS', transaction_id: '4200TX', amount: { total: 33000 } }; }
+    else if (path === '/v3/refund/domestic/refunds') { state.refund = JSON.parse(body); data = { status: 'PROCESSING', out_trade_no: state.refund.out_trade_no, out_refund_no: state.refund.out_refund_no, amount: state.refund.amount }; }
     else { status = 404; data = { code: 'RESOURCE_NOT_EXISTS', message: '不存在' }; }
-    const text = JSON.stringify(data);
-    return new Response(text, { status, headers: state.badSignature ? signed(text, { serial: 'OTHER' }) : signed(text) });
+    const text = status === 204 ? '' : JSON.stringify(data);
+    return new Response(status === 204 ? null : text, { status, headers: status === 204 ? {} : state.badSignature ? signed(text, { serial: 'OTHER' }) : signed(text) });
   };
   const encrypt = plain => {
     const nonce = 'abcdefghijkl';
@@ -236,7 +240,7 @@ test('WeChat Pay requests are signed, responses and callbacks verified and decry
   assert.deepEqual(await provider.query('GTVF1014BBBBBBP1'), { paid: true, tradeNo: '4200TX', amountMinor: 33000 });
   assert.deepEqual(await provider.refund({ outTradeNo: 'GTVF1014BBBBBBP1', refundId: 'R1', amountMinor: 30000, totalMinor: 33000, reason: 'r' }), { status: 'processing' });
   assert.deepEqual(state.refund.amount, { refund: 30000, total: 33000, currency: 'CNY' });
-  assert.equal((await provider.refundQuery({ refundId: 'missing' })).status, 'error');
+  assert.equal((await provider.refundQuery({ refundId: 'missing' })).status, 'not_found');
   state.badSignature = true;
   await assert.rejects(provider.query('GTVF1014BBBBBBP1'), /unknown signing key/);
 
@@ -340,4 +344,27 @@ test('an amount mismatch is logged for the admin and never marks the order paid'
   assert.throws(() => service.markPaid(payment.id, { amountMinor: 1 }), /Amount mismatch/);
   assert.equal((await service.lookup(order.id)).status, 'unpaid');
   assert.ok(service.adminDetail(order.id).events.some(e => e.kind === 'payment_amount_mismatch'));
+});
+
+test('Alipay closes expired trades with a signed request and verified response', async () => {
+  const { provider, state } = alipayFixture();
+  const id = 'GTVF1014CLOSE1';
+  await provider.precreate({ outTradeNo: id, amountMinor: 33000, subject: 'test', expiresAt: Date.now() + 900000 });
+  assert.deepEqual(await provider.close(id), { closed: true });
+  assert.equal(state.trades.get(id).status, 'TRADE_CLOSED');
+  assert.deepEqual(await provider.query(id), { paid: false, closed: true });
+});
+
+test('WeChat empty close responses require a signed terminal query before settlement', async () => {
+  const { provider, state } = wechatFixture();
+  assert.deepEqual(await provider.close('GTVF1014CLOSE2'), { closed: true });
+  assert.equal(state.close.mchid, '1900000001');
+  state.badSignature = true;
+  await assert.rejects(provider.close('GTVF1014CLOSE2'), /unknown signing key/);
+  state.badSignature = false;
+  state.closed = false;
+  state.tradeState = 'PAYERROR';
+  const retryable = await provider.query('GTVF1014CLOSE3');
+  assert.equal(retryable.paid, false);
+  assert.notEqual(retryable.closed, true, 'a payment error is not a confirmed closed trade');
 });

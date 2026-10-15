@@ -6,5 +6,5 @@ import { resolve } from 'node:path';
 import { ROOT } from './build-site.mjs';
 
 const archive = resolve(process.argv[2] || 'verify-api.tar.gz');
-execFileSync('tar', ['-czf', archive, 'server/verify', 'assets/gettoken/verify-rules.mjs'], { cwd: ROOT, stdio: 'inherit' });
+execFileSync('tar', ['-czf', archive, 'server/verify', 'assets/gettoken/verify-rules.mjs', 'scripts/configure-payments.sh', 'scripts/set-payment-opening.sh', 'docs/payment-merchant.example.json'], { cwd: ROOT, stdio: 'inherit' });
 console.log(`Packaged review API: ${archive}`);

@@ -4,6 +4,8 @@ import { DatabaseSync } from 'node:sqlite';
 const SCHEMA = `
 pragma journal_mode = wal;
 pragma foreign_keys = on;
+pragma busy_timeout = 5000;
+pragma secure_delete = on;
 create table if not exists orders (
   id text primary key,
   code_sealed text,
@@ -38,9 +40,11 @@ create table if not exists payments (
   created_at integer not null,
   expires_at integer not null,
   paid_at integer,
-  checked_at integer
+  checked_at integer,
+  reconciled_at integer
 );
 create index if not exists payments_order on payments(order_id);
+create index if not exists payments_trade on payments(channel, trade_no);
 create table if not exists refunds (
   id text primary key,
   order_id text not null references orders(id),
@@ -71,6 +75,15 @@ create table if not exists sessions (hash text primary key, expires_at integer n
 export function openStore(file) {
   const db = new DatabaseSync(file);
   db.exec(SCHEMA);
+  // Existing releases marked payments closed locally without asking the platform.
+  // A null reconciliation timestamp keeps those rows eligible for recovery.
+  db.exec('begin immediate');
+  try {
+    if (!db.prepare('pragma table_info(payments)').all().some(column => column.name === 'reconciled_at')) {
+      db.exec('alter table payments add column reconciled_at integer');
+    }
+    db.exec('commit');
+  } catch (error) { db.exec('rollback'); db.close(); throw error; }
   const cache = new Map();
   const stmt = sql => {
     if (!cache.has(sql)) cache.set(sql, db.prepare(sql));

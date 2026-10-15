@@ -47,6 +47,14 @@ export function alipayProvider(config, { fetch = globalThis.fetch, now = () => D
       return false;
     }
   };
+  function tradeMatches(node, outTradeNo) {
+    if (node.out_trade_no !== outTradeNo) throw new Error('Alipay: wrong out_trade_no');
+  }
+  function refundMatches(node, outTradeNo, refundId, amountMinor) {
+    tradeMatches(node, outTradeNo);
+    if (node.out_request_no !== undefined && node.out_request_no !== refundId) throw new Error('Alipay: wrong out_request_no');
+    if (amountMinor !== undefined && yuanToMinor(node.refund_amount ?? node.refund_fee) !== amountMinor) throw new Error('Alipay: wrong refund amount');
+  }
 
   async function call(method, biz, extra = {}) {
     const params = {
@@ -80,32 +88,52 @@ export function alipayProvider(config, { fetch = globalThis.fetch, now = () => D
       const minutes = Math.max(1, Math.round((expiresAt - now()) / 60000));
       const node = await call('alipay.trade.precreate', { out_trade_no: outTradeNo, total_amount: minorToYuan(amountMinor), subject, timeout_express: `${minutes}m` }, { notify_url: notifyUrl });
       if (node.code !== '10000' || !node.qr_code) throw new Error(`Alipay precreate: ${node.sub_msg || node.msg || node.code}`);
+      tradeMatches(node, outTradeNo);
       return { qr: node.qr_code };
     },
     async query(outTradeNo) {
       const node = await call('alipay.trade.query', { out_trade_no: outTradeNo });
-      if (node.code === '40004') return { paid: false };
+      if (node.code === '40004' && node.sub_code === 'ACQ.TRADE_NOT_EXIST') return { paid: false };
       if (node.code !== '10000') throw new Error(`Alipay query: ${node.sub_msg || node.msg}`);
+      tradeMatches(node, outTradeNo);
       const paid = node.trade_status === 'TRADE_SUCCESS' || node.trade_status === 'TRADE_FINISHED';
+      if (node.trade_status === 'TRADE_CLOSED') return { paid: false, closed: true };
       return { paid, tradeNo: node.trade_no, amountMinor: yuanToMinor(node.total_amount) };
+    },
+    async close(outTradeNo) {
+      const node = await call('alipay.trade.close', { out_trade_no: outTradeNo });
+      if (node.code !== '10000') throw new Error(`Alipay close: ${node.sub_msg || node.msg || node.code}`);
+      tradeMatches(node, outTradeNo);
+      return { closed: true };
     },
     async refund({ outTradeNo, refundId, amountMinor, reason }) {
       const node = await call('alipay.trade.refund', { out_trade_no: outTradeNo, refund_amount: minorToYuan(amountMinor), out_request_no: refundId, refund_reason: reason });
       // fund_change=Y means money moved now; otherwise confirm with the refund query.
-      if (node.code === '10000') return { status: node.fund_change === 'Y' ? 'success' : 'processing' };
+      if (node.code === '10000') {
+        refundMatches(node, outTradeNo, refundId, amountMinor);
+        return { status: node.fund_change === 'Y' ? 'success' : 'processing' };
+      }
+      if (node.code !== '40004') throw new Error(`Alipay refund: ${node.msg || node.code}`);
       return { status: 'error', error: node.sub_msg || node.msg || node.code };
     },
-    async refundQuery({ outTradeNo, refundId }) {
+    async refundQuery({ outTradeNo, refundId, amountMinor }) {
       const node = await call('alipay.trade.fastpay.refund.query', { out_trade_no: outTradeNo, out_request_no: refundId });
-      if (node.code === '10000' && node.refund_status === 'REFUND_SUCCESS') return { status: 'success' };
-      if (node.code === '10000' || node.code === '40004') return { status: 'processing' };
+      if (node.code === '10000') {
+        refundMatches(node, outTradeNo, refundId, node.refund_status === 'REFUND_SUCCESS' ? amountMinor : undefined);
+        // This synchronous refund API exposes REFUND_SUCCESS as its completed
+        // state. A successful query without it means no executed refund yet.
+        return { status: node.refund_status === 'REFUND_SUCCESS' ? 'success' : 'not_found' };
+      }
+      if (node.code === '40004' && ['ACQ.TRADE_NOT_EXIST', 'ACQ.REFUND_NOT_EXIST'].includes(node.sub_code)) return { status: 'not_found' };
       return { status: 'error', error: node.sub_msg || node.msg };
     },
     // POSTed form from Alipay. Returns the paid payment or null; the reply body must be "success".
     parseNotify(rawBody) {
       const params = Object.fromEntries(new URLSearchParams(rawBody));
+      if (params.sign_type !== 'RSA2') throw new Error('Alipay notify: RSA2 required');
       if (!params.sign || !verify(notifySignContent(params), params.sign)) throw new Error('Alipay notify: signature invalid');
       if (params.app_id !== config.appId) throw new Error('Alipay notify: wrong app_id');
+      if (config.sellerId && params.seller_id !== config.sellerId) throw new Error('Alipay notify: wrong seller_id');
       const paid = params.trade_status === 'TRADE_SUCCESS' || params.trade_status === 'TRADE_FINISHED';
       return paid ? { outTradeNo: params.out_trade_no, tradeNo: params.trade_no, amountMinor: yuanToMinor(params.total_amount) } : null;
     },

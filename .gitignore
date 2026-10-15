@@ -24,6 +24,9 @@ verify-api.tar.gz
 *.key
 *.p12
 *.pfx
+payment-merchant.json
+merchant-bundle*.json
+verify.env*
 *.woff
 *.woff2
 *.ttf

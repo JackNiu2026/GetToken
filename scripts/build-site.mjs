@@ -277,7 +277,7 @@ ${crumbNav(route, crumbs)}
 <p class="g-meta">GetToken 编辑部 · 更新：${time(modified)}${t.source ? ` · <a href="${esc(t.source[1])}" target="_blank" rel="noopener noreferrer">${esc(t.source[0])} ↗</a>` : ''}</p>
 </div></div></div></div>
 <main id="main" class="g-shell">
-${page === 1 ? `<section class="g-facts" aria-labelledby="facts-title"><h2 id="facts-title">购买 ${esc(t.name)} 前先分清</h2><dl>${t.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></section>` : ''}
+${page === 1 ? `<section class="g-facts" aria-labelledby="facts-title"><h2 id="facts-title">${t.slug === 'basics' ? '选购前先分清' : `${esc(t.name)} 使用前先分清`}</h2><dl>${t.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></section>` : ''}
 <section class="g-section" aria-labelledby="list-title"><div class="g-section__head"><h2 id="list-title">全部 ${esc(t.name)} 指南</h2><p>共 ${all.length} 篇，本专题文章在前，相关通用指南在后。</p></div>
 <ol class="g-list">${items.map(a => row(route, a)).join('')}</ol>${pager}</section>
 <nav class="g-section g-others" aria-labelledby="others-title"><h2 id="others-title">其他专题</h2><ul>${TOPICS.filter(o => o !== t).map(o => `<li data-tone="${o.tone}"><a href="${href(route, topicRoute(o))}"><span class="g-mark" aria-hidden="true">${esc(o.mark)}</span>${esc(o.name)}</a></li>`).join('')}</ul></nav>
@@ -334,12 +334,12 @@ function articlePage(a) {
 <details class="g-toc-inline"><summary>本文目录</summary>${tocList}</details>
 ${a.sections.map((s, i) => `<section id="section-${i + 1}"><h2>${esc(s.title)}</h2>${renderBlocks(route, s.blocks)}</section>`).join('\n')}
 ${a.faqs.length ? `<section id="questions"><h2>常见问题</h2><div class="g-faq">${a.faqs.map(f => `<details><summary>${esc(f.q)}</summary>${renderBlocks(route, f.a.map(text => ({ type: 'p', text })))}</details>`).join('')}</div></section>` : ''}
-<section id="sources" class="g-sources"><h2>资料来源与说明</h2><p>本文由 GetToken 整理，用于购买前核对，不代表相关产品的官方平台或授权说明。功能、资格与价格可能变化，请以当前官方信息和实际账号状态为准。</p>${a.sources.length ? `<ul>${a.sources.map(([label, address]) => `<li><a href="${esc(address)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a></li>`).join('')}</ul>` : '<p>交付方式与期限以实际确认的服务清单为准。</p>'}<p>更多相关内容：${a.topics.map(slug => `<a href="${href(route, topicRoute(topicOf(slug)))}">${esc(topicOf(slug).name)} 专题</a>`).join('、')}。</p></section>
+<section id="sources" class="g-sources"><h2>资料来源与说明</h2><p>本文由 GetToken 整理，用于购买前核对，不代表相关产品的官方平台或授权说明。功能、资格与价格可能变化，请以当前官方信息和实际账号状态为准。${a.verified ? `公开资料核验：${a.verified}；未在你的账号操作验证。` : ''}</p>${a.sources.length ? `<ul>${a.sources.map(([label, address]) => `<li><a href="${esc(address)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a></li>`).join('')}</ul>` : '<p>交付方式与期限以实际确认的服务清单为准。</p>'}<p>更多相关内容：${a.topics.map(slug => `<a href="${href(route, topicRoute(topicOf(slug)))}">${esc(topicOf(slug).name)} 专题</a>`).join('、')}。</p></section>
 </article>
-<aside class="g-aside"><nav class="g-toc" aria-label="文章目录"><p>本文目录</p>${tocList}</nav><div class="g-aside__cta"><p>想直接开通？</p><a class="g-btn g-btn--light" href="${buyLink(route, t.slug).href}">${esc(buyLink(route, t.slug).label)}</a></div></aside>
+<aside class="g-aside"><nav class="g-toc" aria-label="文章目录"><p>本文目录</p>${tocList}</nav><div class="g-aside__cta"><p>查看方案与受理状态</p><a class="g-btn g-btn--light" href="${buyLink(route, t.slug).href}">${esc(buyLink(route, t.slug).label)}</a></div></aside>
 </div>
 <section class="g-section" aria-labelledby="related-title"><div class="g-section__head"><h2 id="related-title">继续阅读</h2></div><ol class="g-list g-list--cards">${relatedFor(a).map(x => row(route, x)).join('')}</ol></section>
-${cta(route, t.slug, `准备好开通 ${esc(t.name)} 了吗？`)}
+${cta(route, t.slug, `${t.slug === 'basics' ? '先确认账号、期限与权限' : `查看 ${esc(t.name)} 相关方案`}`)}
 </main>`;
   return layout({
     route, tone: t.tone, topic: t.slug, type: 'article', modified: a.updated, published: a.published, title: `${a.title} - GetToken`, description: a.description, body,

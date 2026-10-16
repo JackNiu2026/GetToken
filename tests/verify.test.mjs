@@ -269,7 +269,7 @@ test('the HTTP API guards the admin endpoints and validates input', async () => 
     const created = await call('/orders', { method: 'POST', body: { code: CODE, agree: true, showPublic: true, channel: 'mock' } });
     assert.equal(created.status, 201);
     const order = await created.json();
-    assert.equal((await call(`/orders/${order.id.toLowerCase()}`).then(r => r.json())).status, 'unpaid');
+    assert.equal((await call(`/orders/${order.id.toLowerCase()}`, { headers: { 'X-GetToken-Order-Access': order.accessToken } }).then(r => r.json())).status, 'unpaid');
 
     assert.equal((await call('/admin/orders')).status, 401);
     assert.equal((await call('/admin/login', { method: 'POST', body: { password: 'nope' } })).status, 401);

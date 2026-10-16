@@ -471,7 +471,7 @@ const VERIFY_TITLE = 'Claude KYC认证：Session Key 提交与进度查询 - Get
 const VERIFY_DESCRIPTION = `GetToken Claude KYC认证协助：提交本人账户的 Session Key，查看第三方人工处理进度。Claude 官方身份验证通过 Persona 完成，本服务不保证官方认证结果。人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退，审核费 ${yuan(VERIFY.auditFeeMinor)} 未通过时 ${VERIFY.refundHours} 小时内原路退回。`;
 const VERIFY_FAQS = [
   ['Claude 官方 KYC需要准备什么？', '官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。'],
-  ['关闭页面或倒计时结束会怎样？', `关闭页面不影响本站订单处理，可凭订单号查询。${VERIFY.reviewHours} 小时是本服务的预计处理时间，不是 Claude 官方认证时限；超时仍会显示处理中，不会自动判定通过。`],
+  ['关闭页面或倒计时结束会怎样？', `关闭页面不影响本站订单处理，请使用原浏览器或保存的私密查询链接。${VERIFY.reviewHours} 小时是本服务的预计处理时间，不是 Claude 官方认证时限；超时仍会显示处理中，不会自动判定通过。`],
   ['认证协助未通过如何退款？', `本站订单未通过时，审核费 ${yuan(VERIFY.auditFeeMinor)} 在出结果后 ${VERIFY.refundHours} 小时内原路退回；人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退。退款进度在结果中显示。`],
   ['Session Key 提交错了怎么办？', '未开放时请勿输入。已付款后发现错误，请保留订单号并联系支持方核实，不要重复付款；不得提交他人账户的会话凭据。'],
   ['Session Key 会如何处理？', `Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。服务范围、撤销及提前删除处理方式未确认前不受理。开放后按约定用途加密保存，审核员可在后台查看；出结果 ${VERIFY.purgeDays} 天后自动删除完整值，仅保留末 4 位用于识别。`],
@@ -529,8 +529,8 @@ ${crumbNav(route, crumbs)}
 <p class="v-feed__foot">仅展示同意公开的本站订单；Session Key 已打码，不代表官方认证结果。</p>
 </aside>
 <section class="v-card v-query" id="query" aria-labelledby="query-title">
-<h2 id="query-title">已经提交过？</h2><p>输入订单号，查看认证协助进度与本站处理结果。</p>
-<form data-query><label class="g-visually-hidden" for="v-query-id">订单号</label><input id="v-query-id" name="order" placeholder="例如 GT-VF-1014-7KQ2AB" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
+<h2 id="query-title">已经提交过？</h2><p>在原浏览器输入订单号，或粘贴完整私密查询链接。链接遗失请联系支持方核实恢复，不要发送 Session Key。</p>
+<form data-query><label class="g-visually-hidden" for="v-query-id">订单号或私密查询链接</label><input id="v-query-id" name="order" placeholder="例如 GT-VF-1014-7KQ2AB" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
 <p class="v-error" data-query-error role="alert" hidden></p>
 <ul class="v-recent" data-recent hidden></ul>
 </section>
@@ -652,7 +652,7 @@ export function buildOutputs() {
   }
   for (const a of ARTICLES) outputs.set(`${articleRoute(a)}index.html`, articlePage(a));
   outputs.set(FEED_ROUTE, feed());
-  outputs.set('robots.txt', `User-agent: *\nAllow: /\nDisallow: /${VERIFY_ADMIN_ROUTE}\n\nSitemap: ${url('sitemap.xml')}\n`);
+  outputs.set('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${url('sitemap.xml')}\n`);
   outputs.set('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PAGES.map(p => `  <url><loc>${esc(url(p.route))}</loc>${p.modified ? `<lastmod>${p.modified}</lastmod>` : ''}</url>`).join('\n')}\n</urlset>\n`);
   return outputs;
 }

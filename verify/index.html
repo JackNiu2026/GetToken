@@ -108,8 +108,8 @@
 <p class="v-feed__foot">仅展示同意公开的本站订单；Session Key 已打码，不代表官方认证结果。</p>
 </aside>
 <section class="v-card v-query" id="query" aria-labelledby="query-title">
-<h2 id="query-title">已经提交过？</h2><p>输入订单号，查看认证协助进度与本站处理结果。</p>
-<form data-query><label class="g-visually-hidden" for="v-query-id">订单号</label><input id="v-query-id" name="order" placeholder="例如 GT-VF-1014-7KQ2AB" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
+<h2 id="query-title">已经提交过？</h2><p>在原浏览器输入订单号，或粘贴完整私密查询链接。链接遗失请联系支持方核实恢复，不要发送 Session Key。</p>
+<form data-query><label class="g-visually-hidden" for="v-query-id">订单号或私密查询链接</label><input id="v-query-id" name="order" placeholder="例如 GT-VF-1014-7KQ2AB" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
 <p class="v-error" data-query-error role="alert" hidden></p>
 <ul class="v-recent" data-recent hidden></ul>
 </section>
@@ -127,7 +127,7 @@
 <div class="v-rule v-rule--keep"><h3><span>人工技术费 <span class="v-tag v-tag--rose">不退</span></span><strong>¥30</strong></h3><ul><li>用于人工核对与认证流程协助</li><li>提交后即产生成本，无论结果如何都不退</li></ul></div>
 <div class="v-rule v-rule--back"><h3><span>审核费 <span class="v-tag v-tag--green">未通过可退</span></span><strong>¥300</strong></h3><ul><li>审核通过：不退</li><li>审核未通过：出结果后 24 小时内原路退回</li><li>退款进度在结果里可以看到</li></ul></div>
 </div></section>
-<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq"><details open><summary>Claude 官方 KYC需要准备什么？</summary><p>官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。</p></details><details><summary>关闭页面或倒计时结束会怎样？</summary><p>关闭页面不影响本站订单处理，可凭订单号查询。24 小时是本服务的预计处理时间，不是 Claude 官方认证时限；超时仍会显示处理中，不会自动判定通过。</p></details><details><summary>认证协助未通过如何退款？</summary><p>本站订单未通过时，审核费 ¥300 在出结果后 24 小时内原路退回；人工技术费 ¥30 不退。退款进度在结果中显示。</p></details><details><summary>Session Key 提交错了怎么办？</summary><p>未开放时请勿输入。已付款后发现错误，请保留订单号并联系支持方核实，不要重复付款；不得提交他人账户的会话凭据。</p></details><details><summary>Session Key 会如何处理？</summary><p>Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。服务范围、撤销及提前删除处理方式未确认前不受理。开放后按约定用途加密保存，审核员可在后台查看；出结果 7 天后自动删除完整值，仅保留末 4 位用于识别。</p></details></div></section>
+<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq"><details open><summary>Claude 官方 KYC需要准备什么？</summary><p>官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。</p></details><details><summary>关闭页面或倒计时结束会怎样？</summary><p>关闭页面不影响本站订单处理，请使用原浏览器或保存的私密查询链接。24 小时是本服务的预计处理时间，不是 Claude 官方认证时限；超时仍会显示处理中，不会自动判定通过。</p></details><details><summary>认证协助未通过如何退款？</summary><p>本站订单未通过时，审核费 ¥300 在出结果后 24 小时内原路退回；人工技术费 ¥30 不退。退款进度在结果中显示。</p></details><details><summary>Session Key 提交错了怎么办？</summary><p>未开放时请勿输入。已付款后发现错误，请保留订单号并联系支持方核实，不要重复付款；不得提交他人账户的会话凭据。</p></details><details><summary>Session Key 会如何处理？</summary><p>Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。服务范围、撤销及提前删除处理方式未确认前不受理。开放后按约定用途加密保存，审核员可在后台查看；出结果 7 天后自动删除完整值，仅保留末 4 位用于识别。</p></details></div></section>
 </main>
 <div class="toast" role="status" aria-live="polite" data-toast></div>
 <footer class="site-footer" id="contact">

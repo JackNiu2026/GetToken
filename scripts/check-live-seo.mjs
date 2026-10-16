@@ -134,6 +134,13 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
   requireCheck(robots.status===200,robots.url,'robots','robots.txt must be reachable.');
   requireCheck(robots.body.split(/\r?\n/).some(line=>line.trim()===`Sitemap: ${SITE.origin}/sitemap.xml`),robots.url,'sitemap','robots.txt must point to the canonical sitemap.');
   for (const route of ROUTES) for(const agent of ['Googlebot','Baiduspider']) requireCheck(robotsAllows(robots.body,agent,`/${route}`),robots.url,'crawl',`${agent} is blocked from /${route}`);
+  requireCheck(robotsAllows(robots.body,'Googlebot','/verify/admin/'),robots.url,'private-index','Admin login shell must be crawlable so noindex can be read.');
+  for (const path of ['/verify/?order=GT-VF-1014-AAAAAA', '/verify/admin/']) {
+    const privatePage=await get(path);
+    requireCheck(privatePage.status===200,privatePage.url,'private-index','Private state shell must respond normally.');
+    requireCheck(/noindex/i.test(privatePage.headers.get('x-robots-tag')||''),privatePage.url,'private-index','Private state needs server noindex.');
+    requireCheck(/no-store/i.test(privatePage.headers.get('cache-control')||''),privatePage.url,'private-cache','Private state must not be cached.');
+  }
   requireCheck(sitemap.status===200,sitemap.url,'sitemap','Sitemap must be reachable.');
   const blocks=[...sitemap.body.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(m=>m[1]);
   const locations=blocks.map(b=>decode(b.match(/<loc>(.*?)<\/loc>/)?.[1]||''));

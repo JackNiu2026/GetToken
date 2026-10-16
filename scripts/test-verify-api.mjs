@@ -55,18 +55,22 @@ try {
   const port = (await docker('inspect', '--format', '{{(index (index .NetworkSettings.Ports "443/tcp") 0).HostPort}}', apiContainer)).stdout.trim();
   let base = `https://127.0.0.1:${port}/api/verify/`;
   let cookie;
+  const access = new Map();
   async function call(path, { method = 'GET', body, admin = false } = {}) {
     const id = randomBytes(8).toString('hex');
     const headers = join(temp, `${id}.headers`), output = join(temp, `${id}.json`);
     const args = ['--silent', '--show-error', '--max-time', '10', '--cacert', cert, '--dump-header', headers, '--output', output, '--write-out', '%{http_code}', '--request', method];
     if (body !== undefined) args.push('--header', 'Content-Type: application/json', '--data', JSON.stringify(body));
+    if (path.startsWith('orders/')) args.push('--header', `X-GetToken-Order-Access: ${access.get(path.split('/')[1]) || ''}`);
     if (admin) args.push('--cookie', cookie, '--header', 'X-GetToken-Admin: 1');
     const result = await run('curl', [...args, base + path]);
     const rawHeaders = await readFile(headers, 'utf8');
     const setCookie = /^set-cookie:\s*([^;\r\n]+)/im.exec(rawHeaders)?.[1];
     if (setCookie) cookie = setCookie;
     const text = await readFile(output, 'utf8');
-    return { status: Number(result.stdout), data: JSON.parse(text) };
+    const data = JSON.parse(text);
+    if (data.accessToken) access.set(data.id, data.accessToken);
+    return { status: Number(result.stdout), data };
   }
   let healthy = false;
   for (let i = 0; i < 20; i += 1) {

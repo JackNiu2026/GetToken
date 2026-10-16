@@ -25,7 +25,8 @@ create table if not exists orders (
   refunded_at integer,
   paid_payment text,
   ip_hash text,
-  purged_at integer
+  purged_at integer,
+  access_hash text
 );
 create index if not exists orders_status on orders(status, created_at);
 create index if not exists orders_decided on orders(decided_at);
@@ -79,6 +80,9 @@ export function openStore(file) {
   // A null reconciliation timestamp keeps those rows eligible for recovery.
   db.exec('begin immediate');
   try {
+    if (!db.prepare('pragma table_info(orders)').all().some(column => column.name === 'access_hash')) {
+      db.exec('alter table orders add column access_hash text');
+    }
     if (!db.prepare('pragma table_info(payments)').all().some(column => column.name === 'reconciled_at')) {
       db.exec('alter table payments add column reconciled_at integer');
     }

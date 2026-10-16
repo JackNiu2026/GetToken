@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /verify/admin/
 
 Sitemap: https://gettoken.cc/sitemap.xml

@@ -9,11 +9,13 @@ import { createService } from './service.mjs';
 import { createApp } from './app.mjs';
 import { createProviders } from './pay/index.mjs';
 import { maintainBackups } from './backup.mjs';
+import { assertAccessMigration } from './access.mjs';
 
 const log = message => console.log(`[verify] ${message}`);
 const config = loadConfig();
 mkdirSync(config.dataDir, { recursive: true, mode: 0o700 });
 const store = openStore(join(config.dataDir, 'verify.db'));
+assertAccessMigration(store);
 const providers = createProviders(config);
 const service = createService({ store, config, providers, log });
 const server = createServer(createApp({ service, store, providers, config, log }));

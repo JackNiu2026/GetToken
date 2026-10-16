@@ -75,6 +75,15 @@ find "$release" -type d -exec chmod 755 {} +
 find "$release" -type f -exec chmod 644 {} +
 chmod 755 "$release/scripts/configure-payments.sh" "$release/scripts/set-payment-opening.sh"
 
+# Check before changing the running release. Additive schema migration is safe
+# for the previous binary; existing orders must receive private recovery links.
+(
+  set -a
+  . /etc/gettoken/verify.env
+  set +a
+  runuser -u gettoken-verify -- "$runtime/bin/node" --disable-warning=ExperimentalWarning "$release/server/verify/cli.mjs" access-check
+)
+
 cat > /etc/systemd/system/gettoken-verify.service <<UNIT
 [Unit]
 Description=GetToken review verification API

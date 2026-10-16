@@ -22,6 +22,7 @@ async function deployedFixture() {
   const types={xml:'application/rss+xml',javascript:'application/javascript'};
   for(const [path,type] of [['robots.txt','text/plain'],['sitemap.xml','application/xml'],...ASSETS.map(([path,type])=>[path,types[type]||type])])map.set(`${SITE.origin}/${path}`,{body:await readFile(join(ROOT,path)),headers:{'content-type':type},status:200});
   map.set(SITE.origin.replace('https:','http:')+'/',{body:'',headers:{location:SITE.origin+'/'},status:301});
+  for (const path of ['/verify/?order=GT-VF-1014-AAAAAA', '/verify/admin/']) map.set(SITE.origin+path,{body:'Private shell',status:200,headers:{'x-robots-tag':'noindex, nofollow','cache-control':'no-store'}});
   return {map,fetcher:async address=>{const row=map.get(address)||{body:'Not found',status:404};return new Response(row.body,{status:row.status,headers:row.headers});}};
 }
 

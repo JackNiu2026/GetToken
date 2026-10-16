@@ -2,7 +2,7 @@
 // Generates the product pages (/codex/, /claude/ …), the /guides/ library (hub, topic pages,
 // articles), robots.txt, sitemap.xml and the RSS feed. On the homepage it only refreshes the
 // block between the LATEST markers in index.html; everything else there is hand-written.
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { readFile, writeFile, mkdir, readdir, rm, rmdir } from 'node:fs/promises';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,6 +75,23 @@ const url = route => `${ORIGIN}/${route}`;
 const href = (route, to = '') => `${'../'.repeat(route.split('/').filter(Boolean).length)}${to}`;
 const organization = { '@type': 'Organization', '@id': `${ORIGIN}/#organization`, name: 'GetToken', url: url(''), logo: url('assets/gettoken/logo.png') };
 const website = { '@type': 'WebSite', '@id': `${ORIGIN}/#website`, name: 'GetToken', url: url(''), inLanguage: 'zh-CN', publisher: { '@id': organization['@id'] } };
+function shareImage(route) {
+  const image = SITE.shareImages[route] || SITE.shareImage;
+  if (!/^assets\/[A-Za-z0-9_./-]+\.(png|jpe?g|webp)$/.test(image.path) || image.path.split('/').includes('..')
+    || !image.alt || !Number.isInteger(image.width) || image.width < 1 || !Number.isInteger(image.height) || image.height < 1
+    || !statSync(resolve(ROOT, image.path)).isFile()) throw new Error(`Invalid share image for ${route}`);
+  return image;
+}
+function shareImageMeta(route) {
+  const image = shareImage(route);
+  return `<meta property="og:image" content="${url(image.path)}">
+<meta property="og:image:alt" content="${esc(image.alt)}">
+<meta property="og:image:width" content="${image.width}">
+<meta property="og:image:height" content="${image.height}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="${url(image.path)}">
+<meta name="twitter:image:alt" content="${esc(image.alt)}">`;
+}
 const crumbList = items => ({ '@type': 'BreadcrumbList', itemListElement: items.map(([name, route], i) => ({ '@type': 'ListItem', position: i + 1, name, item: url(route) })) });
 function crumbNav(route, items) {
   return `<nav class="g-crumbs" aria-label="面包屑"><ol>${items.map(([name, to], i) => i === items.length - 1
@@ -185,7 +202,7 @@ ${prev ? `<link rel="prev" href="${url(prev)}">\n` : ''}${next ? `<link rel="nex
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${url(route)}">
-<meta name="twitter:card" content="summary">
+${robots ? '' : shareImageMeta(route)}
 ${type === 'article' ? `${published ? `<meta property="article:published_time" content="${published}">\n` : ''}<meta property="article:modified_time" content="${modified}">\n` : ''}<link rel="alternate" type="application/rss+xml" title="GetToken AI 订阅指南" href="${href(route, FEED_ROUTE)}">
 <link rel="icon" href="${href(route, 'assets/gettoken/favicon.svg')}" type="image/svg+xml">
 <link rel="stylesheet" href="${href(route, 'assets/guides/guides.css')}">
@@ -608,7 +625,17 @@ function homepage() {
   }).join('\n');
   const withLatest = `${html.slice(0, start + LATEST_START.length)}\n        <ol class="news-grid">\n${items}\n        </ol>\n        ${html.slice(end)}`;
   const header = siteHeader({ route: null, current: 'home', cta: { href: '#products', label: '立即选购' } });
-  return between(between(withLatest, 'HEADER', header), 'FOOTER', siteFooter({ route: null }));
+  const homeTitle = html.match(/<title>([^<]+)<\/title>/)[1];
+  const homeDescription = html.match(/<meta name="description" content="([^"]+)">/)[1];
+  const seo = `<meta property="og:title" content="${homeTitle}">
+<meta property="og:description" content="${homeDescription}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GetToken">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="${url('')}">
+${shareImageMeta('')}
+<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website] })}</script>`;
+  return between(between(between(withLatest, 'HEADER', header), 'FOOTER', siteFooter({ route: null })), 'SEO', seo);
 }
 
 // Replaces what sits between <!-- NAME:START … --> and <!-- NAME:END --> in index.html.

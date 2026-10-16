@@ -1,0 +1,566 @@
+{
+  "date": "2026-10-16",
+  "codeRevision": "8106c891817eeff2197ab04271c374aaf7ea6c1b",
+  "productionDeployed": true,
+  "liveFundsVerified": false,
+  "tests": {
+    "javascript": 84,
+    "python": 5,
+    "nginxHttp": 508,
+    "nginxDomains": 108,
+    "apiTls": 21
+  },
+  "browser": {
+    "pages": 28,
+    "views": 56,
+    "errors": [],
+    "problems": []
+  },
+  "preservedStylesAndMotion": [
+    {
+      "file": "assets/gettoken/chrome.css",
+      "sha256": "5fdcb5adc170c95b7f2505c21c7e9261898f73aa05827a138f0c7b21e42566bd"
+    },
+    {
+      "file": "assets/gettoken/home.css",
+      "sha256": "1d030103682e01b505b146392ccddb41e70bbc465260029c32c70cce049cc31e"
+    },
+    {
+      "file": "assets/gettoken/product.css",
+      "sha256": "99ce53960b5d9162fe39b5265190480a7d6b4b3e5b65435d137e18edfb8a5d1b"
+    },
+    {
+      "file": "assets/gettoken/verify.css",
+      "sha256": "54e0c503d6ce2a076cffa516fbc30613f110ea5d9921c3f3b240547c616e41bf"
+    },
+    {
+      "file": "assets/guides/guides.css",
+      "sha256": "02cfc06ba018bf345b300fd0ac15006445d08b854d9e676800842f68d8627174"
+    },
+    {
+      "file": "assets/gettoken/motion.mjs",
+      "sha256": "335199c74c5ab59ae9ddbb1c0c9c735f091829662964265d0f1310d86cbb6ded"
+    },
+    {
+      "file": "assets/gettoken/scenes.mjs",
+      "sha256": "b018d2e84ab4e1476f553b6df4236da8e783a6296e4e33c2d13a2d18353cb5c9"
+    }
+  ],
+  "pages": [
+    {
+      "route": "",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/01-homedesktop.png"
+    },
+    {
+      "route": "",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/01-homemobile.png"
+    },
+    {
+      "route": "codex/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/02-codex-desktop.png"
+    },
+    {
+      "route": "codex/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/02-codex-mobile.png"
+    },
+    {
+      "route": "claude/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/03-claude-desktop.png"
+    },
+    {
+      "route": "claude/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/03-claude-mobile.png"
+    },
+    {
+      "route": "gemini/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/04-gemini-desktop.png"
+    },
+    {
+      "route": "gemini/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/04-gemini-mobile.png"
+    },
+    {
+      "route": "grok/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/05-grok-desktop.png"
+    },
+    {
+      "route": "grok/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/05-grok-mobile.png"
+    },
+    {
+      "route": "ip/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/06-ip-desktop.png"
+    },
+    {
+      "route": "ip/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/06-ip-mobile.png"
+    },
+    {
+      "route": "verify/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/07-verify-desktop.png"
+    },
+    {
+      "route": "verify/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/07-verify-mobile.png"
+    },
+    {
+      "route": "guides/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/08-guides-desktop.png"
+    },
+    {
+      "route": "guides/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/08-guides-mobile.png"
+    },
+    {
+      "route": "guides/codex/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/09-guides-codex-desktop.png"
+    },
+    {
+      "route": "guides/codex/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/09-guides-codex-mobile.png"
+    },
+    {
+      "route": "guides/claude/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/10-guides-claude-desktop.png"
+    },
+    {
+      "route": "guides/claude/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/10-guides-claude-mobile.png"
+    },
+    {
+      "route": "guides/claude-code/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/11-guides-claude-code-desktop.png"
+    },
+    {
+      "route": "guides/claude-code/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/11-guides-claude-code-mobile.png"
+    },
+    {
+      "route": "guides/gemini/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/12-guides-gemini-desktop.png"
+    },
+    {
+      "route": "guides/gemini/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/12-guides-gemini-mobile.png"
+    },
+    {
+      "route": "guides/grok/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/13-guides-grok-desktop.png"
+    },
+    {
+      "route": "guides/grok/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/13-guides-grok-mobile.png"
+    },
+    {
+      "route": "guides/basics/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/14-guides-basics-desktop.png"
+    },
+    {
+      "route": "guides/basics/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/14-guides-basics-mobile.png"
+    },
+    {
+      "route": "guides/account-topup-or-independent/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/15-guides-account-topup-or-independent-desktop.png"
+    },
+    {
+      "route": "guides/account-topup-or-independent/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/15-guides-account-topup-or-independent-mobile.png"
+    },
+    {
+      "route": "guides/monthly-subscription-renewal/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/16-guides-monthly-subscription-renewal-desktop.png"
+    },
+    {
+      "route": "guides/monthly-subscription-renewal/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/16-guides-monthly-subscription-renewal-mobile.png"
+    },
+    {
+      "route": "guides/claude-topup-verification/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/17-guides-claude-topup-verification-desktop.png"
+    },
+    {
+      "route": "guides/claude-topup-verification/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/17-guides-claude-topup-verification-mobile.png"
+    },
+    {
+      "route": "guides/claude-code-subscription-api/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/18-guides-claude-code-subscription-api-desktop.png"
+    },
+    {
+      "route": "guides/claude-code-subscription-api/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/18-guides-claude-code-subscription-api-mobile.png"
+    },
+    {
+      "route": "guides/claude-code-cost-checklist/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/19-guides-claude-code-cost-checklist-desktop.png"
+    },
+    {
+      "route": "guides/claude-code-cost-checklist/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/19-guides-claude-code-cost-checklist-mobile.png"
+    },
+    {
+      "route": "guides/claude-code-usage-checklist/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/20-guides-claude-code-usage-checklist-desktop.png"
+    },
+    {
+      "route": "guides/claude-code-usage-checklist/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/20-guides-claude-code-usage-checklist-mobile.png"
+    },
+    {
+      "route": "guides/claude-pro-max-selection/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/21-guides-claude-pro-max-selection-desktop.png"
+    },
+    {
+      "route": "guides/claude-pro-max-selection/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/21-guides-claude-pro-max-selection-mobile.png"
+    },
+    {
+      "route": "guides/codex-subscription-credits-api/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/22-guides-codex-subscription-credits-api-desktop.png"
+    },
+    {
+      "route": "guides/codex-subscription-credits-api/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/22-guides-codex-subscription-credits-api-mobile.png"
+    },
+    {
+      "route": "guides/codex-topup-verification/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/23-guides-codex-topup-verification-desktop.png"
+    },
+    {
+      "route": "guides/codex-topup-verification/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/23-guides-codex-topup-verification-mobile.png"
+    },
+    {
+      "route": "guides/gemini-topup-account-options/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/24-guides-gemini-topup-account-options-desktop.png"
+    },
+    {
+      "route": "guides/gemini-topup-account-options/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/24-guides-gemini-topup-account-options-mobile.png"
+    },
+    {
+      "route": "guides/gemini-plan-checklist/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/25-guides-gemini-plan-checklist-desktop.png"
+    },
+    {
+      "route": "guides/gemini-plan-checklist/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/25-guides-gemini-plan-checklist-mobile.png"
+    },
+    {
+      "route": "guides/grok-subscription-checklist/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/26-guides-grok-subscription-checklist-desktop.png"
+    },
+    {
+      "route": "guides/grok-subscription-checklist/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/26-guides-grok-subscription-checklist-mobile.png"
+    },
+    {
+      "route": "guides/grok-subscription-billing-check/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/27-guides-grok-subscription-billing-check-desktop.png"
+    },
+    {
+      "route": "guides/grok-subscription-billing-check/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/27-guides-grok-subscription-billing-check-mobile.png"
+    },
+    {
+      "route": "verify/admin/",
+      "viewport": "desktop",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/28-verify-admin-desktop.png"
+    },
+    {
+      "route": "verify/admin/",
+      "viewport": "mobile",
+      "status": 200,
+      "h1Count": 1,
+      "overflow": 0,
+      "brokenImageCount": 0,
+      "screenshot": "screenshots/28-verify-admin-mobile.png"
+    }
+  ],
+  "codeDeploymentRevision": "f89cf19e9542c03ee0f4106206be9c6e46ad2a21",
+  "codeDeploymentRun": 38916282163,
+  "productionHttpChecks": 510,
+  "paymentMode": "off",
+  "productionOrderPreflight": {
+    "orders": 0,
+    "legacyOrders": 0,
+    "pendingRefunds": 0,
+    "inspectionRun": 38915329615,
+    "installerRun": 38915646320
+  }
+}

@@ -126,11 +126,11 @@ node --test tests/*.test.mjs     # 检查标题重复、断链、结构化数据
 
 - 独立的 title、description、H1、HTTPS canonical、Open Graph；中文 `lang`。
 - 页面上可见的面包屑，与 BreadcrumbList 结构化数据一致。
-- 结构化数据：Organization、WebSite；产品页为 WebPage + Service；指南首页与专题页为 CollectionPage + ItemList；文章为 Article，动态为 NewsArticle（作者、发布方、更新日期、引用来源）。不编造价格、库存、评价、Offer 或 FAQ 富结果；价格未公布前产品页显示 ¥XX。
+- 结构化数据：Organization、WebSite；产品页为 WebPage + Service；指南首页与专题页为 CollectionPage + ItemList；文章为 Article，动态为 NewsArticle（作者、发布方、更新日期、引用来源）。不编造价格、库存、评价、Offer 或 FAQ 富结果；无报价时显示“待报价”，且不能开启虚假付款。
 - 内链：首页 → 产品页与指南；产品页 → 动态、指南、其他产品；指南首页 → 专题 → 文章；文章 → 专题、相关阅读与对应产品页。每篇文章最多三次点击可达。
 - 内容直接写在 HTML 里，百度和 Google 看到的内容与用户一致；目录、FAQ 使用原生链接和 `details`。
 - sitemap 包含全部规范网址与真实更新日期；robots 允许全部抓取；RSS 帮助发现新文章。
-- 指南页只加载 `assets/guides/guides.css`；产品页再加 `assets/gettoken/product.css` 和价格卡脚本，都不加载首页的样式和动效。
+- 指南页加载指南样式及共享导航 `chrome.css/chrome.mjs`；产品页再加产品样式与方案选择脚本，都不加载首页 WebGL 和滚动动效。
 - 专题页与文章的页头、侧栏和底部按钮引导到对应产品页（如 Claude Code 文章 → `/claude/`）；选购基础类文章引导到首页产品区（`/#products`）。
 
 ## 写作原则
@@ -165,3 +165,9 @@ node scripts/test-nginx.mjs      # Linux + Docker：真实 Nginx 验证发布包
 5. 首页导航、产品卡、“最新动态”和页脚都链到产品页与指南，新文章发布后会自动出现在首页，有助于更快被抓取。
 
 排名受竞争、网站信誉和抓取影响，无法保证。私密 token 不放进代码，也不用 Google Indexing API 提交普通文章。
+
+## 本轮更新（2026-10-16）
+
+27 个公开页提供品牌分享图回退，支持路由级图片覆盖；首页补齐 locale、og:url、WebSite 与 Organization。后台不纳入 sitemap，允许抓取登录壳以读取 noindex；带参数的审核页和订单 API 返回服务端 noindex/no-store。索引指令不能代替订单查询凭据或后台认证。
+
+13 篇文章已深化具体步骤、对比和排障，6 个专题负责阅读路线。核验日期与实质更新日期分开记录，无可靠首发证据时不填写 datePublished。图片使用已有品牌标识，不冒充逐篇原创实测图。后续维护规则见 [内容维护](docs/content-maintenance.md)。排名、收录和转化率需要真实平台数据，当前没有这些指标的验收结论。

@@ -1,3 +1,4 @@
+# Historical proposal only; superseded by PR #12. Do not apply to the current implementation.
 diff --git a/assets/gettoken/verify-admin.mjs b/assets/gettoken/verify-admin.mjs
 --- a/assets/gettoken/verify-admin.mjs
 +++ b/assets/gettoken/verify-admin.mjs

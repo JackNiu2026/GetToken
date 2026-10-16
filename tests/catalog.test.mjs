@@ -7,7 +7,7 @@ test('unannounced prices do not imply a payable amount', () => {
   assert.equal(quote.monthlyMinor, null);
   assert.equal(quote.totalMinor, null);
   assert.equal(quote.savingMinor, 0);
-  assert.equal(quote.tierName, 'Pro 5x');
+  assert.equal(quote.tierName, 'Pro 100');
   assert.equal(quote.features.length, 3);
   assert.equal(formatMoney(quote.totalMinor, quote.currency), '待报价');
   assert.equal(totalLabel(quote), '意向周期 3 个月 · 资格与履约待确认');

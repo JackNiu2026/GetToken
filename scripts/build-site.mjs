@@ -10,6 +10,7 @@ import { SITE } from '../content/site.mjs';
 import { TOPICS } from '../content/topics.mjs';
 import { HUB } from '../content/hub.mjs';
 import { PRODUCT_PAGES } from '../content/products.mjs';
+import { PRODUCT_FACTS } from '../content/product-facts.mjs';
 import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney, totalLabel } from '../assets/gettoken/catalog.mjs';
 import { inquiryState } from '../assets/gettoken/inquiry.mjs';
 import { VERIFY, yuan, totalMinor } from '../assets/gettoken/verify-rules.mjs';
@@ -371,7 +372,7 @@ const PAY_DIALOGS = `<dialog class="sheet" id="pay-dialog" aria-labelledby="pay-
 
 const PLAN_STYLES = ['a', 'b', 'c'];
 const priced = catalog => Object.values(catalog.tiers).some(t => Number.isInteger(t.monthlyMinor));
-const refList = catalog => Object.values(catalog.tiers).filter(t => t.ref).map(t => `${t.name} ${t.ref.replace(/\/月$/, '')}`).join(' · ');
+const refList = catalog => Object.values(catalog.tiers).filter(t => t.ref).map(t => `${t.name} ${t.ref}`).join(' · ');
 
 function planCard(p, catalog, key, i) {
   const tier = catalog.tiers[key];
@@ -403,8 +404,9 @@ function productPage(p) {
   const modified = productModified(p);
   const crumbs = [['首页', ''], [catalog.name, route]];
   const refs = refList(catalog);
+  const facts = PRODUCT_FACTS[p.slug];
   const brief = [
-    refs ? ['官方参考价', `${esc(refs)} / 月<small>${esc(p.source[0])} · 仅供对照</small>`] : ['计价', `${catalog.currency === 'USD' ? '美元' : '人民币'}，按线路与周期计算`],
+    refs ? ['官方参考价', `${esc(refs)}<small>${esc(p.source[0])} · 仅供对照</small>`] : ['计价', '按账号地区、规格和供应核实后报价'],
     ['交付方式', catalog.deliveries ? Object.values(catalog.deliveries).map(d => esc(d.name)).join(' · ') : '报价前确认地区、规格与库存'],
     ['服务周期', Object.values(PERIOD_NAMES).join(' · ')],
     ['售后', '受理时确认支持范围与时段'],
@@ -437,7 +439,7 @@ ${crumbNav(route, crumbs)}
 <div class="plans">
 ${tiers.map((key, i) => planCard(p, catalog, key, i)).join('\n')}
 </div>
-<p class="footnote"><span class="live-dot" aria-hidden="true"></span>普通商品不提供站内扫码付款；受理状态见各方案按钮，报价与履约条件须事先确认。${p.source ? `<a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${refs ? `官方参考价：${esc(refs)} / 月` : esc(p.source[0])} ↗</a>` : ''}</p>
+<p class="footnote"><span class="live-dot" aria-hidden="true"></span>普通商品不提供站内扫码付款；受理状态见各方案按钮。${esc(facts.note)}${facts.checked ? ` 官方资料核验：${facts.checked}。` : ''}${p.source ? `<a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${refs ? `官方参考价：${esc(refs)}` : esc(p.source[0])} ↗</a>` : ''}</p>
 </div></section>
 <div class="g-shell">
 <section class="g-section" aria-labelledby="steps-title"><div class="g-section__head"><h2 id="steps-title">怎么买、怎么验收</h2></div>

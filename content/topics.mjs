@@ -6,7 +6,7 @@ export const TOPICS = Object.freeze([
   {
     slug: 'codex',
     name: 'Codex',
-    updated: '2026-10-13',
+    updated: '2026-10-16',
     mark: '>_',
     tone: 'blue',
     title: 'Codex 订阅、充值与代充指南',
@@ -14,7 +14,7 @@ export const TOPICS = Object.freeze([
     short: '订阅、额外用量与 API 余额的区别，代充后的验收方法。',
     intro: '想在自己的账号上开通订阅，或从独立账号开始使用 Codex？先把账号归属、套餐权益与使用额度确认清楚，再决定如何购买。',
     facts: [
-      ['订阅权益', '用 ChatGPT 账号登录 Codex 时，适用权益和用量以该账号当前套餐为准。'],
+      ['订阅权益', '用 ChatGPT 账号登录时先查当前方案；Pro 100/200/500 与旧倍数称呼不同，新旧账号额度也可能不同。'],
       ['额外使用额度', '部分账号可以购买额外使用额度；这与升级订阅不是同一件事。'],
       ['API 余额', 'API Key 的计费路径与订阅不同，购买会员不会自动获得等额 API 余额。'],
     ],
@@ -23,7 +23,7 @@ export const TOPICS = Object.freeze([
   {
     slug: 'claude',
     name: 'Claude',
-    updated: '2026-10-13',
+    updated: '2026-10-16',
     mark: '✦',
     tone: 'violet',
     title: 'Claude 订阅、充值与代充指南',
@@ -31,7 +31,7 @@ export const TOPICS = Object.freeze([
     short: 'Pro 与 Max 怎么选，代充后的会员、账单与续费核对。',
     intro: '从日常写作到长文档研究，先按使用需求选择 Claude 方案，再确认代充或独立账号的交付方式。把套餐、期限和售后放在同一张清单里比较。',
     facts: [
-      ['方案与强度', 'Pro 与 Max 的具体权益和用量应参考当前官方说明及账号实际显示。'],
+      ['方案与强度', 'Pro/Max 是个人方案；按任务强度、限额和预算比较，不把个人订阅当作团队席位。'],
       ['账号归属', '代充是协助给已有账号开通订阅；独立账号需要确认账号和会员一并交付的内容。'],
       ['编程使用', '如果主要使用 Claude Code，应进一步查看编程接入与额度说明。'],
     ],
@@ -40,7 +40,7 @@ export const TOPICS = Object.freeze([
   {
     slug: 'claude-code',
     name: 'Claude Code',
-    updated: '2026-10-13',
+    updated: '2026-10-16',
     mark: '</>',
     tone: 'orange',
     title: 'Claude Code 订阅、额度与月卡指南',
@@ -49,7 +49,7 @@ export const TOPICS = Object.freeze([
     intro: 'Claude Code 的方案选择，首先是接入方式的选择。先分清 Claude 订阅与 API 计费，再核对账号、额度和交付，不把“月卡”当成无限使用承诺。',
     facts: [
       ['Claude 订阅', '官方说明支持通过适用的 Pro 或 Max 订阅使用 Claude Code，权益以账号实际状态为准。'],
-      ['API 计费', 'API 接入与订阅是不同计费路径，需要单独核对凭据、计费和限额。'],
+      ['API 计费', 'API 与订阅是不同计费路径；部分 Max 附带独立 API credits，仍需在 Claude Platform 核实领取、限额和使用条件。'],
       ['第三方月卡', '月卡名称不能证明接入官方订阅；购买前必须确认服务提供方、登录方式和额度规则。'],
     ],
     source: ['Claude Code 官方接入说明', 'https://code.claude.com/docs/en/overview'],
@@ -57,7 +57,7 @@ export const TOPICS = Object.freeze([
   {
     slug: 'gemini',
     name: 'Gemini',
-    updated: '2026-10-13',
+    updated: '2026-10-16',
     mark: '◆',
     tone: 'cyan',
     title: 'Gemini 订阅、充值与代充指南',
@@ -66,7 +66,7 @@ export const TOPICS = Object.freeze([
     intro: '选择 Gemini 服务，先确认 Google 账号适用的订阅方案，再比较自有账号代充和独立账号交付。套餐名称、地区资格与续费条件同样重要。',
     facts: [
       ['产品与套餐', 'Gemini 是产品入口，付费权益需要对照实际 Google AI 套餐，不应仅凭模型名称判断。'],
-      ['账号资格', '套餐及功能的可用性可能因地区、账号类型和资格不同而变化。'],
+      ['账号资格', '先分个人账号与 Workspace，再核对地区、家庭角色和原订阅；存储与 Ultra 版本以目标账号为准。'],
       ['月付与续费', '确认服务期限、到期处理及续费方式，区别正常订阅与限时活动。'],
     ],
     source: ['Google AI 套餐说明', 'https://one.google.com/about/google-ai-plans/'],
@@ -74,7 +74,7 @@ export const TOPICS = Object.freeze([
   {
     slug: 'grok',
     name: 'Grok',
-    updated: '2026-10-13',
+    updated: '2026-10-16',
     mark: 'G',
     tone: 'silver',
     title: 'Grok / SuperGrok 订阅与充值指南',
@@ -82,16 +82,16 @@ export const TOPICS = Object.freeze([
     short: 'SuperGrok 套餐与期限，网页、X 与应用商店的账单来源。',
     intro: '想开通 Grok 或续费 SuperGrok？先确认订阅入口与套餐，再选择给自己的账号代充，或咨询独立账号的交付条件。',
     facts: [
-      ['订阅入口', '把使用入口和会员名称写清楚，避免把不同入口的权益当成相同套餐。'],
+      ['订阅入口', '当前公开价格页列 Plus/Premium/Super/Ultra；旧 Lite/SuperGrok/Heavy 不能直接等同，先按原入口核对。'],
       ['独立账号', '核对账号归属、会员剩余期限及交付后的管理方式。'],
       ['API 服务', '如果需要程序调用，请单独核实 API 的计费与使用条件，不用会员说明替代。'],
     ],
-    source: ['Grok 订阅与账户说明', 'https://docs.x.ai/grok/faq'],
+    source: ['Grok 当前价格与方案', 'https://x.ai/pricing'],
   },
   {
     slug: 'basics',
     name: '选购基础',
-    updated: '2026-10-13',
+    updated: '2026-10-16',
     mark: '?',
     tone: 'green',
     title: 'AI 会员代充、独立账号与续费基础知识',

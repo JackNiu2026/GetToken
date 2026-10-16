@@ -142,12 +142,13 @@ export function loadArticles(dir = ARTICLE_DIR) {
     if (topics.some(t => !topicSlugs.has(t)) || new Set(topics).size !== topics.length) throw new Error(`${file}: invalid extra topics`);
     if (!dateIsValid(data.updated) || (data.published && !dateIsValid(data.published))) throw new Error(`${file}: dates must be YYYY-MM-DD`);
     if (data.published && data.published > data.updated) throw new Error(`${file}: published must not be after updated`);
+    if (data.verified && (!dateIsValid(data.verified) || data.verified > data.updated)) throw new Error(`${file}: verified must be a date not after updated`);
     if (data.type !== undefined && !ARTICLE_TYPES.includes(data.type)) throw new Error(`${file}: type must be one of ${ARTICLE_TYPES.join(', ')}`);
     const { sections, faqs, sources } = splitArticle(parseBlocks(body), file);
     if (sections.length < 2) throw new Error(`${file}: an article needs at least two ## sections`);
     return Object.freeze({
       slug, file, title: data.title, description: data.description, summary: data.summary,
-      type: data.type || 'guide', topic: data.topic, topics, updated: data.updated, published: data.published || null,
+      type: data.type || 'guide', topic: data.topic, topics, updated: data.updated, published: data.published || null, verified: data.verified || null,
       featured: data.featured === true, related: data.related || [],
       sections, faqs, sources, minutes: readingMinutes(body),
     });

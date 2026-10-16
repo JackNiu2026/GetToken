@@ -123,6 +123,22 @@ test('crawl directives respect separate bot groups, wildcards and allow preceden
   assert.equal(robotsAllows('User-agent: *\nDisallow: /guides/\nAllow: /guides/','Googlebot','/guides/intro/'),true);
 });
 
+test('public sharing metadata and home schema have reachable honest brand defaults', async () => {
+  for (const route of ROUTES) {
+    const html = await readFile(resolve(ROOT, route, 'index.html'), 'utf8');
+    const image = html.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
+    assert.ok(image, route);
+    assert.equal(new URL(image).origin, SITE.origin);
+    await readFile(resolve(ROOT, '.' + new URL(image).pathname));
+    assert.match(html, /<meta property="og:locale" content="zh_CN">/);
+    assert.ok(html.includes(`<meta property="og:url" content="${SITE.origin}/${route}">`));
+  }
+  const home = await readFile(resolve(ROOT, 'index.html'), 'utf8');
+  const graph = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
+  assert.ok(graph.some(node => node['@type'] === 'WebSite'));
+  assert.ok(graph.some(node => node['@type'] === 'Organization'));
+});
+
 test('live audit accepts valid HTTP behavior and reports observed failures',async()=>{
   const fixture=await deployedFixture();
   const success=await auditLive({fetcher:fixture.fetcher});

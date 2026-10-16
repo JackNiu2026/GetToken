@@ -31,6 +31,9 @@ const EVENTS = {
   refund_error: '退款失败', refund_pending: '等待退款', expired: '订单过期', code_purged: '代码已删除', mock_paid: '模拟收款',
 };
 let state = { status: 'reviewing', q: '', page: 1, selected: null, mode: 'off' };
+let detailVersion = 0, listVersion = 0, statsVersion = 0, sessionVersion = 0;
+let displayedOrder = null;
+const pendingOrders = new Set();
 
 async function api(path, options = {}) {
   const response = await fetch(new URL(path, API), {
@@ -59,6 +62,11 @@ function showToast(message) {
 }
 
 function showLogin(hint) {
+  sessionVersion++;
+  detailVersion++; listVersion++; statsVersion++;
+  displayedOrder = null;
+  state.selected = null;
+  detail.innerHTML = '';
   app.hidden = true;
   $('[data-logout]').hidden = true;
   $('[data-mode-banner]').hidden = true;
@@ -81,6 +89,7 @@ loginForm.addEventListener('submit', async event => {
   }
 });
 $('[data-logout]').addEventListener('click', async () => {
+  showLogin('正在退出登录…');
   await api('admin/logout', { method: 'POST' }).catch(() => {});
   showLogin('已退出登录。');
 });
@@ -107,7 +116,9 @@ $('[data-pager]').addEventListener('click', event => {
 });
 
 async function loadStats() {
+  const version = ++statsVersion;
   const s = await api('admin/stats');
+  if (version !== statsVersion || app.hidden) return;
   $('[data-stats]').innerHTML = [
     ['is-blue', s.reviewing, '审核中'], ['is-rose', s.overdue, '已超过 24 小时'], ['is-amber', s.unpaid, '待付款'],
     ['is-green', s.passedToday, '今日通过'], ['', s.failedToday, '今日未通过'], [s.refundOverdue ? 'is-rose' : 'is-amber', s.refunding, s.refundOverdue ? `退款未完成 · ${s.refundOverdue} 单超过 24 小时` : '退款未完成'],
@@ -120,9 +131,11 @@ function tag(o) {
 }
 
 async function loadList() {
+  const version = ++listVersion;
   for (const button of filterBox.querySelectorAll('button')) button.setAttribute('aria-selected', String(button.dataset.filter === state.status));
   const params = new URLSearchParams({ status: state.status, q: state.q, page: String(state.page) });
   const data = await api(`admin/orders?${params}`);
+  if (version !== listVersion || app.hidden) return;
   const now = Date.now();
   rows.innerHTML = data.items.length ? data.items.map(o => {
     const remaining = o.status === 'reviewing' ? `<span class="${o.dueAt < now ? 'is-late' : ''}">${left(o.dueAt - now)}</span>` : '—';
@@ -140,16 +153,22 @@ rows.addEventListener('click', event => {
 
 /* ---------- detail ---------- */
 async function openDetail(id) {
+  const version = ++detailVersion;
   state.selected = id;
+  displayedOrder = null;
+  detail.innerHTML = '<p class="v-hint">正在加载订单…</p>';
   for (const tr of rows.querySelectorAll('tr')) tr.classList.toggle('is-selected', !!tr.querySelector(`[data-open="${CSS.escape(id)}"]`));
   try {
-    renderDetail(await api(`admin/orders/${encodeURIComponent(id)}`));
+    const order = await api(`admin/orders/${encodeURIComponent(id)}`);
+    if (version === detailVersion && state.selected === id && !app.hidden) renderDetail(order);
   } catch (error) {
-    detail.innerHTML = `<p class="v-error">${esc(error.message)}</p>`;
+    if (version === detailVersion && !app.hidden) detail.innerHTML = `<p class="v-error">${esc(error.message)}</p>`;
   }
 }
 
 function renderDetail(o) {
+  if (o.id !== state.selected || app.hidden) return;
+  displayedOrder = o;
   const now = Date.now();
   const code = o.code
     ? `<div class="a-code" data-code-text>${esc(o.code)}</div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy-code>复制完整代码</button>`
@@ -178,12 +197,16 @@ ${actions.join('\n')}
 ${o.payments.length ? `<h2>付款</h2><dl class="v-kv">${o.payments.map(p => `<div><dt>${esc(CHANNELS[p.channel] || p.channel)} · ${esc(PAYMENT_STATES[p.status] || p.status)}</dt><dd>${yuan(p.amount)}${p.tradeNo ? `<br><span class="v-mono">${esc(p.tradeNo)}</span>` : ''}</dd></div>`).join('')}</dl>` : ''}
 ${o.refunds.length ? `<h2>退款</h2><dl class="v-kv">${o.refunds.map(r => `<div><dt>${r.kind === 'audit' ? '审核费' : '重复付款'} · ${esc(REFUND_NAMES[r.status] || r.status)}</dt><dd>${yuan(r.amount)}${r.error ? `<br><span class="v-error">${esc(r.error)}</span>` : ''}</dd></div>`).join('')}</dl>` : ''}
 <ol class="a-log">${o.events.map(e => `<li><span>${esc(EVENTS[e.kind] || e.kind)}${e.detail && !['payment_opened', 'paid', 'created'].includes(e.kind) ? ` · ${esc(e.detail)}` : ''}</span><time>${esc(stamp(e.at))}</time></li>`).join('')}</ol>`;
+  for (const action of detail.querySelectorAll('button')) action.disabled = pendingOrders.has(o.id);
 }
 
 detail.addEventListener('click', async event => {
   const button = event.target.closest('button');
-  if (!button || !state.selected) return;
-  const id = state.selected;
+  if (!button || button.disabled || !displayedOrder || displayedOrder.id !== state.selected || app.hidden) return;
+  const id = displayedOrder.id;
+  const version = detailVersion;
+  const session = sessionVersion;
+  if (pendingOrders.has(id)) return;
   if (button.hasAttribute('data-copy-code')) {
     try {
       await navigator.clipboard.writeText($('[data-code-text]', detail).textContent);
@@ -197,7 +220,8 @@ detail.addEventListener('click', async event => {
   if (button.dataset.decide) {
     const passed = button.dataset.decide === 'passed';
     const reason = $('[data-reason]', detail)?.value.trim() || '';
-    const question = passed ? `确认 ${id} 审核通过？\n用户页面会立即显示「恭喜通过」。` : `确认 ${id} 未通过？\n会立即原路退回审核费 ${yuan(VERIFY.auditFeeMinor)}，技术费不退。${reason ? `\n原因：${reason}` : ''}`;
+    const identity = `${id}（Session Key 末 4 位：${String(displayedOrder.code || displayedOrder.codeTail || '').slice(-4) || '不可用'}）`;
+    const question = passed ? `确认 ${identity} 审核通过？\n用户页面会立即显示「恭喜通过」。` : `确认 ${identity} 未通过？\n会立即原路退回审核费 ${yuan(VERIFY.auditFeeMinor)}，技术费不退。${reason ? `\n原因：${reason}` : ''}`;
     if (!window.confirm(question)) return;
     request = [`admin/orders/${encodeURIComponent(id)}/decision`, { result: button.dataset.decide, reason }];
   } else if (button.hasAttribute('data-refund')) {
@@ -206,21 +230,34 @@ detail.addEventListener('click', async event => {
     request = [`admin/orders/${encodeURIComponent(id)}/mock-pay`];
   }
   if (!request) return;
-  button.disabled = true;
+  if (version !== detailVersion || displayedOrder?.id !== id || app.hidden) return;
+  pendingOrders.add(id);
+  for (const action of detail.querySelectorAll('button')) action.disabled = true;
   try {
-    renderDetail(await api(request[0], { method: 'POST', body: request[1] }));
-    showToast('已保存');
+    const order = await api(request[0], { method: 'POST', body: request[1] });
+    pendingOrders.delete(id);
+    if (session !== sessionVersion) return;
+    // Also invalidate a GET started while this mutation was still pending.
+    if (state.selected === id && !app.hidden) { detailVersion++; renderDetail(order); }
+    if (app.hidden) return;
+    showToast(`${id} 已保存`);
     await Promise.all([loadStats(), loadList()]);
   } catch (error) {
-    showToast(error.message);
-    button.disabled = false;
+    if (session === sessionVersion && !app.hidden) showToast(error.message);
+  } finally {
+    pendingOrders.delete(id);
+    if (displayedOrder?.id === id && !app.hidden) {
+      for (const action of detail.querySelectorAll('button')) action.disabled = false;
+    }
   }
 });
 
 /* ---------- start ---------- */
 let refreshTimer = 0;
 async function start() {
+  const session = sessionVersion;
   const me = await api('admin/me');
+  if (session !== sessionVersion) return;
   state.mode = me.mode;
   if (!me.loggedIn) {
     showLogin(me.passwordSet ? '输入在服务器上设置的后台密码。' : '后台密码还没有设置：在服务器上运行 gettoken-verify passwd 设置后再登录。');

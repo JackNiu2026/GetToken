@@ -4,7 +4,7 @@ import { PRODUCTS } from './catalog.mjs';
 const text = value => typeof value === 'string' && value.trim().length > 0;
 export function contactReady(site = SITE) {
   return Boolean(site.contact && [site.contact.wechat, site.contact.telegram, site.contact.email].some(text)
-    && text(site.support?.identity) && text(site.support?.hours));
+    && text(site.support?.identity) && text(site.support?.hours) && text(site.support?.timeZone));
 }
 
 export function inquiryState(product, tier, months, site = SITE) {

@@ -1,6 +1,6 @@
 // /verify/: submit a code, pay online, watch the review and read the result.
 // Every status and result shown here comes from the API; the page never decides an outcome.
-import { VERIFY, totalMinor, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES } from './verify-rules.mjs';
+import { VERIFY, totalMinor, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES, serviceDisclosure, serviceContractReady } from './verify-rules.mjs';
 import { qrSvg } from './qr.mjs';
 
 const API = new URL('../../api/verify/', import.meta.url);
@@ -118,7 +118,7 @@ function checkCode(final = false) {
   codeCount.textContent = `${code.length} 位`;
   const problem = code ? codeProblem(code) : null;
   const showProblem = problem && (final || code.length >= VERIFY.codeMin || !code.startsWith('sk'));
-  codeState.textContent = !code ? '' : showProblem ? problem : problem ? '' : '✓ 格式正确';
+  codeState.textContent = !code ? '' : showProblem ? problem : problem ? '' : '✓ 仅格式通过，未验证凭据有效性';
   codeState.className = showProblem ? 'is-bad' : problem ? '' : 'is-ok';
   codeField.setAttribute('aria-invalid', String(!!showProblem));
   return { code, problem: code ? problem : codeProblem('') };
@@ -131,16 +131,30 @@ function setFormError(message) {
   formError.textContent = message || '';
 }
 
+const canSubmit = () => config?.acceptingOrders === true && config.channels?.length > 0
+  && (config.mode === 'mock' || serviceContractReady(config.serviceContract));
 function renderChannels() {
+  const open = canSubmit();
+  codeField.disabled = !open;
+  $('[data-agree]').disabled = !open;
+  $('[data-show-public]').disabled = !open;
+  if (!open) { codeField.value = ''; checkCode(); }
+  const stateLabel = $('[data-service-state]');
+  if (stateLabel) stateLabel.textContent = `Claude KYC认证 · ${open ? '人工协助' : '暂未受理'}`;
+  const terms = $('[data-service-disclosure]');
+  if (terms) terms.textContent = config?.mode === 'mock'
+    ? '本地测试流程：仅使用虚构凭据，不会真实扣款或完成官方认证。'
+    : serviceDisclosure(config?.serviceContract);
+
   if (!config) {
     channelBox.innerHTML = '<p class="v-hint">认证协助服务暂时无法连接，请稍后刷新页面。</p>';
     submit.disabled = true;
     return;
   }
-  if (!config.channels.length) {
-    channelBox.innerHTML = '<p class="v-hint">在线支付即将开放，开通后即可提交 Claude KYC认证协助。已有订单仍可在右侧查询。</p>';
+  if (!open) {
+    channelBox.innerHTML = '<p class="v-hint">当前暂停新订单，请勿输入会话凭据或付款。已有订单仍可查询，历史收款和退款继续处理。</p>';
     submit.disabled = true;
-    submit.textContent = '即将开放';
+    submit.textContent = '暂未受理';
     return;
   }
   submit.textContent = `付款并提交认证协助 · ${yuan(totalMinor())}`;
@@ -151,6 +165,7 @@ function renderChannels() {
 form.addEventListener('submit', async event => {
   event.preventDefault();
   setFormError('');
+  if (!canSubmit()) return setFormError('当前不受理新订单，请勿输入会话凭据或付款');
   const { code, problem } = checkCode(true);
   if (problem) {
     setFormError(problem);
@@ -175,8 +190,7 @@ form.addEventListener('submit', async event => {
   } catch (error) {
     setFormError(error.message);
   } finally {
-    submit.disabled = !config?.channels.length;
-    submit.textContent = `付款并提交认证协助 · ${yuan(totalMinor())}`;
+    renderChannels();
   }
 });
 
@@ -235,11 +249,11 @@ function passedView(order) {
   return `<div class="v-result">${top(order, '<span class="v-tag v-tag--green">处理通过</span>')}${confetti()}
 <div class="v-badge v-badge--ok">${CHECK}</div>
 <h2 style="margin-top:16px">本站认证协助处理通过</h2>
-<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，官方认证状态请在 Claude 内核对</p>
+<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，官方认证状态请在 Claude 内核对。${order.reason ? `交付说明：${esc(order.reason)}。` : ''}如与约定不符，请保留订单和脱敏证据联系支持方，不要重复付款。</p>
 ${track(4)}
 <dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>处理用时</dt><dd>${esc(duration(order.decidedAt - order.paidAt))}</dd></div><div><dt>费用</dt><dd>${yuan(order.fees.total)}（已完成）</dd></div></dl>
 ${ownRef(order)}
-<div class="v-acts">${again('再提交一单')}</div></div>`;
+<div class="v-acts">${again('返回服务说明')}</div></div>`;
 }
 
 function failedView(order) {
@@ -251,20 +265,20 @@ function failedView(order) {
   return `<div class="v-result">${top(order, '<span class="v-tag v-tag--rose">未通过</span>')}
 <div class="v-badge v-badge--no">${CROSS}</div>
 <h2 style="margin-top:16px">本站认证协助未通过</h2>
-<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，审核费按原规则退回</p>
+<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，审核费按原规则退回。请先查看原因与原付款账户；退款超时或异常时联系支持方跟进，无需重复购买。</p>
 ${order.reason ? `<p class="v-reason"><b>未通过原因</b>${esc(order.reason)}</p>` : ''}
 <div class="v-refund">
 <div class="v-refund__row"><b>审核费 <span class="v-tag ${done ? 'v-tag--green' : 'v-tag--amber'}">${esc(REFUND_NAMES[refund.status] || '退款中')}</span></b><span>${refundLine}</span><strong>${yuan(refund.amount ?? order.fees.audit)}</strong></div>
 <div class="v-refund__row"><b>人工技术费 <span class="v-tag v-tag--rose">不退</span></b><span>人工核对与认证协助已处理</span><strong>${yuan(order.fees.tech)}</strong></div>
 </div>
 ${ownRef(order)}
-<div class="v-acts">${again('重新提交')}</div></div>`;
+<div class="v-acts">${again('返回服务说明')}</div></div>`;
 }
 
 function expiredView(order) {
   return `${top(order, '<span class="v-tag v-tag--gray">已过期</span>')}
 <h2>订单已过期</h2><p class="v-sub">这个订单在 24 小时内没有完成付款，已自动关闭，没有产生费用。</p>
-<div class="v-acts">${again('重新提交')}</div>`;
+<div class="v-acts">${again('返回服务说明')}</div>`;
 }
 
 const VIEWS = { unpaid: unpaidView, reviewing: reviewingView, passed: passedView, failed: failedView, expired: expiredView };

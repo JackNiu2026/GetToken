@@ -13,7 +13,7 @@ import { PRODUCT_PAGES } from '../content/products.mjs';
 import { PRODUCT_FACTS } from '../content/product-facts.mjs';
 import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney, totalLabel } from '../assets/gettoken/catalog.mjs';
 import { inquiryState } from '../assets/gettoken/inquiry.mjs';
-import { VERIFY, yuan, totalMinor } from '../assets/gettoken/verify-rules.mjs';
+import { VERIFY, yuan, totalMinor, SERVICE_CONTRACT, serviceDisclosure } from '../assets/gettoken/verify-rules.mjs';
 import { ROOT, loadArticles, validateLibrary, inline, esc, dateIsValid } from './content.mjs';
 
 export { ROOT };
@@ -47,7 +47,7 @@ const articleRoute = a => `guides/${a.slug}/`;
 const productRoute = p => `${p.slug}/`;
 export const VERIFY_ROUTE = 'verify/';
 export const VERIFY_ADMIN_ROUTE = 'verify/admin/';
-const VERIFY_UPDATED = '2026-10-14';
+const VERIFY_UPDATED = '2026-10-16';
 // The product page that sells what a topic covers; shared topics (选购基础) have none.
 const productFor = topicSlug => PRODUCT_PAGES.find(p => p.topics.includes(topicSlug));
 // The product's own articles first, then shared guides that also cover it; each group newest first.
@@ -96,7 +96,7 @@ function buyLink(route, topicSlug) {
 // customer-service dialog; 'link' goes to the homepage, which opens it (/#contact).
 const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg>';
 const GLYPH_CLASS = { codex: 'codex', claude: 'claude', gemini: 'gemini', grok: 'grok', ip: 'ip' };
-const SOON = VERIFY.open ? '' : '<em class="nav-soon">即将开放</em>';
+const SOON = '<em class="nav-soon">查看状态</em>';
 const linkTo = (route, to = '') => (route === null ? `./${to}` : href(route, to));
 const anchor = (route, id) => (route === null ? `#${id}` : `${linkTo(route)}#${id}`);
 
@@ -473,8 +473,8 @@ const VERIFY_FAQS = [
   ['Claude 官方 KYC需要准备什么？', '官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。'],
   ['关闭页面或倒计时结束会怎样？', `关闭页面不影响本站订单处理，可凭订单号查询。${VERIFY.reviewHours} 小时是本服务的预计处理时间，不是 Claude 官方认证时限；超时仍会显示处理中，不会自动判定通过。`],
   ['认证协助未通过如何退款？', `本站订单未通过时，审核费 ${yuan(VERIFY.auditFeeMinor)} 在出结果后 ${VERIFY.refundHours} 小时内原路退回；人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退。退款进度在结果中显示。`],
-  ['Session Key 提交错了怎么办？', '付款前请核对本人账户的 Session Key。提交后不能修改；如需更正请重新提交，已付款订单请联系客服处理。请勿提交他人账户的会话凭据。'],
-  ['Session Key 会如何处理？', `Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。请确认服务范围并授权后再提交。本站加密保存，审核员可在后台查看；出结果 ${VERIFY.purgeDays} 天后自动删除完整值，仅保留末 4 位用于识别。`],
+  ['Session Key 提交错了怎么办？', '未开放时请勿输入。已付款后发现错误，请保留订单号并联系支持方核实，不要重复付款；不得提交他人账户的会话凭据。'],
+  ['Session Key 会如何处理？', `Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。服务范围、撤销及提前删除处理方式未确认前不受理。开放后按约定用途加密保存，审核员可在后台查看；出结果 ${VERIFY.purgeDays} 天后自动删除完整值，仅保留末 4 位用于识别。`],
 ];
 
 function verifyPage() {
@@ -486,9 +486,9 @@ function verifyPage() {
   const body = `<div class="v-hero"><div class="g-shell">
 ${crumbNav(route, crumbs)}
 <div class="v-hero__text">
-<p class="g-eyebrow">Claude KYC认证 · ${VERIFY.open ? '人工协助' : '即将开放'}</p>
+<p class="g-eyebrow" data-service-state>Claude KYC认证 · 暂未受理</p>
 <h1>Claude KYC认证</h1>
-<p class="g-lead">提交本人账户的 Session Key，查询认证协助进度。GetToken 为第三方服务，非 Anthropic 官方认证入口；官方 KYC须由本人按 Claude 内的 Persona 提示完成。本页显示本站处理结果，不保证官方认证通过。${VERIFY.open ? '' : '在线支付即将开放，开通后即可提交。'}</p>
+<p class="g-lead">先核对服务范围与受理状态，再决定是否提交本人 Session Key。GetToken 为第三方服务，非 Anthropic 官方认证入口；官方 KYC须由本人按 Claude 内的 Persona 提示完成。本页显示本站处理结果，不保证官方认证通过。</p>
 <ul class="v-facts"><li><b>${tech}</b>人工技术费 · 不退</li><li><b>${audit}</b>审核费 · 未通过退</li><li><b>${VERIFY.reviewHours} 小时</b>预计处理时间</li></ul>
 </div></div></div>
 <main id="main" class="g-shell">
@@ -498,22 +498,22 @@ ${crumbNav(route, crumbs)}
 <form class="v-card v-form" id="submit" data-form novalidate aria-labelledby="submit-title">
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
-<p class="v-hint" id="v-code-hint">Session Key 是 Claude 登录会话凭据，不是 API Key 或身份证明。仅提交本人账户的完整值，确认已授权本站在约定范围内访问账户；提交后不能修改，请先核对。</p>
-<div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
+<p class="v-hint" id="v-code-hint" data-service-disclosure>${esc(serviceDisclosure(SERVICE_CONTRACT))} Session Key 是登录凭据，不是 API Key 或身份证明；格式通过不代表有效。</p>
+<div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required disabled></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
 </div></div>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3>确认费用</h3><div class="v-step__body">
 <div class="v-fees">
-<div class="v-fee"><b>人工技术费<span class="v-tag v-tag--rose">不退</span></b><span>人工核对与认证协助，提交后产生成本</span><strong>${tech}</strong></div>
+<div class="v-fee"><b>人工技术费<span class="v-tag v-tag--rose">不退</span></b><span>开放后按已确认的服务规则收取费用</span><strong>${tech}</strong></div>
 <div class="v-fee"><b>审核费<span class="v-tag v-tag--green">未通过可退</span></b><span>审核未通过时，${VERIFY.refundHours} 小时内原路退回</span><strong>${audit}</strong></div>
 <div class="v-fee v-fee--total"><b>合计</b><span>未通过时实际支出 ${tech}</span><strong>${total}</strong></div>
 </div>
-<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我确认账户归本人所有并授权约定范围的认证协助；已了解 Session Key 的访问权限，技术费 ${tech} 不退，审核费 ${audit} 未通过时退回。</span></label>
-<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
+<label class="v-check"><input type="checkbox" name="agree" data-agree disabled><span>我确认账户归本人所有并授权约定范围的认证协助；已了解 Session Key 的访问权限，技术费 ${tech} 不退，审核费 ${audit} 未通过时退回。</span></label>
+<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public disabled><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
 </div></div>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>选择付款方式</h3><div class="v-step__body">
 <div class="v-channels" role="radiogroup" aria-label="付款方式" data-channels><p class="v-hint">正在读取可用的付款方式…</p></div>
-<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit${VERIFY.open ? '' : ' disabled'}>${VERIFY.open ? `付款并提交认证协助 · ${total}` : '即将开放'}</button>
+<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit disabled>暂未受理</button>
 <p class="v-error" data-form-error role="alert" hidden></p>
 <p class="v-hint v-center">到账后开始本站处理计时，官方认证以 Claude 账户显示为准。</p></div>
 </div></div>

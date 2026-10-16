@@ -112,7 +112,7 @@ function renderContact(container, intro) {
 
 const queryDialog = $('#query-dialog');
 registerDialog(queryDialog);
-const contactIntro = () => contactReady() ? `${SITE.support.identity} · 支持时段：${SITE.support.hours}。请说明需求，不要发送密码或 Session Key。` : '当前不受理新咨询或付款。';
+const contactIntro = () => contactReady() ? `${SITE.support.identity} · 支持时段：${SITE.support.hours}（${SITE.support.timeZone}）。请说明需求，不要发送密码或 Session Key。` : '当前不受理新咨询或付款。';
 renderContact($('[data-query-contact]'), contactIntro());
 $$('[data-open-query]').forEach(button => button.addEventListener('click', () => { $('#query-title').textContent = '服务咨询'; $('.sheet__text', queryDialog).textContent = contactIntro(); openDialog(queryDialog, button); }));
 

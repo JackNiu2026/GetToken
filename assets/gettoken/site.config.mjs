@@ -5,7 +5,7 @@
 // relative paths below (e.g. './assets/gettoken/pay/wechat.png'). An empty
 // string shows the "收款码待上传" placeholder instead of a broken image.
 export const SITE = Object.freeze({
-  support: Object.freeze({ identity: '', hours: '' }),
+  support: Object.freeze({ identity: '', hours: '09:00–23:00', timeZone: '' }),
   // Enable only after supply, support and the listed tiers/periods are verified.
   inquiries: Object.freeze(Object.fromEntries(['codex', 'claude', 'gemini', 'grok', 'ip'].map(key => [key,
     Object.freeze({ enabled: false, tiers: Object.freeze([]), periods: Object.freeze([]) }),

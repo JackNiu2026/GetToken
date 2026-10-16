@@ -1,3 +1,4 @@
+import { READY_CONTRACT } from './helpers/service-contract.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -13,7 +14,7 @@ import { paymentPlatform } from './helpers/payment-platform.mjs';
 const CODE = 'sk-acceptance-' + 'aB12'.repeat(12);
 async function setup(t) {
   const platform = await paymentPlatform(t);
-  const config = { mode: 'live', acceptNewOrders: true, origin: 'https://gettoken.cc', secret: randomBytes(32), alipay: platform.alipay, wechat: platform.wechat };
+  const config = { mode: 'live', acceptNewOrders: true, serviceContract: READY_CONTRACT, origin: 'https://gettoken.cc', secret: randomBytes(32), alipay: platform.alipay, wechat: platform.wechat };
   const providers = createProviders(config, { fetch: platform.transport });
   const store = openStore(':memory:'); t.after(() => store.close());
   const service = createService({ store, config, providers });
@@ -82,7 +83,7 @@ for (const channel of ['alipay', 'wechat']) {
     assert.equal(platform.state.transferCount, 1);
     const passed = (await call('orders', { body: { code: CODE, agree: true, channel, showPublic: true } })).data;
     await call(`notify/${channel}`, { notice: platform.paidNotice(passed.payment.id) });
-    assert.equal((await call(`admin/orders/${passed.id}/decision`, { body: { result: 'passed' }, admin: true })).data.status, 'passed');
+    assert.equal((await call(`admin/orders/${passed.id}/decision`, { body: { result: 'passed', reason: 'Synthetic delivery evidence' }, admin: true })).data.status, 'passed');
     assert.equal((await call('feed')).data.today.passed, 1);
     assert.equal(platform.state.transferCount, 1, 'passed reviews do not refund');
     for (const body of [null, [], 1]) assert.equal((await call('orders', { body })).status, 400);
@@ -93,7 +94,7 @@ for (const channel of ['alipay', 'wechat']) {
     const order = await service.createOrder({ code: CODE, agree: true, channel });
     platform.paidNotice(order.payment.id);
     await service.lookup(order.id);
-    service.decide(order.id, 'failed');
+    service.decide(order.id, 'failed', 'Synthetic failure');
     const refund = store.get('select * from refunds where order_id = ?', order.id);
     platform.state.dropRefundResponse = true;
     await service.runRefund(refund);
@@ -148,7 +149,7 @@ test('concurrent refund requests coalesce and an early success callback wins ove
   } };
   service = createService({ store, config: { mode: 'mock', secret: randomBytes(32) }, providers: { mock: provider } });
   const order = await service.createOrder({ code: CODE, agree: true, channel: 'mock' });
-  service.markPaid(order.payment.id, { tradeNo: 'UNIQUE', amountMinor: 33000 }); service.decide(order.id, 'failed');
+  service.markPaid(order.payment.id, { tradeNo: 'UNIQUE', amountMinor: 33000 }); service.decide(order.id, 'failed', 'Synthetic failure');
   const refund = store.get('select * from refunds where order_id = ?', order.id);
   const results = await Promise.all([service.runRefund(refund), service.runRefund(refund), service.retryRefund(order.id)]);
   assert.equal(calls, 1); assert.equal(results[0].status, 'success');

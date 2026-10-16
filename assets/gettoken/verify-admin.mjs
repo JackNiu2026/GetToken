@@ -171,18 +171,18 @@ function renderDetail(o) {
   displayedOrder = o;
   const now = Date.now();
   const code = o.code
-    ? `<div class="a-code" data-code-text>${esc(o.code)}</div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy-code>复制完整代码</button>`
+    ? `<div class="a-code" data-code-text>${esc(o.code)}</div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy-code>复制 Session Key</button>`
     : `<p class="a-code">${o.codePurged ? '代码已按规则删除，只保留末 4 位。' : '代码无法解密，请检查服务器的 VERIFY_SECRET 是否被更换。'}</p>`;
   const actions = [];
   if (o.status === 'reviewing') {
-    actions.push(`<h2>录入结果</h2><textarea class="a-reason" data-reason maxlength="300" placeholder="未通过原因（选填，用户可见）"></textarea>
+    actions.push(`<h2>录入结果</h2><textarea class="a-reason" data-reason maxlength="300" placeholder="交付证据摘要或未通过原因（正式服务必填，用户可见；勿填凭据）"></textarea>
 <div class="a-decide"><button class="v-btn v-btn--ok" type="button" data-decide="passed">通过</button><button class="v-btn v-btn--no" type="button" data-decide="failed">未通过并退审核费</button></div>`);
   }
   if (o.refunds.some(r => r.status !== 'success')) actions.push('<button class="v-btn v-btn--light v-btn--block" type="button" data-refund>重试 / 刷新退款状态</button>');
   if (o.status === 'unpaid' && state.mode === 'mock') actions.push('<button class="v-btn v-btn--light v-btn--block" type="button" data-mock-pay>模拟收款（测试模式）</button>');
   const due = o.status === 'reviewing' ? `${stamp(o.dueAt)}（${left(o.dueAt - now)}）` : stamp(o.dueAt);
   detail.innerHTML = `<div class="v-order__top"><span class="v-mono">${esc(o.id)}</span>${tag(o)}</div>
-<h2>审核代码</h2>${code}
+<h2>Session Key</h2>${code}
 ${o.repeats ? `<p class="a-warn">同一个代码之前还提交过 ${o.repeats} 次。</p>` : ''}
 <dl class="v-kv">
 <div><dt>提交</dt><dd>${esc(stamp(o.createdAt))}</dd></div>
@@ -210,7 +210,7 @@ detail.addEventListener('click', async event => {
   if (button.hasAttribute('data-copy-code')) {
     try {
       await navigator.clipboard.writeText($('[data-code-text]', detail).textContent);
-      showToast('已复制完整代码');
+      showToast('已复制 Session Key');
     } catch {
       showToast('复制失败，请手动选择');
     }
@@ -221,7 +221,7 @@ detail.addEventListener('click', async event => {
     const passed = button.dataset.decide === 'passed';
     const reason = $('[data-reason]', detail)?.value.trim() || '';
     const identity = `${id}（Session Key 末 4 位：${String(displayedOrder.code || displayedOrder.codeTail || '').slice(-4) || '不可用'}）`;
-    const question = passed ? `确认 ${identity} 审核通过？\n用户页面会立即显示「恭喜通过」。` : `确认 ${identity} 未通过？\n会立即原路退回审核费 ${yuan(VERIFY.auditFeeMinor)}，技术费不退。${reason ? `\n原因：${reason}` : ''}`;
+    const question = passed ? `确认 ${identity} 审核通过？\n用户页面会显示本站处理结果，不代表官方认证通过。` : `确认 ${identity} 未通过？\n会立即原路退回审核费 ${yuan(VERIFY.auditFeeMinor)}，技术费不退。${reason ? `\n原因：${reason}` : ''}`;
     if (!window.confirm(question)) return;
     request = [`admin/orders/${encodeURIComponent(id)}/decision`, { result: button.dataset.decide, reason }];
   } else if (button.hasAttribute('data-refund')) {

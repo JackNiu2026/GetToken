@@ -36,15 +36,15 @@ export const PRODUCTS = deepFreeze({
         ref: '$20/月', monthlyMinor: null,
       },
       pro5x: {
-        name: 'Pro 5x', hint: '高强度', badge: '开发主力',
-        desc: '每天连续用 Codex 写代码、跑检查，用量约为 Plus 的 5 倍。',
-        features: ['约 5 倍 Plus 用量', '适合连续开发', '多项目切换'],
+        name: 'Pro 100', hint: '高强度', badge: '开发主力',
+        desc: '用于较频繁的个人开发。具体模型、用量与账号资格以当前官方方案为准。',
+        features: ['个人 Pro 方案', '用量依账号规则', '不含团队席位'],
         ref: '$100/月', monthlyMinor: null,
       },
       pro20x: {
-        name: 'Pro 20x', hint: '重度并行', badge: '团队 / 重度',
-        desc: '多个项目并行、长时间代理任务，适合团队或重度用户，用量约为 Plus 的 20 倍。',
-        features: ['约 20 倍 Plus 用量', '多任务并行', '用量最宽裕'],
+        name: 'Pro 200', hint: '重度并行', badge: '个人 / 重度',
+        desc: '适合需要更多个人用量的用户；新旧订阅的额度可能不同，不保证旧版倍数。',
+        features: ['个人 Pro 方案', '需核对新旧资格', '不是最高官方档位'],
         ref: '$200/月', monthlyMinor: null,
       },
     },
@@ -69,9 +69,9 @@ export const PRODUCTS = deepFreeze({
         ref: '$100/月', monthlyMinor: null,
       },
       max20x: {
-        name: 'Max 20x', hint: '重度并行', badge: '团队 / 重度',
-        desc: '多个项目并行、长时间代理任务，适合团队或重度用户，用量约为 Pro 的 20 倍。',
-        features: ['约 20 倍 Pro 用量', '多任务并行', '用量最宽裕'],
+        name: 'Max 20x', hint: '重度并行', badge: '个人 / 重度',
+        desc: '面向高强度个人任务，按官方 Max 20x 规则计算用量；不包含团队席位或管理权限。',
+        features: ['官方用量规则', '个人重度任务', '不是团队席位'],
         ref: '$200/月', monthlyMinor: null,
       },
     },
@@ -87,19 +87,19 @@ export const PRODUCTS = deepFreeze({
         name: 'AI Plus', hint: '轻量使用', badge: '入门首选',
         desc: '日常问答、写作与资料整理，先用较低的价格体验 Gemini 高级功能。',
         features: ['Gemini 高级模型', '云端存储', '可随时升级'],
-        ref: '约 $7.99/月', monthlyMinor: null,
+        ref: null, monthlyMinor: null,
       },
       pro: {
-        name: 'AI Pro', hint: '日常主力', badge: '最多人选',
+        name: 'AI Pro', hint: '日常主力', badge: '日常使用',
         desc: '查资料、写长文与多模态创作，包含 Deep Research 与更大的云端存储。',
         features: ['Deep Research', '多模态创作', '更大云端存储'],
-        ref: '$19.99/月', monthlyMinor: null,
+        ref: null, monthlyMinor: null,
       },
       ultra: {
         name: 'AI Ultra', hint: '重度创作', badge: '专业 / 重度',
-        desc: '面向开发者与专业创作者，开放最高用量与最新的实验功能。',
-        features: ['最高用量', '实验功能优先', '适合专业创作'],
-        ref: '$99.99/月起', monthlyMinor: null,
+        desc: '面向较高强度的创作需求；Ultra 存在不同用量版本，需按账号地区核对。',
+        features: ['核对 Ultra 版本', '功能依地区资格', '存储依实际方案'],
+        ref: null, monthlyMinor: null,
       },
     },
   },
@@ -111,22 +111,22 @@ export const PRODUCTS = deepFreeze({
     deliveries: DELIVERIES,
     tiers: {
       lite: {
-        name: 'SuperGrok Lite', hint: '轻量使用', badge: '入门首选',
-        desc: '追热点、查实时信息与日常问答，先用轻量档位体验 SuperGrok。',
+        name: 'Lite（旧名称）', hint: '轻量使用', badge: '入门首选',
+        desc: '原轻量方案名称仅供识别旧记录；当前入口与对应权益需重新核实，暂不受理。',
         features: ['实时信息', '日常问答', '可随时升级'],
-        ref: '约 $10/月', monthlyMinor: null,
+        ref: null, monthlyMinor: null,
       },
       supergrok: {
-        name: 'SuperGrok', hint: '日常主力', badge: '最多人选',
-        desc: '长对话、调研与创作的主力档位，用量和功能更完整。',
+        name: 'SuperGrok（旧名称）', hint: '日常主力', badge: '日常使用',
+        desc: '此为原方案名称，不代表当前官方完整目录或本站可供货范围，暂不受理。',
         features: ['更高用量', '长对话调研', '图像创作'],
-        ref: '$30/月', monthlyMinor: null,
+        ref: null, monthlyMinor: null,
       },
       heavy: {
-        name: 'SuperGrok Heavy', hint: '重度使用', badge: '专业 / 重度',
-        desc: '需要最强模型与最高用量的重度用户，适合复杂推理与长时间任务。',
-        features: ['最强模型', '最高用量', '复杂推理'],
-        ref: '$300/月', monthlyMinor: null,
+        name: 'Heavy（旧名称）', hint: '重度使用', badge: '专业 / 重度',
+        desc: '原 Heavy 方案需按实际账号及购买渠道核实，不再承诺旧价格或最高用量。',
+        features: ['旧方案待核实', '按原渠道核对', '当前暂不受理'],
+        ref: null, monthlyMinor: null,
       },
     },
   },
@@ -138,20 +138,20 @@ export const PRODUCTS = deepFreeze({
     tiers: {
       starter: {
         name: '入门线路', hint: '单一环境', badge: '先试试',
-        desc: '一个店铺或一个账号先用起来，所需地区在付款后与客服确认。',
-        features: ['独立住宅 IP', '单一环境', '可随时升级'],
+        desc: '单一环境的需求分类；报价前确认地区库存、协议、带宽和流量，暂不承诺具体线路。',
+        features: ['地区库存待确认', '协议规格待确认', '单一环境需求'],
         ref: null, monthlyMinor: null,
       },
       standard: {
         name: '生产线路', hint: '日常使用', badge: '跨境必备',
-        desc: '跨境电商、AI 工具和多环境运营，店铺与账号各有独立环境。',
+        desc: '多环境需求需逐项确认并发数、独享含义、带宽与流量；供应规格未核实前不受理。',
         features: ['按场景选择线路', '适合多环境隔离', '协议与方案可扩展'],
         ref: null, monthlyMinor: null,
       },
       premium: {
-        name: '旗舰线路', hint: '高要求场景', badge: '长期稳定',
-        desc: '长期运营的店铺与账号，对稳定性要求更高的场景。',
-        features: ['更高稳定性', '适合长期店铺', '优先售后响应'],
+        name: '旗舰线路', hint: '高要求场景', badge: '长期需求',
+        desc: '长期使用需确认测试窗口、故障处理、替换与补偿规则；名称不代表可用性保证。',
+        features: ['验收方式待确认', '故障规则待确认', '供应核实后受理'],
         ref: null, monthlyMinor: null,
       },
     },
@@ -159,7 +159,7 @@ export const PRODUCTS = deepFreeze({
 });
 
 export const PERIOD_OPTIONS = PERIODS;
-export const PERIOD_NAMES = Object.freeze({ 1: '月付', 3: '季付', 12: '年付' });
+export const PERIOD_NAMES = Object.freeze({ 1: '1 个月', 3: '3 个月', 12: '12 个月' });
 
 export function getQuote(productKey, tierKey, months, deliveryKey = null) {
   const product = Object.hasOwn(PRODUCTS, productKey) ? PRODUCTS[productKey] : null;

@@ -3,42 +3,36 @@ title: Claude Code 充值怎么选？Claude 订阅与 API 计费区别
 description: 按 Claude Code 的登录与接入方式分清 Pro / Max 订阅、API 计费及第三方月卡，避免购买错误服务。
 summary: Claude Code 可以按适用订阅或 API 路径使用，实际费用取决于登录与凭据配置。先核对当前计费身份，再购买代充、账号或额度，避免重复支付同一权益。
 topic: claude-code
-updated: 2026-10-09
+updated: 2026-10-16
 related:
   - claude-code-cost-checklist
   - claude-code-usage-checklist
   - claude-pro-max-selection
+verified: 2026-10-16
 ---
-## 先核对接入方式
+## 三步确定当前在付哪种费用
 
-官方文档说明 Claude Code 可以在终端、IDE、桌面与浏览器等环境中使用，具体接入选项应按你使用的环境核对。
+1. 在自己的 Claude Code 中打开当前支持的账号或状态入口，核对订阅登录、Claude Console/API 或其他提供方；终端菜单可先查看 `/help`，不要把完整输出发给客服。
+2. 只在本机确认是否配置了 `ANTHROPIC_API_KEY`。官方说明该变量可能使工具按 API 身份计费；不要打印变量值，也不要盲目删除工作环境配置。
+3. 在对应的订阅用量页、Claude Platform 或云服务账单核对当前消耗，再决定需要续费、加用量还是排查身份错误。
 
-咨询时只需要描述操作系统、工具入口和登录类型，不发送密码、API Key、会话令牌或代码仓库中的敏感内容。
+## 订阅、API 与第三方月卡对照
 
-## 使用 Claude 订阅
+| 路径 | 费用与用量在哪里看 | 不能据此推断 |
+| --- | --- | --- |
+| 适用 Pro/Max 订阅登录 | Claude 账号方案及用量 | 不保证无限消息，不等于通用 API 余额 |
+| Claude API/Console | 对应组织或项目的用量和账单 | 买会员不自动改变 API 身份 |
+| 云平台或第三方接入 | 实际服务方的计费和限额 | 不能直接套用个人订阅的权益 |
 
-对于适用的 Pro 或 Max 订阅，可以按官方说明连接 Claude Code。要确认账号的会员状态、用量规则及限制。
+部分 Max 方案列有独立 API credits，领取、适用组织与期限仍需单独核对。它不把订阅用量和所有 API 支出合为一个余额。
 
-这不是同一账号上另一份凭空增加的官方会员。若商家交付的是 Claude 订阅，应写清楚该订阅如何用于 Claude Code。
+## 示例：已有会员却持续出现 API 账单
 
-## 使用 API 路径
+假设用户已买 Pro，但机器配置了 API 身份。先在本机核对实际提供方和对应账单；需要改用订阅时按官方登录流程重新选择身份。只重复买 Pro 不会自动修复凭据配置。本示例描述排障思路，未声称在用户设备上实测。
 
-通过 API 凭据接入时，需要核对计费主体、模型价格、用量记录和预算限制。订阅费用不能直接理解为等额 API 余额。若某个套餐附带独立 API 额度，还需核对其适用范围与计费页面。
+## 询价时只描述必要信息
 
-第三方服务还需说明服务提供方、实际入口和数据处理方式。不能用官方订阅的权益说明替代第三方方案的规格。
-
-## 如何理解 Claude Code 月卡
-
-- 月卡是服务期限标签，先查明它对应哪一种接入路径。
-- 确认期限、额度、重置规则及超额后的处理。
-- 确认是自己的账号、独立账号还是其他服务凭据。
-- 确认代码、操作记录和授权由谁管理。
-
-## GetToken 咨询应该写什么
-
-描述你的开发环境、希望的交付方式和实际用途。例如：“日常在终端使用，希望咨询能用于 Claude Code 的独立账号，请说明对应订阅、额度查询方式、有效期和管理权限。”
-
-GetToken 主要承接代充和独立账号咨询；具体可售方案需要确认，不默认提供 API 余额充值。
+可提供操作系统、终端或 IDE、登录类型、任务强度和意向周期，不发送源码、密钥或会话凭据。“月卡”只描述期限，需另说明实际接入方、额度、重置、超额费用和代码数据处理。GetToken 是否受理以商品状态为准，不默认提供 API 充值。
 
 ## 常见问题
 
@@ -54,3 +48,5 @@ GetToken 主要承接代充和独立账号咨询；具体可售方案需要确�
 
 - [Claude Code 官方接入与计费](https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-or-max-plan)
 - [套餐附带的独立 API 额度](https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-and-team-plans)
+
+- [Claude Code 当前交互命令](https://code.claude.com/docs/en/interactive-mode)

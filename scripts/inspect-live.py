@@ -6,6 +6,7 @@ import json
 import pathlib
 import re
 import socket
+import sqlite3
 import subprocess
 import tempfile
 
@@ -101,6 +102,24 @@ def host_facts():
     except (OSError, AttributeError): facts['os'] = None
     return facts
 
-report = {'kind': 'read-only-routing-inspection', 'host': host_facts(), 'releasePath': str(release.resolve()), 'releaseFiles': files_at(release),
+def order_access_summary(database='/var/lib/gettoken-verify/verify.db'):
+    """Aggregate counts only, read-only; never read identities, keys or codes."""
+    connection = None
+    try:
+        address = pathlib.Path(database).resolve().as_uri() + '?mode=ro'
+        connection = sqlite3.connect(address, uri=True, timeout=5)
+        connection.execute('pragma query_only = on')
+        total = connection.execute('select count(*) from orders').fetchone()[0]
+        columns = {row[1] for row in connection.execute('pragma table_info(orders)')}
+        legacy = connection.execute('select count(*) from orders where access_hash is null').fetchone()[0] if 'access_hash' in columns else total
+        pending_refunds = connection.execute("select count(*) from refunds where status != 'success'").fetchone()[0]
+        return {'readable': True, 'orders': total, 'legacyOrders': legacy, 'pendingRefunds': pending_refunds}
+    except (OSError, sqlite3.Error) as error:
+        return {'readable': False, 'errorType': type(error).__name__}
+    finally:
+        if connection is not None:
+            connection.close()
+
+report = {'kind': 'read-only-routing-inspection', 'host': host_facts(), 'orderAccess': order_access_summary(), 'releasePath': str(release.resolve()), 'releaseFiles': files_at(release),
           'nginxConfigValid': config.returncode == 0, 'siteBlocks': blocks, 'dns': dns, 'responses': responses}
 print('GETTOKEN_ROUTING_REPORT=' + json.dumps(report, ensure_ascii=False))

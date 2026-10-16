@@ -173,4 +173,4 @@ node scripts/check-live-seo.mjs --revision "$(git rev-parse HEAD)" --output /tmp
 
 ## 历史部署证据与当前迭代
 
-PR #11 的 `8b56b70` 已合并并在 [部署 run 38657522084](https://github.com/JackNiu2026/GetToken/actions/runs/38657522084) 成功部署；当时 API 为 off。这是历史部署记录，不代表当前实时状态或商户真实到账。本轮 PR 尚未合并部署，状态和剩余资料见 [迭代验收](docs/iteration-acceptance.md)。
+PR #11 的 `8b56b70` 已合并并在 [部署 run 38657522084](https://github.com/JackNiu2026/GetToken/actions/runs/38657522084) 成功部署；当时 API 为 off。这是历史部署记录，不代表当前实时状态或商户真实到账。本轮功能 PR #12～#18 已合并部署，510 项线上 HTTP 检查通过，API 仍为 off；PR #19 同步验收资料。状态和剩余资料见 [迭代验收](docs/iteration-acceptance.md) 与 [合并记录](docs/merge-acceptance-2026-10-16.md)。

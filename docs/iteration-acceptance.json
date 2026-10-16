@@ -1,7 +1,7 @@
 {
   "date": "2026-10-16",
   "codeRevision": "8106c891817eeff2197ab04271c374aaf7ea6c1b",
-  "productionDeployed": false,
+  "productionDeployed": true,
   "liveFundsVerified": false,
   "tests": {
     "javascript": 84,
@@ -551,5 +551,16 @@
       "brokenImageCount": 0,
       "screenshot": "screenshots/28-verify-admin-mobile.png"
     }
-  ]
+  ],
+  "codeDeploymentRevision": "f89cf19e9542c03ee0f4106206be9c6e46ad2a21",
+  "codeDeploymentRun": 38916282163,
+  "productionHttpChecks": 510,
+  "paymentMode": "off",
+  "productionOrderPreflight": {
+    "orders": 0,
+    "legacyOrders": 0,
+    "pendingRefunds": 0,
+    "inspectionRun": 38915329615,
+    "installerRun": 38915646320
+  }
 }

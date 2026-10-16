@@ -14,7 +14,7 @@
 | KYC 协助具体动作、交付证据、不受理范围 | 待确认 | SERVICE_CONTRACT 的 scope / successEvidence / excludedCases |
 | 凭据用途、撤销与提前删除、超时处理 | 待确认 | credentialPurpose / revocationAndDeletion / timeoutAction |
 | 微信、支付宝正式商户 | 待私有配置与核验 | [支付资料清单](payment-launch.md)，真实秘密通过服务器私有目录或 Secrets 提供 |
-| 历史订单及私密恢复渠道 | 未取得生产盘点 | [权限迁移](order-access-migration.md)，有未迁移订单阻止发布切换 |
+| 历史订单及私密恢复渠道 | 本轮生产盘点：订单 0、未迁移 0、待退款 0 | 本次无需恢复链接；未来存量仍按 [权限迁移](order-access-migration.md) 核实所有权与私密交付 |
 | 真实资金验收 | 尚未执行 | 账户持有人扫码，平台到账与原路退款分别确认 |
 
 无需重复提供已经成功使用过的 GitHub 部署 SSH 资料。部署前复核现有配置和正式 HTTPS 回调；历史成功记录不代表当前商户资料已就绪。

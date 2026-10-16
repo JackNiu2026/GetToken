@@ -24,14 +24,16 @@ async function setup(t) {
   t.after(() => new Promise(resolve => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}/api/verify/`;
   let cookie;
+  const access = new Map();
   const call = async (path, { body, admin = false, notice } = {}) => {
     const response = await fetch(base + path, {
       method: body !== undefined || notice ? 'POST' : 'GET', body: notice?.body ?? (body !== undefined ? JSON.stringify(body) : undefined),
-      headers: { ...(notice?.headers || (body !== undefined ? { 'Content-Type': 'application/json' } : {})), ...(admin ? { Cookie: cookie, 'X-GetToken-Admin': '1' } : {}) },
+      headers: { ...(path.startsWith('orders/') ? { 'X-GetToken-Order-Access': access.get(path.split('/')[1]) || '' } : {}), ...(notice?.headers || (body !== undefined ? { 'Content-Type': 'application/json' } : {})), ...(admin ? { Cookie: cookie, 'X-GetToken-Admin': '1' } : {}) },
     });
     if (response.headers.get('set-cookie')) cookie = response.headers.get('set-cookie').split(';')[0];
     const text = await response.text();
     let data; try { data = JSON.parse(text); } catch { data = text; }
+    if (data?.accessToken) access.set(data.id, data.accessToken);
     return { status: response.status, data };
   };
   assert.equal((await call('admin/login', { body: { password: 'payment-loop-test-only' } })).status, 200);

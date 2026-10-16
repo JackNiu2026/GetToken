@@ -2,6 +2,7 @@
 import { VERIFY, ORDER_PATTERN, SERVICE_CONTRACT } from '../../assets/gettoken/verify-rules.mjs';
 import { UserError } from './service.mjs';
 import { checkPassword, sha256, token } from './secure.mjs';
+import { validOrderAccess } from './access.mjs';
 
 const PREFIX = '/api/verify';
 const SESSION_HOURS = 12;
@@ -43,7 +44,7 @@ export function createApp({ service, store, providers, config, now = () => Date.
   const allow = limiter(now);
 
   const send = (res, status, data, headers = {}) => {
-    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers });
+    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', ...headers });
     res.end(JSON.stringify(data));
   };
   const clientIp = req => {
@@ -78,6 +79,12 @@ export function createApp({ service, store, providers, config, now = () => Date.
     if (req.method !== 'GET' && req.headers['x-gettoken-admin'] !== '1') throw new UserError('请求来源不正确', 403);
   };
   const cookie = (value, maxAge) => `${COOKIE}=${value}; Path=${PREFIX}/admin; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+  const requireOrderAccess = (req, id) => {
+    const row = store.get('select access_hash from orders where id = ?', id);
+    if (!validOrderAccess(id, req.headers['x-gettoken-order-access'], row?.access_hash)) {
+      throw new UserError('请使用原浏览器或完整查询链接；凭据遗失请联系支持方核实恢复，不要发送 Session Key', 403);
+    }
+  };
 
   async function notify(req, res, channel, refund = false) {
     const provider = providers[channel];
@@ -124,12 +131,14 @@ export function createApp({ service, store, providers, config, now = () => Date.
       limit(req, 'lookup', 120, 60_000);
       const orderId = decodeURIComponent(id).toUpperCase();
       if (!ORDER_PATTERN.test(orderId)) throw new UserError('订单号格式不正确，例如 GT-VF-1014-7KQ2AB', 400);
+      requireOrderAccess(req, orderId);
       send(res, 200, await service.lookup(orderId, query.get('channel')));
     }],
     ['POST', /^\/orders\/([^/]+)\/payments$/, async (req, res, [id]) => {
       limit(req, 'repay', 20, 3600_000);
       const orderId = decodeURIComponent(id).toUpperCase();
       if (!ORDER_PATTERN.test(orderId)) throw new UserError('订单号格式不正确', 400);
+      requireOrderAccess(req, orderId);
       const body = await json(req);
       send(res, 200, await service.requestPayment(orderId, body.channel));
     }],

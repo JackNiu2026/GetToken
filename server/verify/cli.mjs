@@ -10,6 +10,7 @@ import { openStore } from './store.mjs';
 import { createProviders } from './pay/index.mjs';
 import { hashPassword } from './secure.mjs';
 import { createService } from './service.mjs';
+import { assertAccessMigration, legacyOrderCount, issueOrderAccess } from './access.mjs';
 
 // One reader for every question, so piped input (two lines) works as well as a terminal.
 const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: process.stdin.isTTY });
@@ -31,7 +32,17 @@ const config = loadConfig();
 const store = openStore(join(config.dataDir, 'verify.db'));
 const command = process.argv[2];
 
-if (command === 'passwd') {
+if (['access-check', 'issue-access', 'rotate-access'].includes(command)) {
+  try {
+    if (command === 'access-check') {
+      console.log(`待迁移查询权限的历史订单：${legacyOrderCount(store)}`);
+      assertAccessMigration(store);
+    } else {
+      issueOrderAccess({ store, id: process.argv[3], output: process.argv[4], origin: config.origin, rotate: command === 'rotate-access' });
+      console.log('查询链接已写入指定私有文件；核实所有权后通过私密渠道交付，不要粘贴到日志或公开工单。');
+    }
+  } catch (error) { console.error(error.message); process.exitCode = 1; }
+} else if (command === 'passwd') {
   const first = await ask('新的后台密码（至少 12 位）：');
   if (first.length < 12) { console.error('密码太短，至少 12 位'); process.exit(1); }
   if ((await ask('再输入一次：')) !== first) { console.error('两次输入不一致'); process.exit(1); }
@@ -68,7 +79,7 @@ if (command === 'passwd') {
     console.log(JSON.stringify(await service.lookup(id), null, 2));
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 } else {
-  console.log('用法：gettoken-verify passwd | status | doctor | reconcile ORDER_ID | decision ORDER_ID passed/failed [REASON]');
+  console.log('用法：gettoken-verify passwd | status | doctor | access-check | issue-access ORDER_ID PRIVATE_FILE | rotate-access ORDER_ID PRIVATE_FILE | reconcile ORDER_ID | decision ORDER_ID passed/failed REASON');
   process.exitCode = command ? 1 : 0;
 }
 rl.close();

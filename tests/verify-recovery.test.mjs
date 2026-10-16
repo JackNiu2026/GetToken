@@ -196,9 +196,9 @@ test('live opening is enforced by the API while existing orders remain available
   assert.deepEqual(config.channels, []);
   const response = await fetch(base + 'orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: CODE, agree: true, channel: 'a' }) });
   assert.equal(response.status, 503);
-  assert.equal((await fetch(base + 'orders/' + existing.id)).status, 200);
+  assert.equal((await fetch(base + 'orders/' + existing.id, { headers: { 'X-GetToken-Order-Access': existing.accessToken } })).status, 200);
   fixture.add(16 * MINUTE);
-  const renew = await fetch(base + `orders/${existing.id}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'a' }) });
+  const renew = await fetch(base + `orders/${existing.id}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-GetToken-Order-Access': existing.accessToken }, body: JSON.stringify({ channel: 'a' }) });
   assert.equal(renew.status, 200, 'closing new submissions does not abandon existing orders');
 });
 

@@ -1,7 +1,8 @@
 // Order lifecycle. Results come only from decide(), which only the admin API calls:
 // nothing here passes or fails an order on a timer.
 import { VERIFY, codeProblem, normalizeCode, maskTail, SERVICE_CONTRACT, serviceContractReady } from '../../assets/gettoken/verify-rules.mjs';
-import { orderId, compactId, sealCode, openCode, fingerprint, sha256, beijingDayStart } from './secure.mjs';
+import { orderId, compactId, sealCode, openCode, fingerprint, sha256, beijingDayStart, token } from './secure.mjs';
+import { accessDigest } from './access.mjs';
 
 const HOUR = 3600_000;
 const MINUTE = 60_000;
@@ -137,8 +138,9 @@ export function createService({ store, config, providers, now = () => Date.now()
     const t = now();
     let id;
     do id = orderId(t); while (getOrder(id));
-    store.run("insert into orders(id, code_sealed, code_tail, code_fp, show_public, status, tech_fee, audit_fee, created_at, ip_hash) values(?, ?, ?, ?, ?, 'unpaid', ?, ?, ?, ?)",
-      id, sealCode(config.secret, code), code.slice(-4), fingerprint(config.secret, code), showPublic === true ? 1 : 0, VERIFY.techFeeMinor, VERIFY.auditFeeMinor, t, ip ? fingerprint(config.secret, `ip:${ip}`) : null);
+    const accessToken = token();
+    store.run("insert into orders(id, code_sealed, code_tail, code_fp, show_public, status, tech_fee, audit_fee, created_at, ip_hash, access_hash) values(?, ?, ?, ?, ?, 'unpaid', ?, ?, ?, ?, ?)",
+      id, sealCode(config.secret, code), code.slice(-4), fingerprint(config.secret, code), showPublic === true ? 1 : 0, VERIFY.techFeeMinor, VERIFY.auditFeeMinor, t, ip ? fingerprint(config.secret, `ip:${ip}`) : null, accessDigest(id, accessToken));
     event(id, 'user', 'created', showPublic === true ? '同意匿名展示' : null);
     try {
       await openPayment(getOrder(id), channel);
@@ -148,7 +150,7 @@ export function createService({ store, config, providers, now = () => Date.now()
       if (error instanceof UserError) throw error;
       throw new UserError('付款二维码获取失败，请稍后重试或换一种付款方式', 502);
     }
-    return view(getOrder(id));
+    return { ...view(getOrder(id)), accessToken };
   }
 
   async function requestPayment(id, channel) {

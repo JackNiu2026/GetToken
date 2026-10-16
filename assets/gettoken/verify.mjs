@@ -25,6 +25,8 @@ let shownKey = '';
 let pollTimer = 0;
 let tickTimer = 0;
 let clockOffset = 0; // server time minus browser time
+const accessKeys = new Map(recentOrders().filter(o => /^[A-Za-z0-9_-]{43}$/.test(o.access || '')).map(o => [o.id, o.access]));
+let lookupVersion = 0;
 let lastChannel = null; // channel of the last QR code shown, reused when a new one is needed
 
 /* ---------- helpers ---------- */
@@ -33,7 +35,9 @@ async function api(path, options = {}) {
   try {
     response = await fetch(new URL(path, API), {
       ...options,
-      headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(path.match(/^orders\/([^/?]+)/) && accessKeys.has(path.split('/')[1].split('?')[0])
+          ? { 'X-GetToken-Order-Access': accessKeys.get(path.split('/')[1].split('?')[0]) } : {}) },
       body: options.body ? JSON.stringify(options.body) : undefined,
       cache: 'no-store',
     });
@@ -58,7 +62,7 @@ function showToast(message) {
 async function copy(text) {
   try {
     await navigator.clipboard.writeText(text);
-    showToast(`已复制：${text}`);
+    showToast('已复制，请妥善保存；查询链接可访问此订单，不要公开分享');
   } catch {
     showToast('复制失败，请手动选择文字复制');
   }
@@ -98,11 +102,12 @@ function recentOrders() {
     return [];
   }
 }
-function remember(id) {
+function remember(id, access) {
+  if (/^[A-Za-z0-9_-]{43}$/.test(access || '')) accessKeys.set(id, access);
   try {
-    const list = [{ id, at: Date.now() }, ...recentOrders().filter(o => o.id !== id)].slice(0, 5);
+    const list = [{ id, access: accessKeys.get(id), at: Date.now() }, ...recentOrders().filter(o => o.id !== id)].slice(0, 5);
     localStorage.setItem(STORE_KEY, JSON.stringify(list));
-  } catch { /* storage may be blocked; the order number still works */ }
+  } catch { /* Memory still works; save the private query link before closing. */ }
   renderRecent();
 }
 function renderRecent() {
@@ -183,7 +188,7 @@ form.addEventListener('submit', async event => {
   submit.textContent = '正在生成付款二维码…';
   try {
     const order = await api('orders', { method: 'POST', body: { code, agree: true, showPublic: $('[data-show-public]').checked, channel } });
-    remember(order.id);
+    remember(order.id, order.accessToken);
     form.reset();
     checkCode();
     showOrder(order, { scroll: true });
@@ -200,7 +205,8 @@ const track = step => `<ol class="v-track" aria-label="进度">${TRACK.map((name
 const top = (order, tag) => `<div class="v-order__top"><span class="v-mono">订单 ${esc(order.id)}</span>${tag}</div>`;
 const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
 const CROSS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
-const ownRef = order => `<div class="v-ref"><div><span>订单号（凭它查询进度）</span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(order.id)}">复制</button></div>`;
+const queryLink = id => { const url = new URL('/verify/', location.origin); url.searchParams.set('order', id); url.hash = `access=${accessKeys.get(id) || ''}`; return url.href; };
+const ownRef = order => `<div class="v-ref"><div><span>订单号（跨设备请保存私密查询链接）</span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(queryLink(order.id))}">复制查询链接</button></div>`;
 const again = (label = '提交新的认证协助') => `<button class="v-btn v-btn--ghost" type="button" data-new>${label}</button>`;
 
 function unpaidView(order) {
@@ -311,6 +317,7 @@ function showOrder(order, { scroll = false } = {}) {
 }
 
 function closeOrder() {
+  lookupVersion++;
   clearTimeout(pollTimer);
   current = null;
   shownKey = '';
@@ -390,8 +397,11 @@ panel.addEventListener('click', async event => {
   if (channel) {
     if (target.dataset.switch && current.payment?.channel === channel && current.payment.expiresAt > serverNow()) return;
     target.disabled = true;
+    const id = current.id;
+    const version = lookupVersion;
     try {
-      const order = await api(`orders/${encodeURIComponent(current.id)}/payments`, { method: 'POST', body: { channel } });
+      const order = await api(`orders/${encodeURIComponent(id)}/payments`, { method: 'POST', body: { channel } });
+      if (current?.id !== id || version !== lookupVersion) return;
       shownKey = '';
       showOrder(order);
     } catch (error) {
@@ -413,7 +423,18 @@ document.addEventListener('click', event => {
 const queryForm = $('[data-query]');
 const queryError = $('[data-query-error]');
 async function openOrder(raw, { scroll = true, quiet = false } = {}) {
-  const id = String(raw || '').trim().toUpperCase();
+  const version = ++lookupVersion;
+  let input = String(raw || '').trim();
+  if (/^https?:\/\//i.test(input)) {
+    try {
+      const link = new URL(input);
+      if (link.origin !== location.origin || link.pathname !== '/verify/') throw new Error();
+      input = link.searchParams.get('order') || '';
+      const access = new URLSearchParams(link.hash.slice(1)).get('access');
+      if (ORDER_PATTERN.test(input.toUpperCase()) && /^[A-Za-z0-9_-]{43}$/.test(access || '')) accessKeys.set(input.toUpperCase(), access);
+    } catch { input = ''; }
+  }
+  const id = input.toUpperCase();
   queryError.hidden = true;
   if (!ORDER_PATTERN.test(id)) {
     if (!quiet) { queryError.textContent = '订单号格式不正确，例如 GT-VF-1014-7KQ2AB'; queryError.hidden = false; }
@@ -421,11 +442,13 @@ async function openOrder(raw, { scroll = true, quiet = false } = {}) {
   }
   try {
     const order = await api(`orders/${encodeURIComponent(id)}`);
+    if (version !== lookupVersion) return;
     remember(order.id);
+    queryForm.reset();
     shownKey = '';
     showOrder(order, { scroll });
   } catch (error) {
-    if (!quiet) { queryError.textContent = error.message; queryError.hidden = false; }
+    if (version === lookupVersion && !quiet) { queryError.textContent = error.message; queryError.hidden = false; }
   }
 }
 queryForm.addEventListener('submit', event => {
@@ -461,6 +484,13 @@ async function loadFeed() {
 
 /* ---------- start ---------- */
 async function start() {
+  // Fragments never reach HTTP logs. Consume before any requests and remove
+  // from browser history; the Session Key is never placed in the URL/storage.
+  const incoming = new URL(location.href);
+  const id = (incoming.searchParams.get('order') || '').toUpperCase();
+  const access = new URLSearchParams(incoming.hash.slice(1)).get('access');
+  if (ORDER_PATTERN.test(id) && /^[A-Za-z0-9_-]{43}$/.test(access || '')) remember(id, access);
+  if (incoming.hash.startsWith('#access=')) { incoming.hash = ''; history.replaceState(null, '', incoming); }
   renderRecent();
   checkCode();
   try {
@@ -489,4 +519,16 @@ async function start() {
   loadFeed();
   setInterval(loadFeed, 60000);
 }
+// A pasted link may change only the fragment of the current URL, which does
+// not reload this ES module. Consume it with the same rules as initial load.
+window.addEventListener('hashchange', () => {
+  if (!location.hash.startsWith('#access=')) return;
+  const incoming = new URL(location.href);
+  const id = (incoming.searchParams.get('order') || '').toUpperCase();
+  const access = new URLSearchParams(incoming.hash.slice(1)).get('access');
+  if (ORDER_PATTERN.test(id) && /^[A-Za-z0-9_-]{43}$/.test(access || '')) remember(id, access);
+  incoming.hash = '';
+  history.replaceState(null, '', incoming);
+  if (ORDER_PATTERN.test(id)) openOrder(id);
+});
 start();

@@ -28,7 +28,7 @@ export function serviceContractReady(contract = SERVICE_CONTRACT) {
       .every(key => typeof contract[key] === 'string' && contract[key].trim().length > 0);
 }
 export function serviceDisclosure(contract = SERVICE_CONTRACT) {
-  if (!serviceContractReady(contract)) return '服务动作、交付证据与支持信息尚未确认，当前不受理新订单，请勿输入 Session Key 或付款。支持时段拟为 09:00–23:00，时区待确认。';
+  if (!serviceContractReady(contract)) return '当前可在本页填写和选择，暂不能提交订单或付款。服务规则尚未确认，请勿填写真实 Session Key。支持时段拟为 09:00–23:00，时区待确认。';
   return `服务范围：${contract.scope}。交付证据：${contract.successEvidence}。不受理：${contract.excludedCases}。支持方：${contract.supportIdentity}，${contract.supportChannel}，${contract.supportHours}（${contract.supportTimeZone}）。超时处理：${contract.timeoutAction}。凭据用途：${contract.credentialPurpose}。撤销及删除：${contract.revocationAndDeletion}。`;
 }
 

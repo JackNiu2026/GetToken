@@ -140,10 +140,15 @@ const canSubmit = () => config?.acceptingOrders === true && config.channels?.len
   && (config.mode === 'mock' || serviceContractReady(config.serviceContract));
 function renderChannels() {
   const open = canSubmit();
-  codeField.disabled = !open;
-  $('[data-agree]').disabled = !open;
-  $('[data-show-public]').disabled = !open;
-  if (!open) { codeField.value = ''; checkCode(); }
+  // Availability gates order creation, not local form interaction. Preserve the
+  // person's draft and selection when configuration arrives or payment fails.
+  const selected = $('input[name="channel"]:checked', form)?.value;
+  const channels = open ? config.channels : [
+    { key: 'wechat', label: '微信支付（暂不可付款）' },
+    { key: 'alipay', label: '支付宝（暂不可付款）' },
+  ];
+  const chosen = channels.some(c => c.key === selected) ? selected : channels[0]?.key;
+  channelBox.innerHTML = channels.map(c => `<label class="v-channel"><input type="radio" name="channel" value="${esc(c.key)}"${c.key === chosen ? ' checked' : ''}><span>${esc(c.label)}</span></label>`).join('');
   const stateLabel = $('[data-service-state]');
   if (stateLabel) stateLabel.textContent = `Claude KYC认证 · ${open ? '人工协助' : '暂未受理'}`;
   const terms = $('[data-service-disclosure]');
@@ -152,25 +157,23 @@ function renderChannels() {
     : serviceDisclosure(config?.serviceContract);
 
   if (!config) {
-    channelBox.innerHTML = '<p class="v-hint">认证协助服务暂时无法连接，请稍后刷新页面。</p>';
     submit.disabled = true;
+    submit.textContent = '服务连接失败，请刷新重试';
     return;
   }
   if (!open) {
-    channelBox.innerHTML = '<p class="v-hint">当前暂停新订单，请勿输入会话凭据或付款。已有订单仍可查询，历史收款和退款继续处理。</p>';
     submit.disabled = true;
     submit.textContent = '暂未受理';
     return;
   }
   submit.textContent = `付款并提交认证协助 · ${yuan(totalMinor())}`;
-  channelBox.innerHTML = config.channels.map((c, i) => `<label class="v-channel"><input type="radio" name="channel" value="${esc(c.key)}"${i === 0 ? ' checked' : ''}><span>${esc(c.label)}</span></label>`).join('');
   submit.disabled = false;
 }
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
   setFormError('');
-  if (!canSubmit()) return setFormError('当前不受理新订单，请勿输入会话凭据或付款');
+  if (!canSubmit()) return setFormError('当前暂停提交和付款，填写内容仅保留在本页');
   const { code, problem } = checkCode(true);
   if (problem) {
     setFormError(problem);

@@ -89,7 +89,7 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 ## 域名与正式销售配置
 
-实际检查已确认 `gettoken.cc` 与 `www.gettoken.cc` 解析到该服务器，宝塔已有 HTTPS 站点且根目录为发布软链接。部署保留现有证书和域名配置，仅补充 SEO 地址规则。安装脚本的 IP 站点仍监听 HTTP 80，不负责签发或更换证书。价格、收款码和客服联系方式仍遵循 README 中的配置方式。
+实际检查已确认 `gettoken.cc` 与 `www.gettoken.cc` 解析到该服务器，宝塔已有 HTTPS 站点且根目录为发布软链接。部署保留现有证书和域名配置，仅补充 SEO 地址规则。安装脚本的 IP 站点仍监听 HTTP 80，不负责签发或更换证书。商品询价与客服受理按 README 配置，普通商品不启用站内扫码付款。
 
 ## 审核验证服务（/verify/ 与 /api/verify/）
 
@@ -104,7 +104,7 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 ### 第一次上线后
 
-1. 设置后台密码（至少 12 位）：`sudo gettoken-verify passwd`。后台地址 `https://gettoken.cc/verify/admin/`，robots 已禁止收录。
+1. 设置后台密码（至少 12 位）：`sudo gettoken-verify passwd`。后台地址 `https://gettoken.cc/verify/admin/`，页面与响应头设置 noindex，后台数据由 API 会话认证保护；robots 不阻挡登录壳读取该指令。
 2. 配置文件 `/etc/gettoken/verify.env` 在首次发布时自动生成，只有 root 可读，之后的发布不会覆盖。其中的 `VERIFY_SECRET` 用于加密代码，**不要修改或丢失**，换掉后已有订单的代码无法解密。
 3. 刚安装时 `VERIFY_PAY_MODE=off`，页面显示“在线支付暂未开通”。查看状态：`sudo gettoken-verify status`。
 4. 修改 `verify.env` 后执行 `sudo systemctl restart gettoken-verify`。
@@ -145,9 +145,9 @@ WECHAT_PAY_PUBLIC_KEY_ID=PUB_KEY_ID_xxxxxxxx
 
 配置完成后把 `VERIFY_PAY_MODE` 改为 `live` 并重启。只配置了一种时，页面只显示那一种；两种都配置时用户可以切换。`sudo gettoken-verify status` 会列出可用的付款方式。
 
-正式模式的新订单优先受服务器 `VERIFY_ACCEPT_NEW_ORDERS=true/false` 控制，未设置时沿用共享规则的 `open`。未开放时 `/config` 返回空通道列表，原页面禁用提交，直接调用创建订单接口也返回 503。商户齐备后用 `sudo gettoken-payment-opening open` 或 `close` 切换，无需修改前端文件；静态页面原有“即将开放”文案保留。历史查单及退款继续处理，mock 模式允许隔离测试。
+正式新订单同时要求：完整且已批准的公开服务定义、后台密码、支付通道、live 模式与 `VERIFY_ACCEPT_NEW_ORDERS`（未设置时沿用 `open`）。关闭时 `/config` 返回不受理状态和空通道，页面禁用 Session Key 及提交，直接创建返回 503。`gettoken-payment-opening open` 先通过含服务资料的 doctor；历史查询、通知与退款不受新增订单关闭影响。mock 只用于隔离测试。
 
-双渠道资料、导入、密钥生成及真实验收见 [支付上线交付文档](docs/payment-launch.md)。`sudo gettoken-configure-payments 资料.json` 自动校验微信证书与私钥，生成只有 root 可读的配置，保留数据库加密密钥，服务失败恢复旧配置。`sudo gettoken-verify doctor` 检查双渠道配置与后台密码，不能证明真实到账。
+双渠道资料、导入、密钥生成及真实验收见 [支付上线交付文档](docs/payment-launch.md)。`sudo gettoken-configure-payments 资料.json` 自动校验微信证书与私钥，生成只有 root 可读的配置，保留数据库加密密钥，服务失败恢复旧配置。`sudo gettoken-verify doctor` 检查双渠道、后台密码与服务定义，不能证明真实到账。
 
 付款成功由支付平台的异步通知或查单确认。二维码过期与平台关闭分开处理：超时、网络错误和旧版在本地标记关闭的付款仍会补偿查单，只有平台确认终态才停止；未确认款项超过一天后按小时查询，不因回调丢失而丢弃。同订单的第二笔付款也会查单并自动全额退款。付款编号在请求平台前原子预留，同通道的并发获取合并；请求超时重试复用同一编号。升级会自动为旧数据库添加付款终态确认字段。
 
@@ -166,3 +166,11 @@ node scripts/check-live-seo.mjs --revision "$(git rev-parse HEAD)" --output /tmp
 ```
 
 默认要求 HTTPS；检查 canonical 页面 200、正文与本次构建一致、部署版本、HTTP 到 HTTPS、robots 对 Googlebot 与 Baiduspider 的允许规则、sitemap、日期、资源、404 与 SEO 别名。请求通过不表示搜索平台已收录或已有排名。产品页与指南都是目录网址：`/claude`、`/claude/index.html` 这类写法由 `scripts/nginx-seo-locations.conf` 301 到 `/claude/`；旧的 `/navigation/` 301 到 `/guides/`。
+
+## 订单查询权限升级
+
+新 API 的查询及二维码请求使用独立凭据，数据库只保存摘要；浏览器链接用 fragment 交接，不以订单号单独授予查询权限。安装器在切换当前版本前运行候选 CLI `access-check`，有未迁移历史订单时阻止发布。必须先按 [订单迁移说明](docs/order-access-migration.md) 核实所有权、签发并私密交付链接，不能删除订单绕过检查。升级后不能回滚到绕过查询授权的旧 API；关闭新增接单并前向修复，财务数据库和 `VERIFY_SECRET` 保持连续。
+
+## 历史部署证据与当前迭代
+
+PR #11 的 `8b56b70` 已合并并在 [部署 run 38657522084](https://github.com/JackNiu2026/GetToken/actions/runs/38657522084) 成功部署；当时 API 为 off。这是历史部署记录，不代表当前实时状态或商户真实到账。本轮 PR 尚未合并部署，状态和剩余资料见 [迭代验收](docs/iteration-acceptance.md)。

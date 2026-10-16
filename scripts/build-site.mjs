@@ -516,7 +516,7 @@ ${crumbNav(route, crumbs)}
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
 <p class="v-hint" id="v-code-hint" data-service-disclosure>${esc(serviceDisclosure(SERVICE_CONTRACT))} Session Key 是登录凭据，不是 API Key 或身份证明；格式通过不代表有效。</p>
-<div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required disabled></textarea>
+<div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
 </div></div>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3>确认费用</h3><div class="v-step__body">
@@ -525,11 +525,11 @@ ${crumbNav(route, crumbs)}
 <div class="v-fee"><b>审核费<span class="v-tag v-tag--green">未通过可退</span></b><span>审核未通过时，${VERIFY.refundHours} 小时内原路退回</span><strong>${audit}</strong></div>
 <div class="v-fee v-fee--total"><b>合计</b><span>未通过时实际支出 ${tech}</span><strong>${total}</strong></div>
 </div>
-<label class="v-check"><input type="checkbox" name="agree" data-agree disabled><span>我确认账户归本人所有并授权约定范围的认证协助；已了解 Session Key 的访问权限，技术费 ${tech} 不退，审核费 ${audit} 未通过时退回。</span></label>
-<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public disabled><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
+<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我确认账户归本人所有并授权约定范围的认证协助；已了解 Session Key 的访问权限，技术费 ${tech} 不退，审核费 ${audit} 未通过时退回。</span></label>
+<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
 </div></div>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>选择付款方式</h3><div class="v-step__body">
-<div class="v-channels" role="radiogroup" aria-label="付款方式" data-channels><p class="v-hint">正在读取可用的付款方式…</p></div>
+<div class="v-channels" role="radiogroup" aria-label="付款方式" data-channels><label class="v-channel"><input type="radio" name="channel" value="wechat" checked><span>微信支付（暂不可付款）</span></label><label class="v-channel"><input type="radio" name="channel" value="alipay"><span>支付宝（暂不可付款）</span></label></div>
 <div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit disabled>暂未受理</button>
 <p class="v-error" data-form-error role="alert" hidden></p>
 <p class="v-hint v-center">到账后开始本站处理计时，官方认证以 Claude 账户显示为准。</p></div>

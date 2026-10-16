@@ -145,7 +145,7 @@ WECHAT_PAY_PUBLIC_KEY_ID=PUB_KEY_ID_xxxxxxxx
 
 配置完成后把 `VERIFY_PAY_MODE` 改为 `live` 并重启。只配置了一种时，页面只显示那一种；两种都配置时用户可以切换。`sudo gettoken-verify status` 会列出可用的付款方式。
 
-正式新订单同时要求：完整且已批准的公开服务定义、后台密码、支付通道、live 模式与 `VERIFY_ACCEPT_NEW_ORDERS`（未设置时沿用 `open`）。关闭时 `/config` 返回不受理状态和空通道，页面禁用 Session Key 及提交，直接创建返回 503。`gettoken-payment-opening open` 先通过含服务资料的 doctor；历史查询、通知与退款不受新增订单关闭影响。mock 只用于隔离测试。
+正式新订单同时要求：完整且已批准的公开服务定义、后台密码、支付通道、live 模式与 `VERIFY_ACCEPT_NEW_ORDERS`（未设置时沿用 `open`）。关闭时 `/config` 返回不受理状态和空通道，页面保留本地输入、勾选与付款方式选择，仅禁用提交与付款；直接创建返回 503。`gettoken-payment-opening open` 先通过含服务资料的 doctor；历史查询、通知与退款不受新增订单关闭影响。mock 只用于隔离测试。
 
 双渠道资料、导入、密钥生成及真实验收见 [支付上线交付文档](docs/payment-launch.md)。`sudo gettoken-configure-payments 资料.json` 自动校验微信证书与私钥，生成只有 root 可读的配置，保留数据库加密密钥，服务失败恢复旧配置。`sudo gettoken-verify doctor` 检查双渠道、后台密码与服务定义，不能证明真实到账。
 

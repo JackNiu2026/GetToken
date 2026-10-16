@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { X509Certificate, createPublicKey } from 'node:crypto';
 import { privateKey, publicKey } from './pay/keys.mjs';
+import { SERVICE_CONTRACT } from '../../assets/gettoken/verify-rules.mjs';
 
 const MODES = ['off', 'mock', 'live'];
 
@@ -78,6 +79,7 @@ export function loadConfig(env = process.env) {
     origin: origin.origin,
     secret: Buffer.from(secret, 'hex'),
     mode,
+    serviceContract: SERVICE_CONTRACT,
     acceptNewOrders: env.VERIFY_ACCEPT_NEW_ORDERS === undefined ? undefined : env.VERIFY_ACCEPT_NEW_ORDERS === 'true',
     alipay: mode === 'live' ? alipay : null,
     wechat: mode === 'live' ? wechat : null,

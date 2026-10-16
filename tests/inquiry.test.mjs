@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { PRODUCTS, getQuote } from '../assets/gettoken/catalog.mjs';
 import { contactReady, inquiryState, inquirySummary } from '../assets/gettoken/inquiry.mjs';
 
-const ready = { contact: { email: 'support@example.test' }, support: { identity: 'Synthetic support', hours: 'Test hours' },
+const ready = { contact: { email: 'support@example.test' }, support: { identity: 'Synthetic support', hours: 'Test hours', timeZone: 'UTC' },
   inquiries: { codex: { enabled: true, tiers: ['plus'], periods: [1] } } };
 
 test('unconfigured storefront fails closed for every tier and period', () => {

@@ -12,6 +12,26 @@ export const VERIFY = Object.freeze({
   codeMax: 120,
 });
 
+// Public service terms; fill with verified business information, never secrets.
+// Session Key is required by the service owner; actual actions and evidence
+// still need to be defined before accepting production orders.
+export const SERVICE_CONTRACT = Object.freeze({
+  approved: false, requiresSessionKey: true,
+  scope: '', successEvidence: '', excludedCases: '',
+  supportIdentity: '', supportChannel: '', supportHours: '09:00–23:00', supportTimeZone: '',
+  timeoutAction: '', credentialPurpose: '', revocationAndDeletion: '',
+});
+export function serviceContractReady(contract = SERVICE_CONTRACT) {
+  return contract.approved === true && contract.requiresSessionKey === true
+    && ['scope', 'successEvidence', 'excludedCases', 'supportIdentity', 'supportChannel', 'supportHours',
+      'supportTimeZone', 'timeoutAction', 'credentialPurpose', 'revocationAndDeletion']
+      .every(key => typeof contract[key] === 'string' && contract[key].trim().length > 0);
+}
+export function serviceDisclosure(contract = SERVICE_CONTRACT) {
+  if (!serviceContractReady(contract)) return '服务动作、交付证据与支持信息尚未确认，当前不受理新订单，请勿输入 Session Key 或付款。支持时段拟为 09:00–23:00，时区待确认。';
+  return `服务范围：${contract.scope}。交付证据：${contract.successEvidence}。不受理：${contract.excludedCases}。支持方：${contract.supportIdentity}，${contract.supportChannel}，${contract.supportHours}（${contract.supportTimeZone}）。超时处理：${contract.timeoutAction}。凭据用途：${contract.credentialPurpose}。撤销及删除：${contract.revocationAndDeletion}。`;
+}
+
 export const totalMinor = () => VERIFY.techFeeMinor + VERIFY.auditFeeMinor;
 export const yuan = minor => `¥${(minor / 100).toFixed(2).replace(/\.00$/, '')}`;
 

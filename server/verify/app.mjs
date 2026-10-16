@@ -1,5 +1,5 @@
 // HTTP API under /api/verify/. Nginx proxies this path to 127.0.0.1 only.
-import { VERIFY, ORDER_PATTERN } from '../../assets/gettoken/verify-rules.mjs';
+import { VERIFY, ORDER_PATTERN, SERVICE_CONTRACT } from '../../assets/gettoken/verify-rules.mjs';
 import { UserError } from './service.mjs';
 import { checkPassword, sha256, token } from './secure.mjs';
 
@@ -106,6 +106,8 @@ export function createApp({ service, store, providers, config, now = () => Date.
     ['GET', /^\/health$/, (req, res) => send(res, 200, { ok: true, mode: config.mode })],
     ['GET', /^\/config$/, (req, res) => send(res, 200, {
       mode: config.mode,
+      acceptingOrders: service.acceptingNewOrders(),
+      serviceContract: config.serviceContract || SERVICE_CONTRACT,
       // The existing frontend disables submission when this list is empty.
       // Configured providers stay active for old payments and refunds in the service.
       channels: service.acceptingNewOrders() ? Object.values(providers).map(p => ({ key: p.name, label: p.label })) : [],

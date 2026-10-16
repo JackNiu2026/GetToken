@@ -1,6 +1,6 @@
 // Order lifecycle. Results come only from decide(), which only the admin API calls:
 // nothing here passes or fails an order on a timer.
-import { VERIFY, codeProblem, normalizeCode, maskTail } from '../../assets/gettoken/verify-rules.mjs';
+import { VERIFY, codeProblem, normalizeCode, maskTail, SERVICE_CONTRACT, serviceContractReady } from '../../assets/gettoken/verify-rules.mjs';
 import { orderId, compactId, sealCode, openCode, fingerprint, sha256, beijingDayStart } from './secure.mjs';
 
 const HOUR = 3600_000;
@@ -18,7 +18,9 @@ export function createService({ store, config, providers, now = () => Date.now()
     store.run('insert into events(order_id, at, actor, kind, detail) values(?, ?, ?, ?, ?)', orderIdValue, now(), actor, kind, detail);
   const getOrder = id => store.get('select * from orders where id = ?', id);
   const channels = () => Object.keys(providers);
-  const acceptingNewOrders = () => channels().length > 0 && (config.mode === 'mock' || (config.mode === 'live' && (config.acceptNewOrders ?? VERIFY.open)));
+  const acceptingNewOrders = () => channels().length > 0 && config.acceptNewOrders !== false
+    && (config.mode === 'mock' || (config.mode === 'live' && (config.acceptNewOrders ?? VERIFY.open)
+      && serviceContractReady(config.serviceContract || SERVICE_CONTRACT) && !!store.setting('admin_password')));
   const providerFor = channel => {
     if (!Object.hasOwn(providers, channel)) throw new UserError('不支持的付款方式');
     return providers[channel];
@@ -186,6 +188,7 @@ export function createService({ store, config, providers, now = () => Date.now()
       decidedAt: order.decided_at,
       now: t,
     };
+    if (order.status === 'passed') out.reason = order.reason || null;
     if (order.status === 'failed') {
       out.reason = order.reason || null;
       out.refund = { status: order.refund_status, amount: order.audit_fee, dueAt: order.refund_due_at, refundedAt: order.refunded_at };
@@ -217,9 +220,10 @@ export function createService({ store, config, providers, now = () => Date.now()
       const order = getOrder(id);
       if (!order) throw new UserError('找不到这个订单', 404);
       if (order.status !== 'reviewing') throw new UserError(order.status === 'unpaid' ? '订单还没有付款，不能录入结果' : '这个订单已经有结果了', 409);
+      if (config.mode === 'live' && !note) throw new UserError('请填写交付证据摘要或未通过原因；不得包含会话凭据');
       const t = now();
       if (result === 'passed') {
-        store.run("update orders set status = 'passed', decided_at = ?, reason = null where id = ?", t, id);
+        store.run("update orders set status = 'passed', decided_at = ?, reason = ? where id = ?", t, note, id);
       } else {
         const payment = store.get('select * from payments where id = ?', order.paid_payment);
         store.run("update orders set status = 'failed', decided_at = ?, reason = ?, refund_status = 'pending', refund_due_at = ? where id = ?", t, note, t + REFUND_DUE, id);

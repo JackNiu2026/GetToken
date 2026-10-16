@@ -4,6 +4,7 @@
 //   gettoken-verify status | doctor | reconcile ORDER | decision ORDER passed/failed [REASON]
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
+import { serviceContractReady } from '../../assets/gettoken/verify-rules.mjs';
 import { loadConfig } from './config.mjs';
 import { openStore } from './store.mjs';
 import { createProviders } from './pay/index.mjs';
@@ -49,7 +50,8 @@ if (command === 'passwd') {
   const pending = store.get("select count(*) as n from refunds where status != 'success'").n;
   console.log(`未完成退款：${pending}`);
   if (command === 'doctor') {
-    const ready = config.mode === 'live' && providers.alipay && providers.wechat && store.setting('admin_password');
+    const ready = config.mode === 'live' && providers.alipay && providers.wechat && store.setting('admin_password') && serviceContractReady(config.serviceContract);
+    console.log(`服务交付及支持信息：${serviceContractReady(config.serviceContract) ? '已确认' : '不完整，禁止开放'}`);
     console.log(`双渠道本地配置检查：${ready ? '通过' : '未通过（需要 live、两个商户与后台密码）'}`);
     console.log('此检查验证密钥格式与证书配对；平台签约、密钥绑定和真实到账需扫码验收。');
     process.exitCode = ready ? 0 : 1;

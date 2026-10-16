@@ -2,6 +2,7 @@
 // The cards are rendered at build time, so prices and copy read fine without JavaScript.
 import { getQuote, formatMoney, totalLabel } from './catalog.mjs';
 import { $, $$, openPayment } from './shop.mjs';
+import { inquiryState } from './inquiry.mjs';
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -40,6 +41,7 @@ for (const card of $$('[data-plan]')) {
     animateValue(priceEl, shownMonthly === undefined ? quote.monthlyMinor : shownMonthly, quote.monthlyMinor, quote.currency);
     shownMonthly = quote.monthlyMinor;
     totalEl.textContent = totalLabel(quote);
+    $('[data-buy]', card).textContent = inquiryState(product, tier, quote.months).label;
     if (quote.savingMinor > 0) {
       const saving = document.createElement('b');
       saving.textContent = ` 省 ${formatMoney(quote.savingMinor, quote.currency)}`;

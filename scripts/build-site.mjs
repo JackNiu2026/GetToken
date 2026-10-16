@@ -11,6 +11,7 @@ import { TOPICS } from '../content/topics.mjs';
 import { HUB } from '../content/hub.mjs';
 import { PRODUCT_PAGES } from '../content/products.mjs';
 import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney, totalLabel } from '../assets/gettoken/catalog.mjs';
+import { inquiryState } from '../assets/gettoken/inquiry.mjs';
 import { VERIFY, yuan, totalMinor } from '../assets/gettoken/verify-rules.mjs';
 import { ROOT, loadArticles, validateLibrary, inline, esc, dateIsValid } from './content.mjs';
 
@@ -155,7 +156,7 @@ export function siteFooter({ route = null, contact = 'dialog' }) {
         <div><span>支持</span><a href="${anchor(route, 'faq')}">常见问题</a><a href="${linkTo(route, VERIFY_ROUTE)}#query">审核进度查询</a>${contactLink}</div>
       </div>
     </div>
-    <p class="shell footer-note">GetToken 是独立第三方服务品牌，与 OpenAI、Google、xAI、Anthropic 无隶属关系。具体可售方案、价格与交付条件以付款页和客服确认为准；产品权益以当前官方说明与实际账号状态为准。</p>
+    <p class="shell footer-note">GetToken 是独立第三方服务品牌，与 OpenAI、Google、xAI、Anthropic 无隶属关系。普通商品按页面受理状态咨询，未确认报价与交付条件前请勿付款；产品权益以当前官方说明与实际账号状态为准。</p>
     <div class="shell footer-bottom"><span>© 2026 GetToken. All rights reserved.</span><span>独立服务品牌 · 非第三方官方平台</span></div>
   </footer>`;
 }
@@ -208,7 +209,7 @@ function row(route, a, heading = 'h3') {
 }
 function cta(route, topicSlug, heading) {
   const buy = buyLink(route, topicSlug);
-  const text = buy.name ? `查看 ${esc(buy.name)} 三档价格与扫码购买说明，付款前与客服确认报价和交付条件。` : '选择产品，查看三档价格与扫码购买说明，付款前与客服确认报价和交付条件。';
+  const text = buy.name ? `查看 ${esc(buy.name)} 方案与受理状态，受理开放后先确认资格、报价和交付条件。` : '选择产品，查看方案与受理状态，受理开放后先确认资格、报价和交付条件。';
   return `<aside class="g-cta" aria-label="购买入口"><div><h2>${heading}</h2><p>${text}</p></div><a class="g-btn g-btn--light" href="${buy.href}">${esc(buy.label)}</a></aside>`;
 }
 
@@ -339,17 +340,17 @@ const PAY_DIALOGS = `<dialog class="sheet" id="pay-dialog" aria-labelledby="pay-
 <button class="sheet__close" type="button" data-close-dialog aria-label="关闭">×</button>
 <div class="pay">
 <div class="pay__summary">
-<p class="eyebrow">Confirm &amp; pay</p>
+<p class="eyebrow">Plan inquiry</p>
 <h2 id="pay-title" data-pay-title>确认你的方案</h2>
 <dl class="pay__list" data-pay-list></dl>
-<div class="pay__ref"><span>付款备注码</span><code data-pay-ref>GT-0000</code><button type="button" data-copy-ref>复制</button></div>
-<ol class="pay__steps"><li>使用收款码完成付款，并在备注中填写付款备注码。</li><li>将付款截图与备注码发送给客服。</li><li>人工核对完成后为你交付，售后全程跟进。</li></ol>
+<div class="pay__ref"><span>方案参考</span><code data-pay-ref>GT-0000</code><button type="button" data-copy-ref>复制</button></div>
+<ol class="pay__steps"><li>确认当前方案是否受理。</li><li>受理开放后先取得书面报价。</li><li>交付与售后以事先确认的约定为准。</li></ol>
 </div>
 <div class="pay__panel">
 <div class="pay__methods" role="tablist" aria-label="支付方式" data-pay-methods></div>
 <div class="pay__qr" data-pay-qr></div>
-<p class="pay__hint">电脑端可直接扫码；在手机上可截图保存，再到 App 中从相册识别。</p>
-<p class="pay__amount"><span>应付金额</span><strong data-pay-amount>¥XX</strong><small data-pay-amount-note>金额以客服确认为准</small></p>
+<p class="pay__hint">普通商品不提供站内扫码付款。</p>
+<p class="pay__amount"><span>报价状态</span><strong data-pay-amount>待报价</strong><small data-pay-amount-note>金额以客服确认为准</small></p>
 <div class="pay__contact" data-pay-contact></div>
 </div>
 </div>
@@ -358,14 +359,14 @@ const PAY_DIALOGS = `<dialog class="sheet" id="pay-dialog" aria-labelledby="pay-
 <button class="sheet__close" type="button" data-close-dialog aria-label="关闭">×</button>
 <div class="sheet__body">
 <p class="eyebrow">Support</p>
-<h2 id="query-title">微信咨询与订单查询</h2>
-<p class="sheet__text">说说你的使用场景，客服帮你对照档位；已付款的话，把付款备注码发给客服即可查询进度。</p>
+<h2 id="query-title">服务咨询与受理状态</h2>
+<p class="sheet__text">普通商品采用人工询价；仅在受理开放后联系支持方，付款前确认交付与售后。</p>
 <div class="pay__contact" data-query-contact></div>
 <button class="g-btn g-btn--light" type="button" data-close-dialog>好的</button>
 </div>
 </dialog>
 <div class="toast" role="status" aria-live="polite" data-toast></div>
-<noscript><p class="noscript-note">启用 JavaScript 后可打开扫码付款窗口；价格与购买说明仍可正常阅读。</p></noscript>
+<noscript><p class="noscript-note">启用 JavaScript 后可查看咨询与受理说明；方案和指南仍可正常阅读。</p></noscript>
 `;
 
 const PLAN_STYLES = ['a', 'b', 'c'];
@@ -384,8 +385,8 @@ function planCard(p, catalog, key, i) {
 <div class="plan__price"><strong data-price>${formatMoney(quote.monthlyMinor, quote.currency)}</strong><span>/ 月</span><ul class="plan__tags">${tier.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>
 <p class="plan__total" data-total>${totalLabel(quote)}</p>
 ${deliveries}<fieldset class="choice choice--period"><legend>服务周期</legend><div class="choice__options">${radios('period', Object.entries(PERIOD_NAMES), String(quote.months), 'data-period')}</div></fieldset>
-<button class="plan__cta" type="button" data-buy>扫码购买</button>
-<p class="plan__note">扫码付款 · 人工核对 · 售后跟进</p>
+<button class="plan__cta" type="button" data-buy>${inquiryState(p.slug, key, quote.months).label}</button>
+<p class="plan__note">先核实资格 · 再确认报价 · 按约验收</p>
 </article>`;
 }
 
@@ -404,9 +405,9 @@ function productPage(p) {
   const refs = refList(catalog);
   const brief = [
     refs ? ['官方参考价', `${esc(refs)} / 月<small>${esc(p.source[0])} · 仅供对照</small>`] : ['计价', `${catalog.currency === 'USD' ? '美元' : '人民币'}，按线路与周期计算`],
-    ['交付方式', catalog.deliveries ? Object.values(catalog.deliveries).map(d => esc(d.name)).join(' · ') : '付款后与客服确认地区与线路'],
+    ['交付方式', catalog.deliveries ? Object.values(catalog.deliveries).map(d => esc(d.name)).join(' · ') : '报价前确认地区、规格与库存'],
     ['服务周期', Object.values(PERIOD_NAMES).join(' · ')],
-    ['售后', '有效期内人工跟进'],
+    ['售后', '受理时确认支持范围与时段'],
   ];
   const guideList = list => `<ol>${list.map(a => `<li><a href="${href(route, articleRoute(a))}"><strong>${esc(a.title)}</strong><span>${esc(topicOf(a.topic).name)} · 约 ${a.minutes} 分钟</span></a></li>`).join('')}</ol>`;
   const allLink = topic ? `<a class="p-more" href="${href(route, topicRoute(topic))}">全部 ${esc(catalog.name)} 动态与指南 →</a>` : '';
@@ -436,14 +437,14 @@ ${crumbNav(route, crumbs)}
 <div class="plans">
 ${tiers.map((key, i) => planCard(p, catalog, key, i)).join('\n')}
 </div>
-<p class="footnote"><span class="live-dot" aria-hidden="true"></span>${priced(catalog) ? '' : '价格即将公布，'}下单金额以付款页与客服确认为准。${p.source ? `<a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${refs ? `官方参考价：${esc(refs)} / 月` : esc(p.source[0])} ↗</a>` : ''}</p>
+<p class="footnote"><span class="live-dot" aria-hidden="true"></span>普通商品不提供站内扫码付款；受理状态见各方案按钮，报价与履约条件须事先确认。${p.source ? `<a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${refs ? `官方参考价：${esc(refs)} / 月` : esc(p.source[0])} ↗</a>` : ''}</p>
 </div></section>
 <div class="g-shell">
 <section class="g-section" aria-labelledby="steps-title"><div class="g-section__head"><h2 id="steps-title">怎么买、怎么验收</h2></div>
 <ol class="p-steps">
-<li><h3>选档位与周期</h3><p>拿不准就先选入门档月付，之后随时可以升级。</p></li>
-<li><h3>扫码付款</h3><p>付款时在备注里填写页面给出的备注码。</p></li>
-<li><h3>人工核对交付</h3><p>把付款凭证发给客服，核对后开通或交付。</p></li>
+<li><h3>选档位与周期</h3><p>先阅读适用条件；所选周期仅表达意向，不代表已确认供应。</p></li>
+<li><h3>确认受理状态</h3><p>受理开放后咨询资格、报价、交付期限与售后规则。</p></li>
+<li><h3>取得书面确认</h3><p>按支持方登记的询价记录确认交易；未确认前不要付款。</p></li>
 <li class="p-steps__check"><h3>${catalog.deliveries ? '在账号里验收' : '确认线路'}</h3><p>${catalog.deliveries ? '核对套餐、有效期与用量。' : '与客服确认地区与线路，接入后测试连通。'}${verify ? ` <a href="${href(route, articleRoute(verify))}">验收方法 →</a>` : ''}</p></li>
 </ol></section>
 ${feed}

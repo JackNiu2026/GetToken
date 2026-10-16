@@ -14,7 +14,7 @@ const DELIVERIES = {
 };
 
 // Prices are in minor units (fen / cent). `null` means "not announced yet" and
-// renders as an XX placeholder everywhere; set an integer to publish a price,
+// renders as 待报价 everywhere; set an integer to publish a reference quote,
 // then run `node scripts/build-site.mjs` so the product pages show it without JavaScript.
 // `periodRate` is the multiplier applied per period; 1 means no discount.
 // Set e.g. `{ 3: 0.95, 12: 0.85 }` to show savings on longer periods.
@@ -194,7 +194,7 @@ export function getQuote(productKey, tierKey, months, deliveryKey = null) {
 
 export function formatMoney(minor, currency) {
   if (!['CNY', 'USD'].includes(currency)) throw new RangeError('Invalid currency');
-  if (minor === null) return `${currency === 'CNY' ? '¥' : '$'}XX`;
+  if (minor === null) return '待报价';
   if (!Number.isInteger(minor)) throw new RangeError('Invalid money value');
   const amount = (minor / 100).toFixed(2);
   const trimmed = currency === 'USD' ? amount : amount.replace(/\.00$/, '');
@@ -203,6 +203,7 @@ export function formatMoney(minor, currency) {
 
 // "季付 · 3 个月合计 ¥XX", shared by the generated page and the live card.
 export function totalLabel(quote) {
+  if (quote.totalMinor === null) return `意向周期 ${quote.months} 个月 · 资格与履约待确认`;
   return `${PERIOD_NAMES[quote.months]} · ${quote.months} 个月合计 ${formatMoney(quote.totalMinor, quote.currency)}`;
 }
 

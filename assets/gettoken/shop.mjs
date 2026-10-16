@@ -1,7 +1,7 @@
 // Shared storefront behaviour for the homepage and product pages: toast, copy,
 // contact details, the order/contact dialog and the payment dialog.
 // Everything is page-local: no requests, no storage, no real orders.
-import { formatMoney, createPaymentReference } from './catalog.mjs';
+import { contactReady, inquiryState, inquirySummary } from './inquiry.mjs';
 import { SITE } from './site.config.mjs';
 
 export const $ = (selector, root = document) => root.querySelector(selector);
@@ -85,7 +85,7 @@ function renderContact(container, intro) {
   if (!entries.length && !wechatQr) {
     const empty = document.createElement('p');
     empty.className = 'contact-empty';
-    empty.textContent = '客服联系方式即将公布';
+    empty.textContent = '客服尚未开放，当前不受理新咨询或付款。';
     container.append(empty);
     return;
   }
@@ -112,101 +112,17 @@ function renderContact(container, intro) {
 
 const queryDialog = $('#query-dialog');
 registerDialog(queryDialog);
-renderContact($('[data-query-contact]'), '把你的需求或付款备注码发给客服');
-$$('[data-open-query]').forEach(button => button.addEventListener('click', () => openDialog(queryDialog, button)));
+const contactIntro = () => contactReady() ? `${SITE.support.identity} · 支持时段：${SITE.support.hours}。请说明需求，不要发送密码或 Session Key。` : '当前不受理新咨询或付款。';
+renderContact($('[data-query-contact]'), contactIntro());
+$$('[data-open-query]').forEach(button => button.addEventListener('click', () => { $('#query-title').textContent = '服务咨询'; $('.sheet__text', queryDialog).textContent = contactIntro(); openDialog(queryDialog, button); }));
 
-/* ---------- Payment dialog ---------- */
-const payDialog = $('#pay-dialog');
-registerDialog(payDialog);
-const pay = payDialog && {
-  title: $('[data-pay-title]', payDialog),
-  list: $('[data-pay-list]', payDialog),
-  ref: $('[data-pay-ref]', payDialog),
-  methods: $('[data-pay-methods]', payDialog),
-  qr: $('[data-pay-qr]', payDialog),
-  amount: $('[data-pay-amount]', payDialog),
-  amountNote: $('[data-pay-amount-note]', payDialog),
-};
-if (pay) {
-  renderContact($('[data-pay-contact]', payDialog), '付款后，把截图和备注码发给客服');
-  $('[data-copy-ref]', payDialog).addEventListener('click', () => copyText(pay.ref.textContent));
-  pay.methods.addEventListener('keydown', event => {
-    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-    const tabs = $$('button', pay.methods);
-    const i = tabs.indexOf(document.activeElement);
-    if (i < 0) return;
-    const next = tabs[(i + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
-    next.click();
-    next.focus();
-  });
-}
-
-function qrPlaceholder(label) {
-  const box = document.createElement('div');
-  box.className = 'qr-placeholder';
-  box.innerHTML = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="6" width="14" height="14" rx="2"/><rect x="28" y="6" width="14" height="14" rx="2"/><rect x="6" y="28" width="14" height="14" rx="2"/><path d="M28 28h6v6h-6zM38 38h4v4h-4zM28 40h4M40 28v6"/></svg>';
-  const title = document.createElement('b');
-  title.textContent = `${label}收款码`;
-  const note = document.createElement('span');
-  note.textContent = '收款码待上传';
-  box.append(title, note);
-  return box;
-}
-
-function showMethod(method) {
-  $$('button', pay.methods).forEach(b => {
-    const selected = b.dataset.method === method.key;
-    b.setAttribute('aria-selected', String(selected));
-    b.tabIndex = selected ? 0 : -1;
-  });
-  pay.qr.replaceChildren();
-  pay.qr.setAttribute('aria-label', `${method.label}收款码`);
-  if (method.qr) {
-    const img = new Image();
-    img.src = siteAsset(method.qr);
-    img.alt = `${method.label}收款码`;
-    img.addEventListener('error', () => pay.qr.replaceChildren(qrPlaceholder(method.label)), { once: true });
-    pay.qr.append(img);
-  } else {
-    pay.qr.append(qrPlaceholder(method.label));
-  }
-}
-
+// Preserve the existing exported name for product-page callers; ordinary products
+// now use the existing contact dialog and never create a payment or pseudo-order.
 export function openPayment(quote, trigger) {
-  if (!pay) return;
-  const methods = SITE.payment.methods.filter(m => m.currencies.includes(quote.currency));
-  const available = methods.length ? methods : SITE.payment.methods;
-  pay.title.textContent = `${quote.name} · ${quote.tierName}`;
-  const rows = [
-    ['方案', `${quote.tierName} · ${quote.tierHint}`],
-    ...(quote.deliveryName ? [['交付方式', quote.deliveryName]] : []),
-    ['服务周期', `${quote.months} 个月`],
-    ['月度价格', `${formatMoney(quote.monthlyMinor, quote.currency)} / 月`],
-  ];
-  if (quote.savingMinor > 0) rows.push(['周期优惠', `−${formatMoney(quote.savingMinor, quote.currency)}`]);
-  rows.push(['合计', formatMoney(quote.totalMinor, quote.currency)]);
-  pay.list.replaceChildren(...rows.map(([k, v], i) => {
-    const row = document.createElement('div');
-    if (i === rows.length - 1) row.className = 'is-total';
-    const dt = document.createElement('dt');
-    dt.textContent = k;
-    const dd = document.createElement('dd');
-    dd.textContent = v;
-    row.append(dt, dd);
-    return row;
-  }));
-  pay.ref.textContent = createPaymentReference(quote);
-  pay.amount.textContent = formatMoney(quote.totalMinor, quote.currency);
-  pay.amountNote.textContent = quote.totalMinor === null ? '价格即将公布，金额以客服确认为准' : `币种 ${quote.currency}，请按此金额付款`;
-  pay.methods.replaceChildren(...available.map(method => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.setAttribute('role', 'tab');
-    b.dataset.method = method.key;
-    b.textContent = method.label;
-    b.addEventListener('click', () => showMethod(method));
-    return b;
-  }));
-  showMethod(available[0]);
-  openDialog(payDialog, trigger);
+  if (!queryDialog) return;
+  const availability = inquiryState(quote.product, quote.tier, quote.months);
+  $('#query-title').textContent = `${quote.name} · ${availability.label}`;
+  $('.sheet__text', queryDialog).textContent = `${inquirySummary(quote)} ${availability.message}`;
+  renderContact($('[data-query-contact]'), contactIntro());
+  openDialog(queryDialog, trigger);
 }

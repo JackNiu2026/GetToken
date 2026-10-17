@@ -49,3 +49,22 @@ test('paused intake never stores Session Keys',t=>{
  assert.throws(()=>service.createSessionOrder({code:CODE,agree:true}),e=>e.status===503);
  assert.equal(f.store.get('select count(*) as n from orders').n,0);
 });
+
+test('feed separates today and all-time passed totals while respecting public consent', t => {
+ const f=fixture(t);
+ const old=f.service.createSessionOrder({code:CODE+'old',agree:true,showPublic:true});
+ f.service.decide(old.id,'passed','Synthetic previous-day result');
+ const dayStart=Math.floor((Date.now()+8*3600000)/86400000)*86400000-8*3600000;
+ f.store.run('update orders set decided_at = ? where id = ?',dayStart-1000,old.id);
+ for (const [suffix,showPublic] of [['public',true],['private',false]]) {
+   const o=f.service.createSessionOrder({code:CODE+suffix,agree:true,showPublic});
+   f.service.decide(o.id,'passed','Synthetic current-day result');
+ }
+ const failed=f.service.createSessionOrder({code:CODE+'failed',agree:true,showPublic:true});
+ f.service.decide(failed.id,'failed','Synthetic failure');
+ const feed=f.service.feed();
+ assert.equal(feed.today.passed,2);assert.equal(feed.totalPassed,3);
+ assert.equal(feed.today.processed,3);assert.equal(feed.items.length,2);
+ assert.ok(feed.items.every(row=>/^sk••••/.test(row.code)));
+ assert.ok(!JSON.stringify(feed).includes(CODE));
+});

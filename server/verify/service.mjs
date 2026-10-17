@@ -1,5 +1,5 @@
 // Order lifecycle. Results come only from decide(), which only the admin API calls:
-// nothing here passes or fails an order on a timer.
+// processing countdowns never decide a result; unchecked intake can expire for privacy.
 import { VERIFY, codeProblem, normalizeCode, maskTail, SERVICE_CONTRACT, serviceContractReady } from '../../assets/gettoken/verify-rules.mjs';
 import { orderId, compactId, sealCode, openCode, fingerprint, sha256, beijingDayStart, token } from './secure.mjs';
 import { accessDigest } from './access.mjs';
@@ -19,7 +19,7 @@ export function createService({ store, config, providers, now = () => Date.now()
     store.run('insert into events(order_id, at, actor, kind, detail) values(?, ?, ?, ?, ?)', orderIdValue, now(), actor, kind, detail);
   const getOrder = id => store.get('select * from orders where id = ?', id);
   const channels = () => Object.keys(providers);
-  const acceptingNewOrders = () => channels().length > 0 && config.acceptNewOrders !== false
+  const acceptingNewOrders = () => !config.externalIntake && channels().length > 0 && config.acceptNewOrders !== false
     && (config.mode === 'mock' || (config.mode === 'live' && (config.acceptNewOrders ?? VERIFY.open)
       && serviceContractReady(config.serviceContract || SERVICE_CONTRACT) && !!store.setting('admin_password')));
   const providerFor = channel => {
@@ -128,6 +128,68 @@ export function createService({ store, config, providers, now = () => Date.now()
   }
 
   /* ---------- public API ---------- */
+  const acceptingExternalOrders = () => config.externalIntake === true && config.acceptExternalOrders !== false
+    && !!store.setting('admin_password');
+  const external = id => store.get('select * from external_orders where order_id = ?', id);
+  const externalView = o => {
+    const e = external(o.id);
+    return e ? { source: e.source, reference: `尾号 ${e.reference_tail}`, checkedAt: e.checked_at } : null;
+  };
+  function createExternalOrder({ code: raw, reference: rawReference, source = 'taobao', agree, showPublic, ip }) {
+    if (!acceptingExternalOrders()) throw new UserError('资料提交暂不可用，请稍后重试', 503);
+    const code = normalizeCode(raw), problem = codeProblem(code);
+    if (problem) throw new UserError(problem);
+    if (agree !== true) throw new UserError('请确认账户归属与资料提交授权');
+    if (source !== 'taobao') throw new UserError('本轮仅支持淘宝订单');
+    const reference = String(rawReference || '').trim();
+    if (!/^\d{10,32}$/.test(reference)) throw new UserError('请填写完整淘宝订单号（10–32 位数字）');
+    const referenceHash = fingerprint(config.secret, `${source}:${reference}`);
+    const accessToken = token(), t = now();
+    return store.transaction(() => {
+      if (store.get('select order_id from external_orders where reference_hash = ?', referenceHash)) {
+        throw new UserError('此订单已提交，请使用原浏览器或私密链接查询；无法找回时联系支持方核实', 409);
+      }
+      let id; do id = orderId(t); while (getOrder(id));
+      store.run("insert into orders(id, code_sealed, code_tail, code_fp, show_public, status, tech_fee, audit_fee, created_at, ip_hash, access_hash) values(?, ?, ?, ?, ?, 'submitted', ?, ?, ?, ?, ?)",
+        id, sealCode(config.secret, code), code.slice(-4), fingerprint(config.secret, code), showPublic === true ? 1 : 0,
+        0, 0, t, ip ? fingerprint(config.secret, `ip:${ip}`) : null, accessDigest(id, accessToken));
+      store.run('insert into external_orders(order_id, source, reference_sealed, reference_hash, reference_tail) values(?, ?, ?, ?, ?)',
+        id, source, sealCode(config.secret, reference), referenceHash, reference.slice(-4));
+      event(id, 'user', 'external_submitted');
+      return { ...view(getOrder(id)), accessToken };
+    });
+  }
+  function checkExternalOrder(id, accepted, reason) {
+    const note = String(reason || '').trim();
+    if (!note || note.length > 300) throw new UserError('请填写核单记录或驳回原因（最多 300 字，不得包含凭据）');
+    if (typeof accepted !== 'boolean') throw new UserError('核单结果不正确');
+    return store.transaction(() => {
+      const o = getOrder(id);
+      if (!o || !external(id)) throw new UserError('找不到外部订单', 404);
+      if (o.status !== 'submitted') throw new UserError('订单已核对，请勿重复操作', 409);
+      if (accepted && !o.code_sealed) throw new UserError('会话资料已清除，请先联系用户核实', 409);
+      const t = now();
+      store.run('update external_orders set checked_at = ?, check_note = ? where order_id = ?', t, note, id);
+      store.run('update orders set status = ?, paid_at = ?, due_at = ?, decided_at = ?, reason = ? where id = ?',
+        accepted ? 'reviewing' : 'rejected', accepted ? t : null, accepted ? t + VERIFY.reviewHours * HOUR : null,
+        accepted ? null : t, accepted ? null : note, id);
+      event(id, 'admin', accepted ? 'external_confirmed' : 'external_rejected', note);
+      return adminDetail(id);
+    });
+  }
+  function recordExternalRefund(id, reason) {
+    const note = String(reason || '').trim();
+    if (!note || note.length > 300) throw new UserError('请填写退款凭证或记录摘要（最多 300 字）');
+    return store.transaction(() => {
+      const o = getOrder(id);
+      if (!o || !external(id)) throw new UserError('找不到外部订单', 404);
+      if (o.status !== 'failed' || o.refund_status !== 'pending') throw new UserError('此订单没有待登记的线下退款', 409);
+      store.run('update external_orders set refund_note = ? where order_id = ?', note, id);
+      store.run("update orders set refund_status = 'success', refunded_at = ? where id = ?", now(), id);
+      event(id, 'admin', 'external_refunded', note);
+      return adminDetail(id);
+    });
+  }
   async function createOrder({ code: raw, showPublic, agree, channel, ip }) {
     if (!acceptingNewOrders()) throw new UserError('在线支付暂未开通，请稍后再来', 503);
     const code = normalizeCode(raw);
@@ -154,6 +216,7 @@ export function createService({ store, config, providers, now = () => Date.now()
   }
 
   async function requestPayment(id, channel) {
+    if (config.externalIntake) throw new UserError('站内支付已关闭，请通过原交易渠道处理', 503);
     const order = getOrder(id);
     if (!order) throw new UserError('找不到这个订单', 404);
     if (order.status !== 'unpaid' && order.status !== 'expired') throw new UserError('这个订单已经付款');
@@ -189,13 +252,17 @@ export function createService({ store, config, providers, now = () => Date.now()
       dueAt: order.due_at,
       decidedAt: order.decided_at,
       now: t,
+      external: externalView(order),
     };
-    if (order.status === 'passed') out.reason = order.reason || null;
+    if (out.external) out.fees = null; // Taobao amounts are not verified by this API.
+    if (['passed', 'rejected'].includes(order.status)) out.reason = order.reason || null;
     if (order.status === 'failed') {
       out.reason = order.reason || null;
-      out.refund = { status: order.refund_status, amount: order.audit_fee, dueAt: order.refund_due_at, refundedAt: order.refunded_at };
+      out.refund = out.external
+        ? { status: order.refund_status, refundedAt: order.refunded_at }
+        : { status: order.refund_status, amount: order.audit_fee, dueAt: order.refund_due_at, refundedAt: order.refunded_at };
     }
-    if (order.status === 'unpaid') {
+    if (order.status === 'unpaid' && !config.externalIntake) {
       const pending = store.all("select * from payments where order_id = ? and status = 'pending' and qr is not null and expires_at > ? order by created_at desc", order.id, t);
       const payment = pending.find(p => p.channel === channel) || pending[0];
       out.payment = payment ? { id: payment.id, channel: payment.channel, qr: payment.qr, amount: payment.amount, expiresAt: payment.expires_at } : null;
@@ -206,7 +273,7 @@ export function createService({ store, config, providers, now = () => Date.now()
   function feed() {
     const t = now();
     const day = beijingDayStart(t);
-    const counts = store.get("select count(*) as processed, coalesce(sum(status = 'passed'), 0) as passed from orders where decided_at >= ?", day);
+    const counts = store.get("select count(*) as processed, coalesce(sum(status = 'passed'), 0) as passed from orders where decided_at >= ? and status in ('passed', 'failed')", day);
     const items = store.all("select code_tail, decided_at from orders where status = 'passed' and show_public = 1 order by decided_at desc limit 20")
       .map(row => ({ code: maskTail(row.code_tail), at: row.decided_at }));
     return { now: t, today: { processed: counts.processed, passed: counts.passed }, items };
@@ -222,11 +289,16 @@ export function createService({ store, config, providers, now = () => Date.now()
       const order = getOrder(id);
       if (!order) throw new UserError('找不到这个订单', 404);
       if (order.status !== 'reviewing') throw new UserError(order.status === 'unpaid' ? '订单还没有付款，不能录入结果' : '这个订单已经有结果了', 409);
-      if (config.mode === 'live' && !note) throw new UserError('请填写交付证据摘要或未通过原因；不得包含会话凭据');
+      if ((config.mode === 'live' || external(id)) && !note) throw new UserError('请填写交付证据摘要或未通过原因；不得包含会话凭据');
       const t = now();
       if (result === 'passed') {
         store.run("update orders set status = 'passed', decided_at = ?, reason = ? where id = ?", t, note, id);
       } else {
+        if (external(id)) {
+          store.run("update orders set status = 'failed', decided_at = ?, reason = ?, refund_status = 'pending', refund_due_at = null where id = ?", t, note, id);
+          event(id, actor, result, note);
+          return;
+        }
         const payment = store.get('select * from payments where id = ?', order.paid_payment);
         store.run("update orders set status = 'failed', decided_at = ?, reason = ?, refund_status = 'pending', refund_due_at = ? where id = ?", t, note, t + REFUND_DUE, id);
         store.run("insert into refunds(id, order_id, payment_id, channel, kind, amount, status, created_at, updated_at) values(?, ?, ?, ?, 'audit', ?, 'pending', ?, ?)",
@@ -306,7 +378,7 @@ export function createService({ store, config, providers, now = () => Date.now()
     if (status === 'refund') where.push("refund_status is not null and refund_status != 'success'");
     else if (status) { where.push('status = ?'); args.push(status); }
     const query = String(q).trim().toUpperCase();
-    if (query) { where.push('(id like ? or upper(code_tail) = ?)'); args.push(`%${query}%`, query.slice(-4)); }
+    if (query) { where.push('(id like ? or upper(code_tail) = ? or id in (select order_id from external_orders where reference_hash = ?))'); args.push(`%${query}%`, query.slice(-4), fingerprint(config.secret, `taobao:${String(q).trim()}`)); }
     const sql = `from orders${where.length ? ` where ${where.join(' and ')}` : ''}`;
     const size = 30;
     const total = store.get(`select count(*) as n ${sql}`, ...args).n;
@@ -317,6 +389,7 @@ export function createService({ store, config, providers, now = () => Date.now()
   const adminRow = o => ({
     id: o.id, status: o.status, code: maskTail(o.code_tail), showPublic: !!o.show_public, createdAt: o.created_at, paidAt: o.paid_at,
     dueAt: o.due_at, decidedAt: o.decided_at, refundStatus: o.refund_status, refundDueAt: o.refund_due_at, reason: o.reason,
+    external: externalView(o),
   });
 
   function adminDetail(id) {
@@ -329,6 +402,7 @@ export function createService({ store, config, providers, now = () => Date.now()
     const repeats = store.get('select count(*) as n from orders where code_fp = ? and id != ?', o.code_fp, id).n;
     return {
       ...adminRow(o), code, codePurged: !!o.purged_at, repeats,
+      external: external(id) ? { ...externalView(o), reference: openCode(config.secret, external(id).reference_sealed), checkNote: external(id).check_note, refundNote: external(id).refund_note } : null,
       payments: store.all('select id, channel, status, amount, trade_no as tradeNo, created_at as createdAt, paid_at as paidAt from payments where order_id = ? order by created_at', id),
       refunds: store.all('select id, kind, channel, amount, status, error, attempts, updated_at as updatedAt from refunds where order_id = ? order by created_at', id),
       events: store.all('select at, actor, kind, detail from events where order_id = ? order by id desc limit 50', id),
@@ -341,6 +415,7 @@ export function createService({ store, config, providers, now = () => Date.now()
     const count = (sql, ...args) => store.get(`select count(*) as n from orders where ${sql}`, ...args).n;
     return {
       unpaid: count("status = 'unpaid'"),
+      submitted: count("status = 'submitted'"),
       reviewing: count("status = 'reviewing'"),
       overdue: count("status = 'reviewing' and due_at < ?", t),
       passedToday: count("status = 'passed' and decided_at >= ?", day),
@@ -370,6 +445,13 @@ export function createService({ store, config, providers, now = () => Date.now()
     }
     // Codes are secrets: drop them once an order is settled.
     const cutoff = t - VERIFY.purgeDays * 24 * HOUR;
+    // Unchecked intake must not retain credentials indefinitely.
+    for (const o of store.all("select id from orders where status = 'submitted' and created_at < ?", cutoff)) {
+      store.transaction(() => {
+        store.run("update orders set status = 'rejected', reason = ?, decided_at = ?, code_sealed = null, purged_at = ? where id = ?", '资料待核对超过 7 天，已关闭并清除完整 Session Key；请通过淘宝原订单联系商家核实。', t, t, o.id);
+        event(o.id, 'system', 'external_expired');
+      });
+    }
     for (const o of store.all("select id from orders where code_sealed is not null and ((decided_at is not null and decided_at < ?) or (status = 'expired' and created_at < ?))", cutoff, cutoff)) {
       store.run('update orders set code_sealed = null, purged_at = ? where id = ?', t, o.id);
       event(o.id, 'system', 'code_purged');
@@ -378,5 +460,5 @@ export function createService({ store, config, providers, now = () => Date.now()
     store.run('delete from sessions where expires_at < ?', t);
   }
 
-  return { createOrder, requestPayment, lookup, feed, markPaid, markRefund, syncPayment, decide, retryRefund, runRefund, adminList, adminDetail, stats, tick, channels, acceptingNewOrders, sha256, event };
+  return { createOrder, createExternalOrder, checkExternalOrder, recordExternalRefund, acceptingExternalOrders, requestPayment, lookup, feed, markPaid, markRefund, syncPayment, decide, retryRefund, runRefund, adminList, adminDetail, stats, tick, channels, acceptingNewOrders, sha256, event };
 }

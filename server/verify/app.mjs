@@ -113,19 +113,22 @@ export function createApp({ service, store, providers, config, now = () => Date.
     ['GET', /^\/health$/, (req, res) => send(res, 200, { ok: true, mode: config.mode })],
     ['GET', /^\/config$/, (req, res) => send(res, 200, {
       mode: config.mode,
-      acceptingOrders: service.acceptingNewOrders(),
+      intakeMode: config.externalIntake ? 'external' : 'online',
+      acceptingOrders: config.externalIntake ? service.acceptingExternalOrders() : service.acceptingNewOrders(),
       serviceContract: config.serviceContract || SERVICE_CONTRACT,
-      // The existing frontend disables submission when this list is empty.
+      // External intake has no online payment channels.
       // Configured providers stay active for old payments and refunds in the service.
       channels: service.acceptingNewOrders() ? Object.values(providers).map(p => ({ key: p.name, label: p.label })) : [],
-      fees: { tech: VERIFY.techFeeMinor, audit: VERIFY.auditFeeMinor },
+      fees: config.externalIntake ? null : { tech: VERIFY.techFeeMinor, audit: VERIFY.auditFeeMinor },
       reviewHours: VERIFY.reviewHours, refundHours: VERIFY.refundHours,
     })],
     ['GET', /^\/feed$/, (req, res) => send(res, 200, service.feed(), { 'Cache-Control': 'public, max-age=20' })],
     ['POST', /^\/orders$/, async (req, res) => {
       limit(req, 'create', 10, 3600_000);
       const body = await json(req);
-      send(res, 201, await service.createOrder({ code: body.code, showPublic: body.showPublic, agree: body.agree, channel: body.channel, ip: clientIp(req) }));
+      send(res, 201, config.externalIntake
+        ? service.createExternalOrder({ code: body.code, reference: body.reference, source: body.source, showPublic: body.showPublic, agree: body.agree, ip: clientIp(req) })
+        : await service.createOrder({ code: body.code, showPublic: body.showPublic, agree: body.agree, channel: body.channel, ip: clientIp(req) }));
     }],
     ['GET', /^\/orders\/([^/]+)$/, async (req, res, [id], query) => {
       limit(req, 'lookup', 120, 60_000);
@@ -162,13 +165,23 @@ export function createApp({ service, store, providers, config, now = () => Date.
       if (hash) store.run('delete from sessions where hash = ?', hash);
       send(res, 200, { ok: true }, { 'Set-Cookie': cookie('', 0) });
     }],
-    ['GET', /^\/admin\/me$/, (req, res) => send(res, 200, { loggedIn: !!session(req), passwordSet: !!store.setting('admin_password'), mode: config.mode })],
+    ['GET', /^\/admin\/me$/, (req, res) => send(res, 200, { loggedIn: !!session(req), passwordSet: !!store.setting('admin_password'), mode: config.mode, intakeMode: config.externalIntake ? 'external' : 'online' })],
     ['GET', /^\/admin\/stats$/, (req, res) => { requireAdmin(req); send(res, 200, service.stats()); }],
     ['GET', /^\/admin\/orders$/, (req, res, _, query) => {
       requireAdmin(req);
       send(res, 200, service.adminList({ status: query.get('status') || '', q: query.get('q') || '', page: Number(query.get('page')) || 1 }));
     }],
     ['GET', /^\/admin\/orders\/([^/]+)$/, (req, res, [id]) => { requireAdmin(req); send(res, 200, service.adminDetail(decodeURIComponent(id))); }],
+    ['POST', /^\/admin\/orders\/([^/]+)\/check-external$/, async (req, res, [id]) => {
+      requireAdmin(req);
+      const body = await json(req);
+      send(res, 200, service.checkExternalOrder(decodeURIComponent(id), body.accepted, body.reason));
+    }],
+    ['POST', /^\/admin\/orders\/([^/]+)\/external-refund$/, async (req, res, [id]) => {
+      requireAdmin(req);
+      const body = await json(req);
+      send(res, 200, service.recordExternalRefund(decodeURIComponent(id), body.reason));
+    }],
     ['POST', /^\/admin\/orders\/([^/]+)\/decision$/, async (req, res, [id]) => {
       requireAdmin(req);
       const body = await json(req);
@@ -188,6 +201,7 @@ export function createApp({ service, store, providers, config, now = () => Date.
     }],
     ['POST', /^\/admin\/orders\/([^/]+)\/mock-pay$/, (req, res, [id]) => {
       requireAdmin(req);
+      if (config.externalIntake) throw new UserError('站内支付已关闭', 503);
       if (config.mode !== 'mock') throw new UserError('只有测试模式可以模拟收款', 403);
       const payment = store.get("select * from payments where order_id = ? and status = 'pending' order by created_at desc limit 1", decodeURIComponent(id));
       if (!payment) throw new UserError('这个订单没有待付款的二维码', 409);

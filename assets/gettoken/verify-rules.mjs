@@ -1,6 +1,7 @@
 // Fees, timings and the code format for /verify/. Shared by the page, the build and the API
 // (server/verify), so the amounts shown before payment are the amounts charged.
 export const VERIFY = Object.freeze({
+  intakeMode: 'external',
   open: false, // false: the navigation and page say 即将开放. Set true once live payments work, then rebuild.
   techFeeMinor: 3000, // 人工技术费 ¥30, never refunded
   auditFeeMinor: 30000, // 审核费 ¥300, refunded when the review fails
@@ -9,7 +10,7 @@ export const VERIFY = Object.freeze({
   paymentMinutes: 15, // a payment QR code stays valid this long
   purgeDays: 7, // submitted codes are deleted this many days after the result
   codeMin: 40,
-  codeMax: 120,
+  codeMax: 4096,
 });
 
 // Public service terms; fill with verified business information, never secrets.
@@ -54,6 +55,8 @@ export const maskTail = tail => `sk••••${tail}`;
 export const ORDER_PATTERN = /^GT-VF-\d{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
 
 export const STATUS_NAMES = Object.freeze({
+  submitted: '待核单',
+  rejected: '核单未通过',
   unpaid: '待付款',
   expired: '已过期',
   reviewing: '审核中',

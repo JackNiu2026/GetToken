@@ -26,6 +26,8 @@ export function loadConfig(env = process.env) {
   if (origin.protocol !== 'https:' && mode === 'live') throw new Error('VERIFY_PUBLIC_ORIGIN must use HTTPS for live payments');
   if (env.VERIFY_ACCEPT_NEW_ORDERS && !['true', 'false'].includes(env.VERIFY_ACCEPT_NEW_ORDERS)) throw new Error('VERIFY_ACCEPT_NEW_ORDERS must be true or false');
 
+  if (env.VERIFY_ACCEPT_EXTERNAL_ORDERS && !['true', 'false'].includes(env.VERIFY_ACCEPT_EXTERNAL_ORDERS)) throw new Error('VERIFY_ACCEPT_EXTERNAL_ORDERS must be true or false');
+
   const alipay = env.ALIPAY_APP_ID ? {
     appId: env.ALIPAY_APP_ID,
     sellerId: env.ALIPAY_SELLER_ID,
@@ -79,6 +81,8 @@ export function loadConfig(env = process.env) {
     origin: origin.origin,
     secret: Buffer.from(secret, 'hex'),
     mode,
+    externalIntake: true,
+    acceptExternalOrders: env.VERIFY_ACCEPT_EXTERNAL_ORDERS !== 'false',
     serviceContract: SERVICE_CONTRACT,
     acceptNewOrders: env.VERIFY_ACCEPT_NEW_ORDERS === undefined ? undefined : env.VERIFY_ACCEPT_NEW_ORDERS === 'true',
     alipay: mode === 'live' ? alipay : null,

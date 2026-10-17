@@ -30,6 +30,16 @@ create table if not exists orders (
 );
 create index if not exists orders_status on orders(status, created_at);
 create index if not exists orders_decided on orders(decided_at);
+create table if not exists external_orders (
+  order_id text primary key references orders(id),
+  source text not null,
+  reference_sealed text not null,
+  reference_hash text not null unique,
+  reference_tail text not null,
+  checked_at integer,
+  check_note text,
+  refund_note text
+);
 create table if not exists payments (
   id text primary key,
   order_id text not null references orders(id),

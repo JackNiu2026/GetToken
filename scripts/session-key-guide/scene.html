@@ -1,0 +1,72 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>Session Key 获取动画 · 虚构演示</title>
+<style>
+*{box-sizing:border-box}body{margin:0;width:1280px;height:900px;overflow:hidden;background:#0b0b10;color:#f4f5f8;font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}header{position:absolute;left:36px;right:36px;top:24px;display:flex;align-items:center;justify-content:space-between}h1{margin:0;font-size:30px;line-height:1.5;letter-spacing:-.02em}header span{font-size:15px;color:#cdd0dc}#frame{position:absolute;left:32px;right:32px;top:98px;height:620px;border-radius:16px;overflow:hidden;background:#edf1f7}svg{display:block;width:100%;height:100%;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}#caption{position:absolute;left:38px;right:38px;top:738px}#caption h2{margin:0 0 8px;font-size:27px;line-height:1.4}#caption p{margin:0;max-width:1180px;color:#cdd0dc;font-size:20px;line-height:1.65}#timeline{position:absolute;left:38px;right:38px;bottom:18px;display:flex;gap:8px}#timeline i{display:block;height:4px;flex:1;background:#2c2d40;border-radius:4px;overflow:hidden}#timeline b{display:block;height:100%;background:#c4a3ff}#focus{fill:#3b82f60e;stroke:#2563eb;stroke-width:3;rx:5}#cursor{filter:drop-shadow(1px 3px 2px #0004)}.mono{font-family:ui-monospace,Consolas,monospace}.muted{fill:#6b7280}.grid{stroke:#d8dde7;stroke-width:1}.label{font-size:17px;fill:#273449}
+</style></head><body>
+<header><h1>如何找到 Session Key</h1><span>虚构界面 · 示例值 · 不读取你的账号</span></header>
+<div id="frame"><svg id="scene" viewBox="0 0 1100 560" aria-label="虚构的 Chrome 开发者工具演示">
+<defs><clipPath id="table-clip"><rect x="562" y="220" width="538" height="210"/></clipPath><clipPath id="value-clip"><rect x="766" y="220" width="231" height="33"/></clipPath></defs>
+<rect width="1100" height="560" fill="#fff"/>
+<rect width="1100" height="40" fill="#d6e5fb"/><path d="M17 40V20Q17 8 29 8H240Q252 8 252 20V40" fill="#fff"/>
+<circle cx="38" cy="24" r="6" fill="#b5795e"/><text id="tab-label" x="54" y="29" font-size="15" fill="#263247">Claude</text><path d="M228 19l8 8m0-8l-8 8" stroke="#586477" stroke-width="1.5"/>
+<rect y="40" width="1100" height="48" fill="#fff"/><path d="M26 60l-7 7 7 7m-6-7h18m17-7l7 7-7 7m7-7H44" stroke="#626e80" stroke-width="1.6" fill="none"/>
+<rect x="104" y="49" width="930" height="31" rx="16" fill="#eef3fa"/><circle cx="123" cy="65" r="4" fill="#64748b"/><text id="address" x="138" y="70" font-size="17" fill="#223047">claude.ai/new</text>
+<line x1="0" x2="1100" y1="88" y2="88" class="grid"/>
+<g id="claude-screen"><text x="28" y="150" font-size="23" fill="#463c34">Claude</text><text x="30" y="264" font-size="25" fill="#463c34">已登录 Claude</text><text x="30" y="298" font-size="16" fill="#80746a">请在当前账号的网页中操作</text><rect x="18" y="454" width="274" height="74" rx="17" fill="#faf9f6" stroke="#d7d4d0"/><text x="34" y="486" font-size="15" fill="#a19b94">Message Claude…</text><circle cx="269" cy="506" r="10" fill="#eeeae5"/></g>
+<g id="tools">
+<rect x="310" y="88" width="790" height="472" fill="#fff"/><line x1="310" x2="310" y1="88" y2="560" stroke="#bfc8d6"/>
+<rect x="310" y="88" width="790" height="42" fill="#f2f3f5"/><text x="333" y="115" class="label">Elements</text><text x="425" y="115" class="label">Console</text><text x="517" y="115" class="label">Network</text><text x="647" y="115" class="label">Application</text><text x="788" y="115" class="label">Security</text><text x="893" y="115" class="label">»</text><path d="M1070 100l13 13m0-13l-13 13" stroke="#6f7a8a" stroke-width="2"/>
+<rect id="application-active" x="639" y="126" width="125" height="3" fill="#1a73e8"/>
+<line x1="562" x2="562" y1="130" y2="560" class="grid"/>
+<text x="326" y="158" font-size="18" fill="#1f3044">Application</text><text x="329" y="193" class="label">Manifest</text><text x="329" y="223" class="label">Service workers</text><text x="329" y="254" font-size="17" fill="#6d7989">Storage</text>
+<text x="341" y="283" class="label">Local storage</text><text x="341" y="311" class="label">Session storage</text><text x="324" y="338" class="label">⌄</text><text x="342" y="338" class="label">Cookies</text>
+<rect id="origin-active" x="331" y="345" width="223" height="30" rx="3" fill="#dceaff"/><circle cx="345" cy="360" r="7" fill="none" stroke="#627997"/><text x="359" y="367" font-size="17" fill="#243b59">https://claude.ai</text>
+<text x="359" y="400" font-size="16" fill="#64748b">https://a.claude.ai</text><text x="341" y="437" class="label">Cache storage</text><text x="341" y="470" class="label">Storage buckets</text>
+<rect x="562" y="130" width="538" height="55" fill="#fafbfd"/><rect x="577" y="142" width="422" height="30" rx="6" fill="#fff" stroke="#c6ceda"/><text id="filter" x="589" y="163" font-size="17" fill="#6b7280">Filter</text>
+<rect x="562" y="185" width="538" height="35" fill="#f2f5fa"/><text x="576" y="209" font-size="18" fill="#2e4057">Name</text><text x="775" y="209" font-size="18" fill="#2e4057">Value</text><text x="1009" y="209" font-size="16" fill="#2e4057">Domain</text>
+<g clip-path="url(#table-clip)"><g id="rows">
+<g id="unfiltered"><text x="576" y="242" font-size="16" fill="#40546f">__cf_bm</text><text x="775" y="242" font-size="16" fill="#718096">••••••</text><text x="576" y="275" font-size="15" fill="#40546f">anthropic-device-id</text><text x="775" y="275" font-size="15" fill="#718096">DEMO_DEVICE</text></g>
+<rect id="selected-row" x="563" y="286" width="537" height="33" fill="#dceaff"/>
+<text x="576" y="308" font-size="20" fill="#1f3657">sessionKey</text><rect id="edit-selection" x="766" y="287" width="231" height="31" fill="#1a73e8"/><text id="value" x="775" y="308" font-size="14" class="mono" fill="#263e5b">sk-ant-sid02-EXAMPLE_ONLY</text>
+<text x="576" y="341" font-size="18" fill="#40546f">sessionKeyLC</text><text x="775" y="341" font-size="15" class="mono" fill="#718096">0000000000</text>
+<text x="576" y="374" font-size="18" fill="#40546f">sessionKeyV3</text><text x="775" y="374" font-size="15" fill="#718096">其他 Cookie（示例）</text>
+<text x="576" y="407" font-size="18" fill="#40546f">sessionKeyV3LC</text><text x="775" y="407" font-size="15" class="mono" fill="#718096">0000000000</text>
+</g></g>
+<path d="M562 220H1100M562 253H1100M562 286H1100M562 319H1100M562 352H1100M562 385H1100M562 418H1100M760 185V430M998 185V430" class="grid" fill="none"/>
+<rect x="562" y="430" width="538" height="130" fill="#fafbfd" stroke="#d8dde7"/>
+<text x="580" y="456" font-size="16" fill="#52647d">Cookie Value</text><text x="580" y="486" font-size="18" class="mono" fill="#263e5b">sk-ant-sid02-EXAMPLE_ONLY</text><text x="580" y="518" font-size="17" fill="#7a8697">仅为示例，请复制自己账号中的完整值</text>
+<g id="copy-keys"><rect x="604" y="428" width="462" height="102" rx="9" fill="#edf4ff" stroke="#8bb6f5"/><text x="627" y="464" font-size="23" fill="#1b4e94">Ctrl + A → Ctrl + C → Esc</text><text x="627" y="502" font-size="18" fill="#3b5f91">Mac：⌘A → ⌘C → Esc</text></g>
+</g>
+<g id="f12"><rect x="650" y="300" width="170" height="112" rx="14" fill="#111118"/><text x="690" y="370" font-size="48" fill="#fff">F12</text><text x="655" y="446" font-size="20" fill="#506078">打开开发者工具</text></g>
+<g id="return-form"><rect y="88" width="1100" height="472" fill="#0b0b10"/><text x="210" y="160" font-size="24" fill="#f4f5f8">GetToken</text><text x="210" y="216" font-size="25" fill="#f4f5f8">Session Key</text><rect x="210" y="245" width="690" height="126" rx="14" fill="#111118" stroke="#c4a3ff" stroke-width="2"/><text id="pasted" x="232" y="303" class="mono" font-size="24" fill="#e4d5ff"></text><text x="210" y="417" font-size="20" fill="#cdd0dc">粘贴自己的完整 Value，核对后再自行提交</text><text x="210" y="458" font-size="18" fill="#a4a8b8">本动画只演示操作，不读取或复制任何 Cookie</text></g>
+<rect id="focus" x="650" y="300" width="170" height="112"/>
+<g id="cursor"><path d="M0 0V29L8 22L14 35L20 32L14 19H25Z" fill="#fff" stroke="#202d40" stroke-width="2"/><circle id="click-ring" cx="4" cy="4" r="18" fill="none" stroke="#2563eb" stroke-width="3"/></g>
+</svg></div>
+<div id="caption"><h2 id="step-title"></h2><p id="step-text"></p></div><div id="timeline"></div>
+<script>
+const cameras=[[0,0,1100,560],[305,75,795,405],[300,205,530,270],[550,130,550,280],[550,130,550,420],[0,0,1100,560]];
+const targets=[[650,300,170,112],[639,92,130,36],[320,316,236,62],[566,220,194,33],[766,220,231,33],[210,245,690,126]];
+const cursors=[[736,354],[708,111],[450,359],[806,158],[877,238],[410,303]];
+const byId=id=>document.getElementById(id),ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),4);
+window.draw=(time,steps)=>{
+ const index=Math.max(0,steps.findIndex(s=>time>=s.start&&time<s.end)),step=steps[index],local=time-step.start;
+ const progress=ease(local/.85),previous=Math.max(0,index-1);
+ const camera=cameras[index].map((n,i)=>cameras[previous][i]+(n-cameras[previous][i])*progress);
+ byId('scene').setAttribute('viewBox',camera.join(' '));
+ byId('step-title').textContent=`${index+1} / ${steps.length}  ${step.title}`;byId('step-text').textContent=step.text;
+ byId('tools').style.opacity=index===0?'0':'1';byId('f12').style.opacity=index===0?'1':'0';byId('return-form').style.opacity=index===5?'1':'0';
+ byId('claude-screen').setAttribute('transform',`translate(${index===0?340:0} 0)`);
+ byId('application-active').style.opacity=index>=1?'1':'0';byId('origin-active').style.opacity=index>=2?'1':'0';
+ byId('filter').textContent=index>=3?'sessionKey'.slice(0,Math.min(10,Math.floor(local*12))):'Filter';
+ byId('rows').setAttribute('transform',`translate(0 ${index>=3?-66:0})`);byId('unfiltered').style.opacity=index>=3?'0':'1';
+ byId('selected-row').style.opacity=index>=3?'1':'0';byId('edit-selection').style.opacity=index===4&&local>.7?'1':'0';byId('value').setAttribute('fill',index===4&&local>.7?'#fff':'#263e5b');
+ byId('copy-keys').style.opacity=index===4?'1':'0';byId('address').textContent=index===5?'gettoken.cc/verify/':'claude.ai/new';
+ byId('tab-label').textContent=index===5?'GetToken':'Claude';
+ byId('pasted').textContent=index===5&&local>1?'sk-ant-sid02-EXAMPLE_ONLY'.slice(0,Math.floor((local-1)*24)):'';
+ const focus=byId('focus');['x','y','width','height'].forEach((name,i)=>focus.setAttribute(name,targets[index][i]));focus.style.opacity=String(.75+.25*Math.sin(time*4));
+ let cursor=cursors[index].map((n,i)=>cursors[previous][i]+(n-cursors[previous][i])*progress);
+ if(index===3&&local>2){const selection=ease((local-2)/.8);cursor=cursor.map((n,i)=>n+([663,236][i]-n)*selection);}
+ byId('cursor').setAttribute('transform',`translate(${cursor.join(' ')})`);
+ byId('click-ring').style.opacity=local>.85&&local<1.4?String(1-(local-.85)/.55):'0';
+ byId('timeline').innerHTML=steps.map((s,i)=>`<i><b style="width:${i<index?100:i===index?Math.min(100,local/(s.end-s.start)*100):0}%"></b></i>`).join('');
+};
+</script></body></html>

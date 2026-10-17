@@ -96,6 +96,14 @@ try {
   const module=await curlRequest(base+'/assets/gettoken/product.mjs');
   assert.equal(module.status,200);
   assert.match(module.headers.get('content-type')||'',/javascript/);
+  const tutorial=await curlRequest(base+'/assets/gettoken/session-key-guide.mp4',{headers:{Range:'bytes=0-31'}});
+  assert.equal(tutorial.status,206);
+  assert.match(tutorial.headers.get('content-type')||'',/video\/mp4/);
+  assert.equal((await tutorial.text()).slice(4,8),'ftyp');
+  const captions=await curlRequest(base+'/assets/gettoken/session-key-guide.vtt');
+  assert.equal(captions.status,200);
+  assert.match(captions.headers.get('content-type')||'',/text\/vtt/);
+  assert.ok((await captions.text()).startsWith('WEBVTT'));
   const feed=await curlRequest(base+'/guides/feed.xml');
   assert.equal(feed.status,200);
   const slash=await curlRequest(base+'/guides/claude-code-cost-checklist?utm_source=qa');

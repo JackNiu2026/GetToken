@@ -25,8 +25,8 @@
 <link rel="stylesheet" href="../assets/guides/guides.css">
 <link rel="stylesheet" href="../assets/gettoken/chrome.css">
 <script type="module" src="../assets/gettoken/chrome.mjs"></script>
-<link rel="stylesheet" href="../assets/gettoken/verify.css?v=helper-20261017">
-<script type="module" src="../assets/gettoken/verify.mjs?v=helper-visible-20261017"></script>
+<link rel="stylesheet" href="../assets/gettoken/verify.css?v=key-guide-20261017">
+<script type="module" src="../assets/gettoken/verify.mjs?v=key-guide-20261017"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://gettoken.cc/#organization","name":"GetToken","url":"https://gettoken.cc/","logo":"https://gettoken.cc/assets/gettoken/logo.png"},{"@type":"WebSite","@id":"https://gettoken.cc/#website","name":"GetToken","url":"https://gettoken.cc/","inLanguage":"zh-CN","publisher":{"@id":"https://gettoken.cc/#organization"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首页","item":"https://gettoken.cc/"},{"@type":"ListItem","position":2,"name":"Claude KYC认证","item":"https://gettoken.cc/verify/"}]},{"@type":"WebPage","@id":"https://gettoken.cc/verify/#webpage","url":"https://gettoken.cc/verify/","name":"Claude KYC认证","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。","dateModified":"2026-10-17","inLanguage":"zh-CN","isPartOf":{"@id":"https://gettoken.cc/#website"},"mainEntity":{"@type":"Service","name":"Claude KYC认证协助","serviceType":"第三方人工认证协助","provider":{"@id":"https://gettoken.cc/#organization"},"areaServed":"CN","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。"}}]}</script>
 </head>
 <body>
@@ -84,15 +84,9 @@
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
 <p class="v-hint" id="v-code-hint" data-service-disclosure>Session Key 是登录会话凭据，持有者可能访问你的账户；不是 API Key 或身份证明。请先确认协助范围，再提交本人账户凭据；格式通过不代表有效。</p>
-<div class="v-helper" data-session-helper>
-<button class="v-btn v-btn--ghost" type="button" data-session-extract aria-describedby="v-helper-status">获取已登录的 Session Key</button>
-<p class="v-hint" id="v-helper-status" data-session-status role="status">测试版，原生读取待实机验收。电脑 Chrome / Edge 首次需安装助手，与 Claude 使用同一浏览器资料，无需 F12。</p>
-<details class="v-helper__install" data-session-install hidden><summary>安装与使用说明</summary>
-<ol><li><a href="../assets/downloads/gettoken-session-helper.zip" download>下载助手安装包（开发者模式）</a>，解压到固定目录。</li>
-<li>打开 <code>chrome://extensions/</code> 或 <code>edge://extensions/</code>，开启“开发者模式”，点击“加载已解压的扩展程序”，选择含 <code>manifest.json</code> 的目录。</li>
-<li>返回并刷新本页，再次点击获取按钮，在扩展窗口确认授权。已登录 Claude 无需重新登录。</li></ol>
-<p>助手尚未上架浏览器商店，仅支持电脑普通窗口。不会自动提交；拒绝授权仍可手动填写。若未找到会话，请在同一浏览器资料中打开 Claude 检查登录。</p>
-<p><a href="https://github.com/JackNiu2026/GetToken/tree/main/extensions/session-helper" target="_blank" rel="noopener noreferrer">查看助手源码与隐私说明 ↗</a></p></details>
+<div class="v-helper">
+<button class="v-btn v-btn--ghost" type="button" data-key-guide-open aria-haspopup="dialog" aria-controls="key-guide">查看 Session Key 获取教程</button>
+<p class="v-hint">30 秒动画演示 · 电脑 Chrome / Edge 操作 · 无需安装扩展</p>
 </div>
 <div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="4136" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
@@ -137,6 +131,18 @@
 </div></section>
 <section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq"><details open><summary>Claude 官方 KYC需要准备什么？</summary><p>官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。</p></details><details><summary>提交需要哪些资料？</summary><p>只需填写本人账户的 Session Key 并确认授权，不需要购买订单号或截图，本页不提供支付。</p></details><details><summary>提交后什么时候开始处理？</summary><p>提交成功后进入人工处理，预计 24 小时。超时仍显示处理中，不会自动判定通过；官方状态以 Claude 账户显示为准。</p></details><details><summary>如何查询已提交的记录？</summary><p>原浏览器可使用受理编号或最近提交记录查询；换设备请使用完整私密查询链接。链接请妥善保存，不要公开分享，不要在查询框输入 Session Key。</p></details><details><summary>Session Key 提交错了怎么办？</summary><p>请保留受理编号，通过已确认的支持渠道申请核实或撤销；不要在聊天中发送完整 Session Key。不得提交他人账户的会话凭据。</p></details><details><summary>Session Key 会如何处理？</summary><p>Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。仅在确认协助范围后提交；加密保存，仅授权审核员可查看。出结果 7 天后删除完整值，仅保留末 4 位。可申请撤销与提前删除，并在 Claude 撤销相关会话。</p></details></div></section>
 </main>
+<dialog class="v-guide" id="key-guide" data-key-guide-dialog aria-labelledby="key-guide-title" aria-describedby="key-guide-note">
+<div class="v-guide__head"><div><h2 id="key-guide-title">如何找到 Session Key</h2><p id="key-guide-note">动画使用虚构界面与示例值，不会读取或复制你的 Cookie。</p></div><button class="v-btn v-btn--ghost" type="button" data-guide-close>关闭</button></div>
+<div class="v-guide__body">
+<video data-key-guide-video controls playsinline muted preload="none" width="1280" height="900" poster="../assets/gettoken/session-key-guide.png" aria-label="Session Key 获取教程，约 30 秒">
+<source src="../assets/gettoken/session-key-guide.mp4" type="video/mp4"><track kind="captions" src="../assets/gettoken/session-key-guide.vtt" srclang="zh" label="简体中文">
+你的浏览器暂不支持播放。请按下方文字步骤操作，或下载视频观看。</video>
+<p class="v-guide__status" data-key-guide-status role="status" aria-live="polite">可暂停、全屏观看，也可选择下方步骤跳转。</p>
+<ol class="v-guide__chapters" aria-label="跳转教程步骤"><li><button type="button" data-guide-jump="0" data-guide-title="登录 Claude，打开开发者工具">1 打开工具</button></li><li><button type="button" data-guide-jump="4" data-guide-title="选择 Application（应用）">2 选择应用</button></li><li><button type="button" data-guide-jump="8" data-guide-title="展开 Cookies，选择 claude.ai">3 选择站点</button></li><li><button type="button" data-guide-jump="13" data-guide-title="筛选并选中 sessionKey">4 找到名称</button></li><li><button type="button" data-guide-jump="18" data-guide-title="复制完整的 Value（值）">5 复制数值</button></li><li><button type="button" data-guide-jump="24" data-guide-title="返回表单，粘贴后核对">6 返回粘贴</button></li></ol>
+<details class="v-guide__transcript" data-key-guide-transcript><summary>查看文字步骤与 Mac 快捷键</summary><ol><li><strong>登录 Claude，打开开发者工具</strong><p>在已登录的 claude.ai 页面按 F12。Windows / Linux 也可按 Ctrl+Shift+I；Mac 按 ⌘+⌥+I。</p></li><li><strong>选择 Application（应用）</strong><p>在开发者工具顶部点击 Application（应用）。没有看到时，先展开顶部的 » 更多标签。</p></li><li><strong>展开 Cookies，选择 claude.ai</strong><p>在左侧 Storage（存储）下展开 Cookies，点击 https://claude.ai，确认选中的是这个站点。</p></li><li><strong>筛选并选中 sessionKey</strong><p>在 Filter（筛选）输入 sessionKey，选择 Name 恰好为 sessionKey 的行；不要选择 sessionKeyLC 等其他行。</p></li><li><strong>复制完整的 Value（值）</strong><p>双击该行的 Value 单元格，按 Ctrl+A、Ctrl+C 复制完整值，再按 Esc 退出编辑。Mac 使用 ⌘A、⌘C；不要修改或删除 Cookie。</p></li><li><strong>返回表单，粘贴后核对</strong><p>回到本站，在 Session Key 输入框粘贴完整值，只粘贴 Value，不要粘贴名称、截图或省略号。确认账户归属与授权范围后自行提交。</p></li></ol></details>
+<p class="v-guide__note">只复制本人账号的完整 Value，不要复制 sessionKeyLC，不要照抄动画示例。Session Key 是登录凭据，请勿公开分享。</p>
+<div class="v-guide__foot"><a href="../assets/gettoken/session-key-guide.mp4" download>下载动画视频</a><div><button class="v-btn v-btn--ghost" type="button" data-guide-replay>重播动画</button><button class="v-btn v-btn--light" type="button" data-guide-fill>返回填写</button></div></div>
+</div></dialog>
 <div class="toast" role="status" aria-live="polite" data-toast></div>
 <footer class="site-footer" id="contact">
     <div class="shell footer-main">

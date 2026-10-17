@@ -43,10 +43,14 @@ try {
   const uid = process.getuid(), gid = process.getgid();
   env.VERIFY_SECRET = randomBytes(32).toString('hex');
   const mounts = ['--mount', `type=bind,src=${apiDir},dst=/app,readonly`, '--mount', `type=bind,src=${dataDir},dst=/data`];
-  apiContainer = (await docker('run', '--detach', '--rm', '--user', `${uid}:${gid}`, '--read-only', '--publish', '127.0.0.1::443', ...mounts,
+  apiContainer = (await docker('run', '--detach', '--rm', '--user', `${uid}:${gid}`, '--read-only', '--tmpfs', '/etc/gettoken:rw,noexec,nosuid,nodev,mode=0700', '--publish', '127.0.0.1::443', ...mounts,
     '--env', 'VERIFY_SECRET', '--env', 'VERIFY_PAY_MODE=mock', '--env', 'VERIFY_HOST=127.0.0.1', '--env', 'VERIFY_DATA_DIR=/data', nodeImage,
     'node', '--disable-warning=ExperimentalWarning', '/app/server/verify/server.mjs')).stdout.trim();
   assert.equal((await docker('exec', apiContainer, 'node', '--version')).stdout.trim(), 'v22.22.0');
+  await docker('exec', apiContainer, 'node', '--disable-warning=ExperimentalWarning', '/app/server/verify/cli.mjs', 'access-check');
+  await docker('exec', '--user', '0:0', apiContainer, 'node', '--disable-warning=ExperimentalWarning', '/app/server/verify/bootstrap.mjs');
+  await docker('exec', '--user', '0:0', apiContainer, 'node', '-e', "const s=require('node:fs').statSync('/etc/gettoken/verify-admin.initial-password');if(s.uid!==0||(s.mode&0o777)!==0o600)process.exit(1)"); checks++;
+  await docker('exec', apiContainer, 'node', '-e', "try{require('node:fs').readFileSync('/etc/gettoken/verify-admin.initial-password');process.exit(1)}catch(e){if(e.code!=='EACCES')process.exit(1)}"); checks++;
   execFileSync('docker', [endpoint, 'exec', '-i', apiContainer, 'node', '--disable-warning=ExperimentalWarning', '/app/server/verify/cli.mjs', 'passwd'],
     { env, input: 'verify-integration-test-only\nverify-integration-test-only\n', stdio: ['pipe', 'pipe', 'pipe'] });
   nginxContainer = (await docker('run', '--detach', '--rm', '--network', `container:${apiContainer}`,

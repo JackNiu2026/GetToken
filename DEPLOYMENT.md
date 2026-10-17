@@ -93,7 +93,7 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 ## 审核验证服务（/verify/ 与 /api/verify/）
 
-`/verify/` 是静态页面，淘宝资料提交、人工核单及结果由同一台服务器上的后端处理。当前使用外部淘宝订单流程，本站所有在线付款入口关闭，`VERIFY_PAY_MODE=off` 不阻止人工资料受理。操作见 [淘宝订单受理](docs/external-order-intake.md)。下文支付平台章节保留为历史资金运维参考，不代表当前已开放付款。
+`/verify/` 是静态页面，淘宝资料提交、人工核单及结果由同一台服务器上的后端处理。当前仅填写 Session Key 即可提交并直接进入人工处理，无需淘宝订单号；本站所有在线付款入口关闭，`VERIFY_PAY_MODE=off` 不阻止人工资料受理。操作见 [Session Key 提交](docs/session-key-intake.md)。下文支付平台章节保留为历史资金运维参考，不代表当前已开放付款。
 
 - 代码在 `server/verify/`，用 Node.js 自带的 SQLite，没有第三方依赖。每次发布随网站一起安装到 `/opt/gettoken/verify/releases/<提交 SHA>/`，`current` 软链接指向当前版本，保留最近 5 个版本。
 - Node.js 固定为 v22.22.0 官方 linux-x64 版本（校验 SHA-256），首次发布时由 GitHub runner 下载后上传到 `/opt/gettoken/runtime/`。服务器需要 x86_64、glibc 2.28 以上；不满足时阻止发布，避免发布缺少支付 API 的版本。
@@ -106,7 +106,7 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 1. 首次缺少后台密码时，安装器生成随机密码并仅保存在服务器 `/etc/gettoken/verify-admin.initial-password`（root:root、0600，日志不输出）；已有密码不变。自行设置或更改后台密码（至少 12 位）：`sudo gettoken-verify passwd`。后台地址 `https://gettoken.cc/verify/admin/`，页面与响应头设置 noindex，后台数据由 API 会话认证保护；robots 不阻挡登录壳读取该指令。
 2. 配置文件 `/etc/gettoken/verify.env` 在首次发布时自动生成，只有 root 可读，之后的发布不会覆盖。其中的 `VERIFY_SECRET` 用于加密代码，**不要修改或丢失**，换掉后已有订单的代码无法解密。
-3. 刚安装时 `VERIFY_PAY_MODE=off`，不提供站内支付；设置后台密码后即可受理淘宝资料。可配置 `VERIFY_ACCEPT_EXTERNAL_ORDERS=false` 暂停资料提交。查看状态：`sudo gettoken-verify status`。
+3. 刚安装时 `VERIFY_PAY_MODE=off`，不提供站内支付；设置后台密码后即可受理 Session Key 资料。可配置 `VERIFY_ACCEPT_EXTERNAL_ORDERS=false` 暂停资料提交。查看状态：`sudo gettoken-verify status`。
 4. 修改 `verify.env` 后执行 `sudo systemctl restart gettoken-verify`。
 
 ### 测试模式

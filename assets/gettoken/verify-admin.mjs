@@ -1,6 +1,6 @@
 // /verify/admin/: the reviewer's page. Lists orders, shows the full code, records the result.
 // The session cookie is HttpOnly and scoped to /api/verify/admin; this script never sees it.
-import { VERIFY, yuan, STATUS_NAMES, REFUND_NAMES } from './verify-rules.mjs?v=taobao-20261017';
+import { VERIFY, yuan, STATUS_NAMES, REFUND_NAMES } from './verify-rules.mjs?v=key-only-20261017';
 
 const API = new URL('../../api/verify/', import.meta.url);
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -25,7 +25,7 @@ const FILTERS = [['submitted', '待核单'], ['rejected', '核单未通过'], ['
 const CHANNELS = { alipay: '支付宝', wechat: '微信支付', mock: '测试通道' };
 const PAYMENT_STATES = { pending: '待付款', paid: '已付款', duplicate: '重复付款', closed: '已关闭' };
 const TONES = { submitted: 'amber', rejected: 'rose', unpaid: 'amber', reviewing: 'violet', passed: 'green', failed: 'rose', expired: 'gray' };
-const EVENTS = { external_submitted: '淘宝资料提交', external_confirmed: '人工核单通过', external_rejected: '核单未通过', external_refunded: '登记淘宝退款', external_expired: '核单超时关闭并清除凭据',
+const EVENTS = { session_submitted: 'Session Key 提交', external_submitted: '淘宝资料提交', external_confirmed: '人工核单通过', external_rejected: '核单未通过', external_refunded: '登记淘宝退款', external_expired: '核单超时关闭并清除凭据',
   created: '用户提交', payment_opened: '生成付款二维码', payment_error: '二维码生成失败', paid: '付款成功', duplicate_payment: '重复付款（自动全额退回）',
   payment_amount_mismatch: '付款金额不符', passed: '标记通过', failed: '标记未通过', refund_success: '退款成功', refund_processing: '退款处理中',
   refund_error: '退款失败', refund_pending: '等待退款', expired: '订单过期', code_purged: '代码已删除', mock_paid: '模拟收款',
@@ -182,18 +182,18 @@ function renderDetail(o) {
   }
   if (o.status === 'reviewing') {
     actions.push(`<h2>录入结果</h2><textarea class="a-reason" data-reason maxlength="300" placeholder="交付证据摘要或未通过原因（正式服务必填，用户可见；勿填凭据）"></textarea>
-<div class="a-decide"><button class="v-btn v-btn--ok" type="button" data-decide="passed">通过</button><button class="v-btn v-btn--no" type="button" data-decide="failed">${o.external ? '未通过，转淘宝售后' : '未通过并退审核费'}</button></div>`);
+<div class="a-decide"><button class="v-btn v-btn--ok" type="button" data-decide="passed">通过</button><button class="v-btn v-btn--no" type="button" data-decide="failed">${o.external?.source === 'session' ? '未通过' : o.external ? '未通过，转淘宝售后' : '未通过并退审核费'}</button></div>`);
   }
   if (o.refunds.some(r => r.status !== 'success')) actions.push('<button class="v-btn v-btn--light v-btn--block" type="button" data-refund>重试 / 刷新退款状态</button>');
   if (o.status === 'unpaid' && state.mode === 'mock') actions.push('<button class="v-btn v-btn--light v-btn--block" type="button" data-mock-pay>模拟收款（测试模式）</button>');
   const due = o.status === 'reviewing' ? `${stamp(o.dueAt)}（${left(o.dueAt - now)}）` : stamp(o.dueAt);
   detail.innerHTML = `<div class="v-order__top"><span class="v-mono">${esc(o.id)}</span>${tag(o)}</div>
-${o.external ? `<h2>淘宝订单号</h2><div class="a-code">${esc(o.external.reference)}</div>${o.external.checkNote ? `<p class="v-hint">核单记录：${esc(o.external.checkNote)}</p>` : ''}${o.external.refundNote ? `<p class="v-hint">售后记录：${esc(o.external.refundNote)}</p>` : ''}` : ''}
+${o.external?.source === 'taobao' ? `<h2>淘宝订单号</h2><div class="a-code">${esc(o.external.reference)}</div>${o.external.checkNote ? `<p class="v-hint">核单记录：${esc(o.external.checkNote)}</p>` : ''}${o.external.refundNote ? `<p class="v-hint">售后记录：${esc(o.external.refundNote)}</p>` : ''}` : ''}
 <h2>Session Key</h2>${code}
 ${o.repeats ? `<p class="a-warn">同一个代码之前还提交过 ${o.repeats} 次。</p>` : ''}
 <dl class="v-kv">
 <div><dt>提交</dt><dd>${esc(stamp(o.createdAt))}</dd></div>
-<div><dt>${o.external ? '核单' : '付款'}</dt><dd>${esc(stamp(o.paidAt))}</dd></div>
+<div><dt>${o.external?.source === 'session' ? '提交' : o.external ? '核单' : '付款'}</dt><dd>${esc(stamp(o.paidAt))}</dd></div>
 <div><dt>预计出结果</dt><dd>${esc(due)}</dd></div>
 ${o.decidedAt ? `<div><dt>出结果</dt><dd>${esc(stamp(o.decidedAt))}</dd></div>` : ''}
 ${o.reason ? `<div><dt>原因</dt><dd>${esc(o.reason)}</dd></div>` : ''}
@@ -236,7 +236,7 @@ detail.addEventListener('click', async event => {
     const passed = button.dataset.decide === 'passed';
     const reason = $('[data-reason]', detail)?.value.trim() || '';
     const identity = `${id}（Session Key 末 4 位：${String(displayedOrder.code || displayedOrder.codeTail || '').slice(-4) || '不可用'}）`;
-    const question = displayedOrder.external && !passed ? `确认 ${identity} 未通过？需通过淘宝原订单处理售后，本站不会发起退款。` : passed ? `确认 ${identity} 审核通过？\n用户页面会显示本站处理结果，不代表官方认证通过。` : `确认 ${identity} 未通过？\n会立即原路退回审核费 ${yuan(VERIFY.auditFeeMinor)}，技术费不退。${reason ? `\n原因：${reason}` : ''}`;
+    const question = displayedOrder.external?.source === 'session' && !passed ? `确认 ${identity} 处理未通过？原因将展示给用户。` : displayedOrder.external && !passed ? `确认 ${identity} 未通过？需通过淘宝原订单处理售后，本站不会发起退款。` : passed ? `确认 ${identity} 审核通过？\n用户页面会显示本站处理结果，不代表官方认证通过。` : `确认 ${identity} 未通过？\n会立即原路退回审核费 ${yuan(VERIFY.auditFeeMinor)}，技术费不退。${reason ? `\n原因：${reason}` : ''}`;
     if (!window.confirm(question)) return;
     request = [`admin/orders/${encodeURIComponent(id)}/decision`, { result: button.dataset.decide, reason }];
   } else if (button.hasAttribute('data-refund')) {
@@ -274,7 +274,7 @@ async function start() {
   const me = await api('admin/me');
   if (session !== sessionVersion) return;
   state.mode = me.mode;
-  if (!me.intakeMode || me.intakeMode === 'online') state.status = 'reviewing';
+  if (me.keyOnlyIntake || !me.intakeMode || me.intakeMode === 'online') state.status = 'reviewing';
   if (!me.loggedIn) {
     showLogin(me.passwordSet ? '输入在服务器上设置的后台密码。' : '后台密码还没有设置：在服务器上运行 gettoken-verify passwd 设置后再登录。');
     return;
@@ -284,7 +284,7 @@ async function start() {
   $('[data-logout]').hidden = false;
   const banner = $('[data-mode-banner]');
   banner.hidden = me.intakeMode !== 'external' && me.mode === 'live';
-  banner.textContent = me.intakeMode === 'external' ? '淘宝订单由人工核验，本站不收款；售后在淘宝原订单处理。' : me.mode === 'mock' ? '测试模式：不会真实收款或退款。' : '在线支付未开通：在服务器的 /etc/gettoken/verify.env 中配置支付宝或微信支付。';
+  banner.textContent = me.keyOnlyIntake ? '仅提交 Session Key，受理后人工处理；本站不提供支付。' : me.intakeMode === 'external' ? '淘宝订单由人工核验，本站不收款；售后在淘宝原订单处理。' : me.mode === 'mock' ? '测试模式：不会真实收款或退款。' : '在线支付未开通：在服务器的 /etc/gettoken/verify.env 中配置支付宝或微信支付。';
   await Promise.all([loadStats(), loadList()]);
   clearInterval(refreshTimer);
   refreshTimer = setInterval(() => { if (!app.hidden && document.visibilityState === 'visible') Promise.all([loadStats(), loadList()]).catch(() => {}); }, 30000);

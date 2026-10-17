@@ -82,6 +82,7 @@ export function loadConfig(env = process.env) {
     secret: Buffer.from(secret, 'hex'),
     mode,
     externalIntake: true,
+    keyOnlyIntake: true,
     acceptExternalOrders: env.VERIFY_ACCEPT_EXTERNAL_ORDERS !== 'false',
     serviceContract: SERVICE_CONTRACT,
     acceptNewOrders: env.VERIFY_ACCEPT_NEW_ORDERS === undefined ? undefined : env.VERIFY_ACCEPT_NEW_ORDERS === 'true',

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0b0b10">
 <title>Claude KYC认证：Session Key 提交与进度查询 - GetToken</title>
-<meta name="description" content="GetToken Claude KYC认证协助：提交本人 Session Key 和淘宝订单号，人工核单后查看处理进度。本站不提供在线支付，官方身份认证须本人完成。">
+<meta name="description" content="GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。">
 <link rel="canonical" href="https://gettoken.cc/verify/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GetToken">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:title" content="Claude KYC认证：Session Key 提交与进度查询 - GetToken">
-<meta property="og:description" content="GetToken Claude KYC认证协助：提交本人 Session Key 和淘宝订单号，人工核单后查看处理进度。本站不提供在线支付，官方身份认证须本人完成。">
+<meta property="og:description" content="GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。">
 <meta property="og:url" content="https://gettoken.cc/verify/">
 <meta property="og:image" content="https://gettoken.cc/assets/gettoken/logo.png">
 <meta property="og:image:alt" content="GetToken 品牌标识">
@@ -26,8 +26,8 @@
 <link rel="stylesheet" href="../assets/gettoken/chrome.css">
 <script type="module" src="../assets/gettoken/chrome.mjs"></script>
 <link rel="stylesheet" href="../assets/gettoken/verify.css">
-<script type="module" src="../assets/gettoken/verify.mjs?v=taobao-20261017"></script>
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://gettoken.cc/#organization","name":"GetToken","url":"https://gettoken.cc/","logo":"https://gettoken.cc/assets/gettoken/logo.png"},{"@type":"WebSite","@id":"https://gettoken.cc/#website","name":"GetToken","url":"https://gettoken.cc/","inLanguage":"zh-CN","publisher":{"@id":"https://gettoken.cc/#organization"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首页","item":"https://gettoken.cc/"},{"@type":"ListItem","position":2,"name":"Claude KYC认证","item":"https://gettoken.cc/verify/"}]},{"@type":"WebPage","@id":"https://gettoken.cc/verify/#webpage","url":"https://gettoken.cc/verify/","name":"Claude KYC认证","description":"GetToken Claude KYC认证协助：提交本人 Session Key 和淘宝订单号，人工核单后查看处理进度。本站不提供在线支付，官方身份认证须本人完成。","dateModified":"2026-10-17","inLanguage":"zh-CN","isPartOf":{"@id":"https://gettoken.cc/#website"},"mainEntity":{"@type":"Service","name":"Claude KYC认证协助","serviceType":"第三方人工认证协助","provider":{"@id":"https://gettoken.cc/#organization"},"areaServed":"CN","description":"GetToken Claude KYC认证协助：提交本人 Session Key 和淘宝订单号，人工核单后查看处理进度。本站不提供在线支付，官方身份认证须本人完成。"}}]}</script>
+<script type="module" src="../assets/gettoken/verify.mjs?v=key-only-20261017"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://gettoken.cc/#organization","name":"GetToken","url":"https://gettoken.cc/","logo":"https://gettoken.cc/assets/gettoken/logo.png"},{"@type":"WebSite","@id":"https://gettoken.cc/#website","name":"GetToken","url":"https://gettoken.cc/","inLanguage":"zh-CN","publisher":{"@id":"https://gettoken.cc/#organization"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首页","item":"https://gettoken.cc/"},{"@type":"ListItem","position":2,"name":"Claude KYC认证","item":"https://gettoken.cc/verify/"}]},{"@type":"WebPage","@id":"https://gettoken.cc/verify/#webpage","url":"https://gettoken.cc/verify/","name":"Claude KYC认证","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。","dateModified":"2026-10-17","inLanguage":"zh-CN","isPartOf":{"@id":"https://gettoken.cc/#website"},"mainEntity":{"@type":"Service","name":"Claude KYC认证协助","serviceType":"第三方人工认证协助","provider":{"@id":"https://gettoken.cc/#organization"},"areaServed":"CN","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。"}}]}</script>
 </head>
 <body>
 <a class="g-skip" href="#main">跳到正文</a>
@@ -71,10 +71,10 @@
 <div class="v-hero"><div class="g-shell">
 <nav class="g-crumbs" aria-label="面包屑"><ol><li><a href="../">首页</a></li><li><span aria-current="page">Claude KYC认证</span></li></ol></nav>
 <div class="v-hero__text">
-<p class="g-eyebrow" data-service-state>Claude KYC认证 · 淘宝订单提交</p>
+<p class="g-eyebrow" data-service-state>Claude KYC认证 · Session Key 提交</p>
 <h1>Claude KYC认证</h1>
-<p class="g-lead">提交本人 Session Key 与淘宝订单号，人工核单后查询处理进度。本站不收款；GetToken 为独立第三方服务，非 Anthropic 官方认证入口。官方 KYC须由本人按 Claude 内的 Persona 提示完成，本站结果不保证官方认证通过。</p>
-<ul class="v-facts"><li><b>淘宝订单</b>仅填写订单号</li><li><b>人工核单</b>核对后开始处理</li><li><b>私密查询</b>保存专属查询链接</li></ul>
+<p class="g-lead">仅需提交本人 Session Key，即可查询人工处理进度。本站不收款；GetToken 为独立第三方服务，非 Anthropic 官方认证入口。官方 KYC须由本人按 Claude 内的 Persona 提示完成，本站结果不保证官方认证通过。</p>
+<ul class="v-facts"><li><b>Session Key</b>仅需填写一项</li><li><b>人工处理</b>提交后进入处理</li><li><b>私密查询</b>保存专属查询链接</li></ul>
 </div></div></div>
 <main id="main" class="g-shell">
 <p class="v-banner" data-mode-banner hidden></p>
@@ -83,20 +83,16 @@
 <form class="v-card v-form" id="submit" data-form novalidate aria-labelledby="submit-title">
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
-<p class="v-hint" id="v-code-hint" data-service-disclosure>Session Key 是登录会话凭据，持有者可能访问你的账户；不是 API Key 或身份证明。请先在淘宝订单中确认协助范围，再提交本人账户凭据；格式通过不代表有效。</p>
+<p class="v-hint" id="v-code-hint" data-service-disclosure>Session Key 是登录会话凭据，持有者可能访问你的账户；不是 API Key 或身份证明。请先确认协助范围，再提交本人账户凭据；格式通过不代表有效。</p>
 <div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="4136" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
 </div></div>
-<div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3><label for="v-reference">填写淘宝订单号</label></h3><div class="v-step__body">
-<p class="v-hint" id="v-reference-hint">填写已购买商品的完整淘宝订单号，仅支持 10–32 位数字，无需上传截图。资料提交后需人工核单，不代表已确认付款。</p>
-<div class="v-field"><input id="v-reference" class="a-reason" name="reference" type="text" inputmode="numeric" minlength="10" maxlength="32" autocomplete="off" spellcheck="false" aria-describedby="v-reference-hint" data-external-reference required></div>
-</div></div>
-<div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>确认授权并提交</h3><div class="v-step__body">
-<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我确认账户归本人所有，已了解 Session Key 的访问权限并授权淘宝订单约定范围内的认证协助；售后及退款按淘宝原订单约定处理。</span></label>
+<div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3>确认授权并提交</h3><div class="v-step__body">
+<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我确认账户归本人所有，已了解 Session Key 的访问权限并授权已确认范围内的认证协助。</span></label>
 <label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
 <div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit disabled>正在连接提交服务…</button>
 <p class="v-error" data-form-error role="alert" hidden></p>
-<p class="v-hint v-center">本页不提供支付。提交后请保存私密查询链接，核单通过后开始处理计时。</p></div>
+<p class="v-hint v-center">本页不提供支付。提交后请保存私密查询链接，提交成功后进入人工处理。</p></div>
 </div></div>
 <noscript><p class="v-error">提交认证协助需要启用 JavaScript。</p></noscript>
 </form>
@@ -110,8 +106,8 @@
 <p class="v-feed__foot">仅展示同意公开的本站订单；Session Key 已打码，不代表官方认证结果。</p>
 </aside>
 <section class="v-card v-query" id="query" aria-labelledby="query-title">
-<h2 id="query-title">已经提交过？</h2><p>在原浏览器输入淘宝订单号或受理编号，换设备请粘贴完整私密查询链接。链接遗失请通过淘宝原订单联系商家核实，不要发送 Session Key。</p>
-<form data-query><label class="g-visually-hidden" for="v-query-id">淘宝订单号、受理编号或私密查询链接</label><input id="v-query-id" name="order" placeholder="淘宝订单号 / 受理编号 / 私密链接" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
+<h2 id="query-title">已经提交过？</h2><p>在原浏览器输入受理编号，或点击最近提交记录；换设备请粘贴完整私密查询链接。不要在查询框输入 Session Key。</p>
+<form data-query><label class="g-visually-hidden" for="v-query-id">受理编号或私密查询链接</label><input id="v-query-id" name="order" placeholder="受理编号 / 私密查询链接" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
 <p class="v-error" data-query-error role="alert" hidden></p>
 <ul class="v-recent" data-recent hidden></ul>
 </section>
@@ -119,17 +115,17 @@
 </div>
 <section class="g-section" id="flow" aria-labelledby="flow-title"><div class="g-section__head"><h2 id="flow-title">认证协助怎么进行</h2><p>本页跟踪本站订单，官方 KYC按 Claude 提示由本人完成。</p></div>
 <ol class="v-flow">
-<li><em>01</em><h3>提交 Session Key</h3><p>填写本人 Session Key 与淘宝订单号，确认授权范围。</p></li>
-<li><em>02</em><h3>人工核对订单</h3><p>核对淘宝订单、购买内容及实付金额，通过后开始预计处理计时。</p></li>
+<li><em>01</em><h3>提交 Session Key</h3><p>填写本人 Session Key，确认账户归属与授权范围。</p></li>
+<li><em>02</em><h3>保存查询链接</h3><p>提交成功后保存受理编号与私密链接，方便后续查询。</p></li>
 <li><em>03</em><h3>人工认证协助</h3><p>逐单核对与处理；官方证件和自拍验证须本人完成。</p></li>
-<li><em>04</em><h3>查看处理结果</h3><p>使用私密查询链接查看结果；售后在淘宝原订单处理。</p></li>
+<li><em>04</em><h3>查看处理结果</h3><p>使用私密查询链接查看处理结果与说明。</p></li>
 </ol></section>
-<section class="g-section" id="rules" aria-labelledby="rules-title"><div class="g-section__head"><h2 id="rules-title">提交与售后约定</h2><p>本站仅受理资料与展示处理进度，交易条件以淘宝原订单约定为准。</p></div>
+<section class="g-section" id="rules" aria-labelledby="rules-title"><div class="g-section__head"><h2 id="rules-title">提交与售后约定</h2><p>本站仅受理资料与展示处理进度，请在了解访问权限与协助范围后提交。</p></div>
 <div class="v-rules">
 <div class="v-rule v-rule--keep"><h3><span>本人账户与授权</span></h3><ul><li>仅提交本人账户的 Session Key</li><li>提交前确认协助范围、交付内容与售后约定</li><li>官方证件和自拍认证须本人完成</li></ul></div>
-<div class="v-rule v-rule--back"><h3><span>通过淘宝原订单联系</span></h3><ul><li>支持时段：9:00–23:00</li><li>退款与售后由商家按原订单约定处理</li><li>本站登记状态不等于平台已到账，请在淘宝核实</li></ul></div>
+<div class="v-rule v-rule--back"><h3><span>查询与资料保护</span></h3><ul><li>支持时段：9:00–23:00</li><li>保存完整私密链接，跨设备凭链接查询</li><li>不要分享完整 Session Key 或私密查询链接</li></ul></div>
 </div></section>
-<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq"><details open><summary>Claude 官方 KYC需要准备什么？</summary><p>官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。</p></details><details><summary>提交后什么时候开始处理？</summary><p>先人工核对淘宝订单及购买内容，核单通过后开始处理，预计 24 小时。超时仍显示处理中，不会自动判定通过；官方状态以 Claude 账户显示为准。</p></details><details><summary>需要在这里付款或上传截图吗？</summary><p>不需要。本轮仅受理淘宝订单号，不上传截图，也不在本站付款。售后与退款请通过淘宝原订单联系商家，按原订单约定处理；本站只展示商家登记的状态，不会自动发起退款。</p></details><details><summary>如何查询已提交的订单？</summary><p>原浏览器可输入淘宝订单号或受理编号查询，也可使用提交后生成的完整私密查询链接。换设备需要私密链接；仅凭淘宝订单号不能在陌生设备查看资料。链接请妥善保存，不要公开分享。</p></details><details><summary>Session Key 提交错了怎么办？</summary><p>请通过淘宝原订单联系商家核实修改或撤销，支持时段为 9:00–23:00；不要在聊天或订单备注发送完整 Session Key，不要重复购买。不得提交他人账户的会话凭据。</p></details><details><summary>Session Key 会如何处理？</summary><p>Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。仅在确认淘宝订单约定的协助范围后提交；加密保存，仅授权审核员可查看。待核单超过 7 天将关闭并删除完整值；出结果 7 天后删除完整值，仅保留末 4 位。可通过淘宝原订单申请撤销与提前删除，并在 Claude 撤销相关会话。</p></details></div></section>
+<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq"><details open><summary>Claude 官方 KYC需要准备什么？</summary><p>官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。</p></details><details><summary>提交需要哪些资料？</summary><p>只需填写本人账户的 Session Key 并确认授权，不需要购买订单号或截图，本页不提供支付。</p></details><details><summary>提交后什么时候开始处理？</summary><p>提交成功后进入人工处理，预计 24 小时。超时仍显示处理中，不会自动判定通过；官方状态以 Claude 账户显示为准。</p></details><details><summary>如何查询已提交的记录？</summary><p>原浏览器可使用受理编号或最近提交记录查询；换设备请使用完整私密查询链接。链接请妥善保存，不要公开分享，不要在查询框输入 Session Key。</p></details><details><summary>Session Key 提交错了怎么办？</summary><p>请保留受理编号，通过已确认的支持渠道申请核实或撤销；不要在聊天中发送完整 Session Key。不得提交他人账户的会话凭据。</p></details><details><summary>Session Key 会如何处理？</summary><p>Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。仅在确认协助范围后提交；加密保存，仅授权审核员可查看。出结果 7 天后删除完整值，仅保留末 4 位。可申请撤销与提前删除，并在 Claude 撤销相关会话。</p></details></div></section>
 </main>
 <div class="toast" role="status" aria-live="polite" data-toast></div>
 <footer class="site-footer" id="contact">

@@ -86,30 +86,28 @@ try {
   assert.equal((await call('config')).data.mode, 'mock'); checks++;
   assert.equal((await call('admin/orders')).status, 401); checks++;
   assert.equal((await call('admin/login', { method: 'POST', body: { password: 'verify-integration-test-only' } })).status, 200); checks++;
-  let referenceSequence = 1000000000000000000n;
+  let submissionSequence = 0;
   const create = async showPublic => {
-    const response = await call('orders', { method: 'POST', body: { code: 'sk-integration-' + 'q'.repeat(45), agree: true, showPublic, reference: String(referenceSequence++), source: 'taobao' } });
+    const response = await call('orders', { method: 'POST', body: { code: 'sk-integration-' + 'q'.repeat(45) + submissionSequence++, agree: true, showPublic, source: 'session' } });
     assert.equal(response.status, 201); checks++;
     return response.data;
   };
   const first = await create(true);
-  assert.equal(first.status, 'submitted'); checks++;
+  assert.equal(first.status, 'reviewing'); checks++;
   assert.equal(first.payment, undefined); checks++;
-  assert.equal((await call(`admin/orders/${first.id}/decision`, { method: 'POST', body: { result: 'passed', reason: 'Synthetic delivery summary' }, admin: true })).status, 409); checks++;
-  assert.equal((await call(`admin/orders/${first.id}/check-external`, { method: 'POST', body: { accepted: true, reason: 'Synthetic Taobao order verified' }, admin: true })).data.status, 'reviewing'); checks++;
+  assert.equal((await call(`admin/orders/${first.id}/decision`, { method: 'POST', body: { result: 'passed' }, admin: true })).status, 400); checks++;
   assert.equal((await call(`orders/${first.id}`)).data.status, 'reviewing'); checks++;
   assert.equal((await call(`admin/orders/${first.id}/decision`, { method: 'POST', body: { result: 'passed', reason: 'Synthetic delivery summary' }, admin: true })).data.status, 'passed'); checks++;
   assert.equal((await call('feed')).data.items.length, 1); checks++;
   const failed = await create(false);
-  await call(`admin/orders/${failed.id}/check-external`, { method: 'POST', body: { accepted: true, reason: 'Synthetic Taobao order verified' }, admin: true });
   const result = await call(`admin/orders/${failed.id}/decision`, { method: 'POST', body: { result: 'failed', reason: 'integration test' }, admin: true });
   assert.equal(result.status, 200); checks++;
   assert.equal(result.data.refunds.length, 0); checks++;
-  assert.equal(result.data.refundStatus, 'pending'); checks++;
-  assert.equal((await call(`admin/orders/${failed.id}/external-refund`, { method: 'POST', body: { reason: 'Synthetic Taobao refund checked' }, admin: true })).data.refundStatus, 'success'); checks++;
+  assert.equal(result.data.refundStatus, null); checks++;
+  assert.equal((await call(`admin/orders/${failed.id}/external-refund`, { method: 'POST', body: { reason: 'No purchase to refund' }, admin: true })).status, 409); checks++;
   const publicResult = (await call(`orders/${failed.id}`)).data;
-  assert.equal(publicResult.refund.amount, undefined); checks++;
-  assert.equal(publicResult.refund.status, 'success'); checks++;
+  assert.equal(publicResult.fees, null); checks++;
+  assert.equal(publicResult.refund, null); checks++;
   assert.equal((await call('feed')).data.items.length, 1); checks++;
   // Restart the actual entry point on the persisted database and recheck history.
   await docker('restart', apiContainer);
@@ -126,10 +124,10 @@ try {
   }
   assert.equal(restored?.status, 200, 'API must recover after restart');
   assert.equal(restored.data.status, 'failed'); checks++;
-  assert.equal(restored.data.refund.status, 'success'); checks++;
+  assert.equal(restored.data.refund, null); checks++;
   const report = { passed: true, checks, mode: 'mock', intakeMode: 'external', runtime: 'v22.22.0', nginxImage: image, tlsVerified: true, persistedHistoryVerified: true, productionVerified: false };
   await writeFile(join(ROOT, '.impeccable/review/verify-api-smoke.json'), JSON.stringify(report, null, 2) + '\n');
-  console.log(`Verify API integration passed: ${checks} checks, Node 22.22.0, real Nginx/TLS, persisted orders, review and refund. Synthetic Taobao references only; no payment provider calls.`);
+  console.log(`Verify API integration passed: ${checks} checks, Node 22.22.0, real Nginx/TLS, persisted orders, review and refund. Synthetic Session Keys only; no payment provider calls.`);
 } finally {
   if (nginxContainer) await docker('stop', nginxContainer).catch(() => {});
   if (apiContainer) await docker('stop', apiContainer).catch(() => {});

@@ -101,7 +101,7 @@ test('rejected and overdue unchecked orders are private and secrets are scrubbed
 });
 
 test('HTTP: private lookup, authenticated manual check, CSRF guard and disabled payment endpoint', async t => {
-  const f = fixture(t), server = createServer(createApp(f));
+  const f = fixture(t), server = createServer(createApp({ ...f, config: { ...f.config, keyOnlyIntake: false } }));
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   t.after(() => new Promise(r => server.close(r)));
   const base = `http://127.0.0.1:${server.address().port}/api/verify/`;

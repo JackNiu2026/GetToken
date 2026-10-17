@@ -1,0 +1,31 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:04.000
+登录 Claude，打开开发者工具
+在已登录的 claude.ai 页面按 F12。Windows / Linux 也可按 Ctrl+Shift+I；Mac 按 ⌘+⌥+I。
+
+2
+00:00:04.000 --> 00:00:08.000
+点击顶部的 Application（应用）标签
+在开发者工具顶部点击 Application（应用）。没有看到时，先展开顶部的 » 更多标签。
+
+3
+00:00:08.000 --> 00:00:13.000
+展开 Cookies，选择 claude.ai
+在左侧 Storage（存储）下展开 Cookies，点击 https://claude.ai，确认选中的是这个站点。
+
+4
+00:00:13.000 --> 00:00:18.000
+筛选并选中 sessionKey
+在 Filter（筛选）输入 sessionKey，选择 Name 恰好为 sessionKey 的行；不要选择 sessionKeyLC 等其他行。
+
+5
+00:00:18.000 --> 00:00:24.000
+复制完整的 Value（值）
+双击该行的 Value 单元格，按 Ctrl+A、Ctrl+C 复制完整值，再按 Esc 退出编辑。Mac 使用 ⌘A、⌘C；不要修改或删除 Cookie。
+
+6
+00:00:24.000 --> 00:00:30.000
+返回表单，粘贴后核对
+回到本站，在 Session Key 输入框粘贴完整值，只粘贴 Value，不要粘贴名称、截图或省略号。确认账户归属与授权范围后自行提交。

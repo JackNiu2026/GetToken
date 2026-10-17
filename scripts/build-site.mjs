@@ -14,6 +14,7 @@ import { PRODUCT_FACTS } from '../content/product-facts.mjs';
 import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney, totalLabel } from '../assets/gettoken/catalog.mjs';
 import { inquiryState } from '../assets/gettoken/inquiry.mjs';
 import { VERIFY } from '../assets/gettoken/verify-rules.mjs';
+import { KEY_GUIDE_STEPS } from '../content/session-key-guide.mjs';
 import { ROOT, loadArticles, validateLibrary, inline, esc, dateIsValid } from './content.mjs';
 
 export { ROOT };
@@ -514,15 +515,9 @@ ${crumbNav(route, crumbs)}
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
 <p class="v-hint" id="v-code-hint" data-service-disclosure>Session Key 是登录会话凭据，持有者可能访问你的账户；不是 API Key 或身份证明。请先确认协助范围，再提交本人账户凭据；格式通过不代表有效。</p>
-<div class="v-helper" data-session-helper>
-<button class="v-btn v-btn--ghost" type="button" data-session-extract aria-describedby="v-helper-status">获取已登录的 Session Key</button>
-<p class="v-hint" id="v-helper-status" data-session-status role="status">测试版，原生读取待实机验收。电脑 Chrome / Edge 首次需安装助手，与 Claude 使用同一浏览器资料，无需 F12。</p>
-<details class="v-helper__install" data-session-install hidden><summary>安装与使用说明</summary>
-<ol><li><a href="${href(route, 'assets/downloads/gettoken-session-helper.zip')}" download>下载助手安装包（开发者模式）</a>，解压到固定目录。</li>
-<li>打开 <code>chrome://extensions/</code> 或 <code>edge://extensions/</code>，开启“开发者模式”，点击“加载已解压的扩展程序”，选择含 <code>manifest.json</code> 的目录。</li>
-<li>返回并刷新本页，再次点击获取按钮，在扩展窗口确认授权。已登录 Claude 无需重新登录。</li></ol>
-<p>助手尚未上架浏览器商店，仅支持电脑普通窗口。不会自动提交；拒绝授权仍可手动填写。若未找到会话，请在同一浏览器资料中打开 Claude 检查登录。</p>
-<p><a href="https://github.com/JackNiu2026/GetToken/tree/main/extensions/session-helper" target="_blank" rel="noopener noreferrer">查看助手源码与隐私说明 ↗</a></p></details>
+<div class="v-helper">
+<button class="v-btn v-btn--ghost" type="button" data-key-guide-open aria-haspopup="dialog" aria-controls="key-guide">查看 Session Key 获取教程</button>
+<p class="v-hint">30 秒动画演示 · 电脑 Chrome / Edge 操作 · 无需安装扩展</p>
 </div>
 <div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
@@ -567,10 +562,22 @@ ${crumbNav(route, crumbs)}
 </div></section>
 <section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq">${VERIFY_FAQS.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
 </main>
+<dialog class="v-guide" id="key-guide" data-key-guide-dialog aria-labelledby="key-guide-title" aria-describedby="key-guide-note">
+<div class="v-guide__head"><div><h2 id="key-guide-title">如何找到 Session Key</h2><p id="key-guide-note">动画使用虚构界面与示例值，不会读取或复制你的 Cookie。</p></div><button class="v-btn v-btn--ghost" type="button" data-guide-close>关闭</button></div>
+<div class="v-guide__body">
+<video data-key-guide-video controls playsinline muted preload="none" width="1280" height="900" poster="${href(route, 'assets/gettoken/session-key-guide.png')}" aria-label="Session Key 获取教程，约 30 秒">
+<source src="${href(route, 'assets/gettoken/session-key-guide.mp4')}" type="video/mp4"><track kind="captions" src="${href(route, 'assets/gettoken/session-key-guide.vtt')}" srclang="zh" label="简体中文">
+你的浏览器暂不支持播放。请按下方文字步骤操作，或下载视频观看。</video>
+<p class="v-guide__status" data-key-guide-status role="status" aria-live="polite">可暂停、全屏观看，也可选择下方步骤跳转。</p>
+<ol class="v-guide__chapters" aria-label="跳转教程步骤">${KEY_GUIDE_STEPS.map((step, index) => `<li><button type="button" data-guide-jump="${step.start}" data-guide-title="${esc(step.title)}">${index + 1} ${esc(step.short)}</button></li>`).join('')}</ol>
+<details class="v-guide__transcript" data-key-guide-transcript><summary>查看文字步骤与 Mac 快捷键</summary><ol>${KEY_GUIDE_STEPS.map(step => `<li><strong>${esc(step.title)}</strong><p>${esc(step.text)}</p></li>`).join('')}</ol></details>
+<p class="v-guide__note">只复制本人账号的完整 Value，不要复制 sessionKeyLC，不要照抄动画示例。Session Key 是登录凭据，请勿公开分享。</p>
+<div class="v-guide__foot"><a href="${href(route, 'assets/gettoken/session-key-guide.mp4')}" download>下载动画视频</a><div><button class="v-btn v-btn--ghost" type="button" data-guide-replay>重播动画</button><button class="v-btn v-btn--light" type="button" data-guide-fill>返回填写</button></div></div>
+</div></dialog>
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
     route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交认证协助' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=helper-20261017">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=helper-visible-20261017"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=key-guide-20261017">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=key-guide-20261017"></script>\n`,
     schema: [crumbList(crumbs), {
       '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: 'Claude KYC认证', description: VERIFY_DESCRIPTION,
       dateModified: VERIFY_UPDATED, inLanguage: 'zh-CN', isPartOf: { '@id': website['@id'] },

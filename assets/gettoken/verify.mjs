@@ -1,7 +1,7 @@
 // /verify/: submit a Session Key, then privately query manual processing.
 // Every status and result shown here comes from the API; the page never decides an outcome.
 import { VERIFY, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES } from './verify-rules.mjs?v=key-only-20261017';
-import { initSessionHelper } from './verify-session-helper.mjs?v=helper-visible-20261017';
+import { initKeyGuide } from './verify-key-guide.mjs?v=key-guide-20261017';
 
 const API = new URL('../../api/verify/', import.meta.url);
 const STORE_KEY = 'gettoken-verify-orders';
@@ -16,7 +16,7 @@ const codeState = $('[data-code-state]');
 const codeCount = $('[data-code-count]');
 const submit = $('[data-submit]');
 const formError = $('[data-form-error]');
-initSessionHelper();
+initKeyGuide();
 
 let config = null;
 let current = null; // last order payload from the API

@@ -53,11 +53,35 @@
 .v-helper { margin-top: 16px; }
 .v-helper > .v-btn { max-width: 100%; white-space: normal; line-height: 1.5; padding-block: 10px; }
 .v-helper > .v-hint { margin-top: 8px; color: var(--ink-2); }
-.v-helper__install { margin-top: 12px; color: var(--ink-2); font-size: 13px; line-height: 1.8; }
-.v-helper__install summary { cursor: pointer; min-height: 36px; }
-.v-helper__install ol { padding-left: 20px; list-style: decimal; }
-.v-helper__install li + li, .v-helper__install p { margin-top: 10px; }
-.v-helper__install code { overflow-wrap: anywhere; }
+/* Closed native dialogs must never create an invisible layer over the form. */
+.v-guide { width: min(960px, calc(100% - 24px)); max-height: calc(100svh - 32px); margin: auto; padding: 0; border: 1px solid var(--line-2); border-radius: 16px; background: var(--bg); color: var(--ink); overflow: auto; }
+.v-guide:not([open]) { display: none; }
+.v-guide::backdrop { background: rgba(0, 0, 0, .78); }
+.v-guide__head { position: sticky; top: 0; z-index: 1; display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.v-guide__head h2 { font-size: 22px; line-height: 1.4; }
+.v-guide__head p { margin-top: 6px; color: var(--ink-2); font-size: 13px; line-height: 1.7; }
+.v-guide__head > button { flex: none; min-height: 44px; }
+.v-guide__body { padding: 20px 24px 24px; }
+.v-guide video { display: block; width: 100%; height: auto; max-height: 60svh; object-fit: contain; background: #0b0b10; border-radius: 8px; }
+.v-guide__status { margin-top: 12px; color: var(--ink-2); font-size: 13px; line-height: 1.7; }
+.v-guide__chapters { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.v-guide__chapters button { width: 100%; min-height: 44px; padding: 8px; border: 1px solid var(--line-2); border-radius: 8px; color: var(--ink-2); background: transparent; font: 500 13px/1.5 var(--font); cursor: pointer; }
+.v-guide__chapters button:hover, .v-guide__chapters button[aria-current="step"] { border-color: var(--v-violet); color: var(--ink); background: rgba(168, 85, 247, .1); }
+.v-guide__transcript { margin-top: 20px; color: var(--ink-2); font-size: 14px; line-height: 1.8; }
+.v-guide__transcript summary { cursor: pointer; min-height: 44px; }
+.v-guide__transcript ol { padding-left: 24px; list-style: decimal; }
+.v-guide__transcript li + li { margin-top: 16px; }
+.v-guide__transcript strong { color: var(--ink); }
+.v-guide__note { margin-top: 16px; color: var(--ink-2); font-size: 13px; line-height: 1.8; }
+.v-guide__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; }
+.v-guide__foot > a { color: var(--link); font-size: 13px; }
+.v-guide__foot > div { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 600px) {
+  .v-guide__head { gap: 12px; padding: 16px; }
+  .v-guide__head h2 { font-size: 19px; }
+  .v-guide__body { padding: 16px; }
+  .v-guide__chapters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .v-field { margin-top: 12px; }
 .v-field textarea, .a-login input, .a-search input, .v-query input, .a-reason { width: 100%; border: 1px solid var(--line-2); border-radius: 14px; background: var(--v-field); color: var(--ink); font: 14px/1.6 var(--mono); padding: 14px 16px; outline: none; }
 .v-field textarea { min-height: 104px; resize: vertical; word-break: break-all; }

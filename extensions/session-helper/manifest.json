@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "GetToken Session Key 助手（测试版）",
+  "version": "0.1.0",
+  "description": "经本人确认后，将当前浏览器已登录的 Claude Session Key 回填到 GetToken。不会自动提交。",
+  "minimum_chrome_version": "116",
+  "incognito": "not_allowed",
+  "permissions": ["cookies", "storage"],
+  "optional_host_permissions": ["https://claude.ai/*"],
+  "background": { "service_worker": "background.mjs", "type": "module" },
+  "content_scripts": [{
+    "matches": ["https://gettoken.cc/verify/", "https://gettoken.cc/verify/?*"],
+    "js": ["bridge.js"],
+    "run_at": "document_idle",
+    "all_frames": false
+  }],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+  }
+}

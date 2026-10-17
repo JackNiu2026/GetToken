@@ -19,11 +19,13 @@ jobs:
           node-version: '22'
       - name: Check JavaScript and deployment scripts
         run: |
-          for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs server/verify/*.mjs server/verify/pay/*.mjs; do node --check "$file"; done
+          for file in assets/gettoken/*.mjs scripts/*.mjs content/*.mjs server/verify/*.mjs server/verify/pay/*.mjs extensions/session-helper/*.mjs extensions/session-helper/*.js; do node --check "$file"; done
           bash -n scripts/deploy-ssh.sh scripts/server-deploy.sh scripts/install-verify.sh scripts/configure-payments.sh scripts/set-payment-opening.sh
           python3 -m py_compile scripts/configure-seo-routing.py scripts/inspect-live.py
       - name: Check generated static pages
-        run: node scripts/build-site.mjs --check
+        run: |
+          node scripts/build-site.mjs --check
+          python3 scripts/package-session-helper.py --check
       - name: Test catalog and static website
         run: node --test tests/*.test.mjs
       - name: Test domain configuration preservation and rollback

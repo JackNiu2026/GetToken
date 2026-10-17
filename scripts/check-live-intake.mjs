@@ -18,3 +18,13 @@ assert.equal(feedResponse.status, 200, 'Passed-record feed must be available');
 const feed = JSON.parse(await feedResponse.text());
 assert.ok(Number.isInteger(feed.totalPassed) && feed.totalPassed >= feed.today.passed && feed.today.passed >= 0, 'Today and cumulative totals must be real nonnegative counts');
 console.log('Production feed verified: today and cumulative passed counts available.');
+
+const helperPage = await curlRequest(new URL('/verify/', SITE.origin).href);
+assert.equal(helperPage.status, 200);
+assert.match(await helperPage.text(), /data-session-extract/, 'Session Key helper button must be deployed');
+const helperModule = await curlRequest(new URL('/assets/gettoken/verify-session-helper.mjs', SITE.origin).href);
+assert.equal(helperModule.status, 200, 'Helper webpage module must be available');
+const helperZip = await curlRequest(new URL('/assets/downloads/gettoken-session-helper.zip', SITE.origin).href);
+assert.equal(helperZip.status, 200, 'Developer-mode helper download must be available');
+assert.equal((await helperZip.text()).slice(0, 4), 'PK\u0003\u0004', 'Helper download must be a ZIP, not an HTML fallback');
+console.log('Production helper delivery verified: opt-in beta markup, webpage module and developer-mode ZIP available. Browser installation and real-account behavior are not tested by these delivery checks.');

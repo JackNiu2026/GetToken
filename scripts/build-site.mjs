@@ -514,6 +514,16 @@ ${crumbNav(route, crumbs)}
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
 <p class="v-hint" id="v-code-hint" data-service-disclosure>Session Key 是登录会话凭据，持有者可能访问你的账户；不是 API Key 或身份证明。请先确认协助范围，再提交本人账户凭据；格式通过不代表有效。</p>
+<div class="v-helper" data-session-helper hidden>
+<button class="v-btn v-btn--ghost" type="button" data-session-extract aria-describedby="v-helper-status">获取已登录的 Session Key</button>
+<p class="v-hint" id="v-helper-status" data-session-status role="status">测试版：电脑 Chrome / Edge 首次需安装助手；与 Claude 使用同一浏览器资料，无需 F12。</p>
+<details class="v-helper__install" data-session-install hidden><summary>安装与使用说明</summary>
+<ol><li><a href="${href(route, 'assets/downloads/gettoken-session-helper.zip')}" download>下载助手安装包（开发者模式）</a>，解压到固定目录。</li>
+<li>打开 <code>chrome://extensions/</code> 或 <code>edge://extensions/</code>，开启“开发者模式”，点击“加载已解压的扩展程序”，选择含 <code>manifest.json</code> 的目录。</li>
+<li>返回并刷新本页，再次点击获取按钮，在扩展窗口确认授权。已登录 Claude 无需重新登录。</li></ol>
+<p>助手尚未上架浏览器商店，仅支持电脑普通窗口。不会自动提交；拒绝授权仍可手动填写。若未找到会话，请在同一浏览器资料中打开 Claude 检查登录。</p>
+<p><a href="https://github.com/JackNiu2026/GetToken/tree/main/extensions/session-helper" target="_blank" rel="noopener noreferrer">查看助手源码与隐私说明 ↗</a></p></details>
+</div>
 <div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
 </div></div>
@@ -560,7 +570,7 @@ ${crumbNav(route, crumbs)}
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
     route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交认证协助' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=sidebar-20261017">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=sidebar-20261017"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=helper-20261017">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=helper-20261017"></script>\n`,
     schema: [crumbList(crumbs), {
       '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: 'Claude KYC认证', description: VERIFY_DESCRIPTION,
       dateModified: VERIFY_UPDATED, inLanguage: 'zh-CN', isPartOf: { '@id': website['@id'] },

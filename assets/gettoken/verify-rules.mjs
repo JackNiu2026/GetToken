@@ -1,8 +1,8 @@
-// Fees, timings and the code format for /verify/. Shared by the page, the build and the API
-// (server/verify), so the amounts shown before payment are the amounts charged.
+// Shared timings and Session Key format. Fee constants apply only to historical
+// online payments; external Taobao amounts are not inferred from these values.
 export const VERIFY = Object.freeze({
   intakeMode: 'external',
-  open: false, // false: the navigation and page say 即将开放. Set true once live payments work, then rebuild.
+  open: false, // Legacy online-payment gate; independent of external Taobao intake.
   techFeeMinor: 3000, // 人工技术费 ¥30, never refunded
   auditFeeMinor: 30000, // 审核费 ¥300, refunded when the review fails
   reviewHours: 24, // expected review time; drives the countdown only
@@ -15,7 +15,8 @@ export const VERIFY = Object.freeze({
 
 // Public service terms; fill with verified business information, never secrets.
 // Session Key is required by the service owner; actual actions and evidence
-// still need to be defined before accepting production orders.
+// gate legacy online checkout. External intake instead requires the terms of the
+// original Taobao purchase to be checked manually before processing.
 export const SERVICE_CONTRACT = Object.freeze({
   approved: false, requiresSessionKey: true,
   scope: '', successEvidence: '', excludedCases: '',

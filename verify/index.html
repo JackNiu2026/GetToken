@@ -26,7 +26,7 @@
 <link rel="stylesheet" href="../assets/gettoken/chrome.css">
 <script type="module" src="../assets/gettoken/chrome.mjs"></script>
 <link rel="stylesheet" href="../assets/gettoken/verify.css?v=helper-20261017">
-<script type="module" src="../assets/gettoken/verify.mjs?v=helper-20261017"></script>
+<script type="module" src="../assets/gettoken/verify.mjs?v=helper-visible-20261017"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://gettoken.cc/#organization","name":"GetToken","url":"https://gettoken.cc/","logo":"https://gettoken.cc/assets/gettoken/logo.png"},{"@type":"WebSite","@id":"https://gettoken.cc/#website","name":"GetToken","url":"https://gettoken.cc/","inLanguage":"zh-CN","publisher":{"@id":"https://gettoken.cc/#organization"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首页","item":"https://gettoken.cc/"},{"@type":"ListItem","position":2,"name":"Claude KYC认证","item":"https://gettoken.cc/verify/"}]},{"@type":"WebPage","@id":"https://gettoken.cc/verify/#webpage","url":"https://gettoken.cc/verify/","name":"Claude KYC认证","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。","dateModified":"2026-10-17","inLanguage":"zh-CN","isPartOf":{"@id":"https://gettoken.cc/#website"},"mainEntity":{"@type":"Service","name":"Claude KYC认证协助","serviceType":"第三方人工认证协助","provider":{"@id":"https://gettoken.cc/#organization"},"areaServed":"CN","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。"}}]}</script>
 </head>
 <body>
@@ -84,9 +84,9 @@
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
 <p class="v-hint" id="v-code-hint" data-service-disclosure>Session Key 是登录会话凭据，持有者可能访问你的账户；不是 API Key 或身份证明。请先确认协助范围，再提交本人账户凭据；格式通过不代表有效。</p>
-<div class="v-helper" data-session-helper hidden>
+<div class="v-helper" data-session-helper>
 <button class="v-btn v-btn--ghost" type="button" data-session-extract aria-describedby="v-helper-status">获取已登录的 Session Key</button>
-<p class="v-hint" id="v-helper-status" data-session-status role="status">测试版：电脑 Chrome / Edge 首次需安装助手；与 Claude 使用同一浏览器资料，无需 F12。</p>
+<p class="v-hint" id="v-helper-status" data-session-status role="status">测试版，原生读取待实机验收。电脑 Chrome / Edge 首次需安装助手，与 Claude 使用同一浏览器资料，无需 F12。</p>
 <details class="v-helper__install" data-session-install hidden><summary>安装与使用说明</summary>
 <ol><li><a href="../assets/downloads/gettoken-session-helper.zip" download>下载助手安装包（开发者模式）</a>，解压到固定目录。</li>
 <li>打开 <code>chrome://extensions/</code> 或 <code>edge://extensions/</code>，开启“开发者模式”，点击“加载已解压的扩展程序”，选择含 <code>manifest.json</code> 的目录。</li>

@@ -2,13 +2,12 @@
 // the textarea after an explicit confirmation in its own extension window.
 export function initSessionHelper(root = document) {
   const helper = root.querySelector('[data-session-helper]');
-  if (!helper || new URLSearchParams(location.search).get('helper') !== '1') return;
+  if (!helper) return;
   const button = root.querySelector('[data-session-extract]');
   const status = root.querySelector('[data-session-status]');
   const guide = root.querySelector('[data-session-install]');
   const field = root.querySelector('[data-code]');
   if (!button || !status || !guide || !field) return;
-  helper.hidden = false;
   const channel = 'gettoken-session-helper-v1';
   let installed = false, waiting = 0, timeout = 0;
   const show = text => { status.textContent = text; };

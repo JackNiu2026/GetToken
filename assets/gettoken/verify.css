@@ -50,6 +50,14 @@
 .v-step h3 { font-size: 17px; line-height: 28px; }
 .v-step__body { grid-column: 2; }
 .v-step__body > .v-hint { margin-top: 4px; }
+.v-helper { margin-top: 16px; }
+.v-helper > .v-btn { max-width: 100%; white-space: normal; line-height: 1.5; padding-block: 10px; }
+.v-helper > .v-hint { margin-top: 8px; color: var(--ink-2); }
+.v-helper__install { margin-top: 12px; color: var(--ink-2); font-size: 13px; line-height: 1.8; }
+.v-helper__install summary { cursor: pointer; min-height: 36px; }
+.v-helper__install ol { padding-left: 20px; list-style: decimal; }
+.v-helper__install li + li, .v-helper__install p { margin-top: 10px; }
+.v-helper__install code { overflow-wrap: anywhere; }
 .v-field { margin-top: 12px; }
 .v-field textarea, .a-login input, .a-search input, .v-query input, .a-reason { width: 100%; border: 1px solid var(--line-2); border-radius: 14px; background: var(--v-field); color: var(--ink); font: 14px/1.6 var(--mono); padding: 14px 16px; outline: none; }
 .v-field textarea { min-height: 104px; resize: vertical; word-break: break-all; }

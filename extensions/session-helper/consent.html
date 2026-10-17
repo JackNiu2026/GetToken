@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>授权读取 Session Key · GetToken 助手</title><link rel="stylesheet" href="consent.css"><script type="module" src="consent.mjs"></script></head>
+<body><main>
+<h1>读取已登录的 Claude 会话</h1>
+<p>无需重新登录或打开 F12。请确认 Claude 和 GetToken 都在当前浏览器的同一份用户资料中打开。</p>
+<dl><div><dt>读取来源</dt><dd>https://claude.ai/ 的 sessionKey Cookie</dd></div><div><dt>回填位置</dt><dd>https://gettoken.cc/verify/ 的输入框</dd></div></dl>
+<p class="notice">Session Key 是账号登录凭证，持有者可能访问你的 Claude 账户。GetToken 是独立第三方，非 Anthropic 官方认证入口。仅在确认服务用途后授权。</p>
+<p>本次仅回填，不会自动提交。扩展不会记录、上传或保存完整值；网页可读取输入框内容，点击网页的提交按钮后，凭据将交给 GetToken 服务端。</p>
+<label><input type="checkbox" id="agree"><span>这是本人账户，我同意读取登录凭证并回填到上述网站。</span></label>
+<div class="actions"><button id="read" disabled>授权读取并回填</button><button id="cancel" class="secondary">取消</button></div>
+<p id="status" role="status" aria-live="polite">正在确认来源页面…</p>
+<button id="open" class="secondary" hidden>打开 Claude 检查登录</button>
+</main></body></html>

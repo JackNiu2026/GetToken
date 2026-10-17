@@ -104,7 +104,7 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 ### 第一次上线后
 
-1. 设置后台密码（至少 12 位）：`sudo gettoken-verify passwd`。后台地址 `https://gettoken.cc/verify/admin/`，页面与响应头设置 noindex，后台数据由 API 会话认证保护；robots 不阻挡登录壳读取该指令。
+1. 首次缺少后台密码时，安装器生成随机密码并仅保存在服务器 `/etc/gettoken/verify-admin.initial-password`（root:root、0600，日志不输出）；已有密码不变。自行设置或更改后台密码（至少 12 位）：`sudo gettoken-verify passwd`。后台地址 `https://gettoken.cc/verify/admin/`，页面与响应头设置 noindex，后台数据由 API 会话认证保护；robots 不阻挡登录壳读取该指令。
 2. 配置文件 `/etc/gettoken/verify.env` 在首次发布时自动生成，只有 root 可读，之后的发布不会覆盖。其中的 `VERIFY_SECRET` 用于加密代码，**不要修改或丢失**，换掉后已有订单的代码无法解密。
 3. 刚安装时 `VERIFY_PAY_MODE=off`，不提供站内支付；设置后台密码后即可受理淘宝资料。可配置 `VERIFY_ACCEPT_EXTERNAL_ORDERS=false` 暂停资料提交。查看状态：`sudo gettoken-verify status`。
 4. 修改 `verify.env` 后执行 `sudo systemctl restart gettoken-verify`。

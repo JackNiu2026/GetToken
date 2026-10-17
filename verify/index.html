@@ -25,8 +25,8 @@
 <link rel="stylesheet" href="../assets/guides/guides.css">
 <link rel="stylesheet" href="../assets/gettoken/chrome.css">
 <script type="module" src="../assets/gettoken/chrome.mjs"></script>
-<link rel="stylesheet" href="../assets/gettoken/verify.css">
-<script type="module" src="../assets/gettoken/verify.mjs?v=key-only-20261017"></script>
+<link rel="stylesheet" href="../assets/gettoken/verify.css?v=sidebar-20261017">
+<script type="module" src="../assets/gettoken/verify.mjs?v=sidebar-20261017"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://gettoken.cc/#organization","name":"GetToken","url":"https://gettoken.cc/","logo":"https://gettoken.cc/assets/gettoken/logo.png"},{"@type":"WebSite","@id":"https://gettoken.cc/#website","name":"GetToken","url":"https://gettoken.cc/","inLanguage":"zh-CN","publisher":{"@id":"https://gettoken.cc/#organization"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首页","item":"https://gettoken.cc/"},{"@type":"ListItem","position":2,"name":"Claude KYC认证","item":"https://gettoken.cc/verify/"}]},{"@type":"WebPage","@id":"https://gettoken.cc/verify/#webpage","url":"https://gettoken.cc/verify/","name":"Claude KYC认证","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。","dateModified":"2026-10-17","inLanguage":"zh-CN","isPartOf":{"@id":"https://gettoken.cc/#website"},"mainEntity":{"@type":"Service","name":"Claude KYC认证协助","serviceType":"第三方人工认证协助","provider":{"@id":"https://gettoken.cc/#organization"},"areaServed":"CN","description":"GetToken Claude KYC认证协助：提交本人 Session Key，保存私密链接查询人工处理进度。无需填写购买订单号，本站不提供支付，官方身份认证须本人完成。"}}]}</script>
 </head>
 <body>
@@ -73,7 +73,7 @@
 <div class="v-hero__text">
 <p class="g-eyebrow" data-service-state>Claude KYC认证 · Session Key 提交</p>
 <h1>Claude KYC认证</h1>
-<p class="g-lead">仅需提交本人 Session Key，即可查询人工处理进度。本站不收款；GetToken 为独立第三方服务，非 Anthropic 官方认证入口。官方 KYC须由本人按 Claude 内的 Persona 提示完成，本站结果不保证官方认证通过。</p>
+<p class="g-lead">仅需提交本人 Session Key，即可查询人工处理进度。本站不收款；GetToken 为独立第三方服务，非 Anthropic 官方认证入口。</p>
 <ul class="v-facts"><li><b>Session Key</b>仅需填写一项</li><li><b>人工处理</b>提交后进入处理</li><li><b>私密查询</b>保存专属查询链接</li></ul>
 </div></div></div>
 <main id="main" class="g-shell">
@@ -100,13 +100,13 @@
 </div>
 <div class="v-side">
 <aside class="v-card v-feed" aria-labelledby="feed-title" data-feed>
-<div class="v-feed__head"><h2 id="feed-title">最新处理通过</h2><span class="v-live">实时</span></div>
-<div class="v-feed__stats"><div><b data-stat="processed">—</b><span>今日处理</span></div><div><b data-stat="passed">—</b><span>今日通过</span></div></div>
-<div class="v-feed__win" data-feed-win><ul class="v-feed__list" data-feed-list><li class="v-feed__empty">正在加载…</li></ul></div>
+<div class="v-feed__head"><h2 id="feed-title">最新处理通过</h2><div class="v-feed__controls"><span class="v-live">实时</span><button type="button" class="v-feed__toggle" data-feed-toggle aria-pressed="false" aria-label="暂停信息流滚动" hidden>暂停</button></div></div>
+<div class="v-feed__stats"><div><b data-stat="passed">—</b><span>今日通过</span></div><div><b data-stat="total-passed">—</b><span>累计通过</span></div></div>
+<div class="v-feed__win" data-feed-win tabindex="0" role="region" aria-label="最新通过记录，暂停后可上下滚动"><ul class="v-feed__list" data-feed-list><li class="v-feed__empty">正在加载…</li></ul></div>
 <p class="v-feed__foot">仅展示同意公开的本站订单；Session Key 已打码，不代表官方认证结果。</p>
 </aside>
 <section class="v-card v-query" id="query" aria-labelledby="query-title">
-<h2 id="query-title">已经提交过？</h2><p>在原浏览器输入受理编号，或点击最近提交记录；换设备请粘贴完整私密查询链接。不要在查询框输入 Session Key。</p>
+<h2 id="query-title">结果查询</h2><p>在原浏览器输入受理编号，或点击最近提交记录；换设备请粘贴完整私密查询链接。不要在查询框输入 Session Key。</p>
 <form data-query><label class="g-visually-hidden" for="v-query-id">受理编号或私密查询链接</label><input id="v-query-id" name="order" placeholder="受理编号 / 私密查询链接" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
 <p class="v-error" data-query-error role="alert" hidden></p>
 <ul class="v-recent" data-recent hidden></ul>

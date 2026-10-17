@@ -58,7 +58,7 @@ function showToast(message) {
 async function copy(text) {
   try {
     await navigator.clipboard.writeText(text);
-    showToast('已复制，请妥善保存；查询链接可访问此订单，不要公开分享');
+    showToast(ORDER_PATTERN.test(text) ? '受理编号已复制，可在原浏览器查询' : '查询链接已复制，请私密保存');
   } catch {
     showToast('复制失败，请手动选择文字复制');
   }
@@ -183,7 +183,7 @@ const top = (order, tag) => `<div class="v-order__top"><span class="v-mono">受�
 const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
 const CROSS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
 const queryLink = id => { const url = new URL('/verify/', location.origin); url.searchParams.set('order', id); url.hash = `access=${accessKeys.get(id) || ''}`; return url.href; };
-const ownRef = order => `<div class="v-ref"><div><span>受理编号（跨设备请保存私密查询链接）</span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(queryLink(order.id))}">复制查询链接</button></div>`;
+const ownRef = order => `<div class="v-ref"><div><span>受理编号 · <a href="${esc(queryLink(order.id))}" data-private-link>跨设备私密查询链接</a></span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(order.id)}">复制受理编号</button></div>`;
 const again = (label = '提交新的认证协助') => `<button class="v-btn v-btn--ghost" type="button" data-new>${label}</button>`;
 
 function unpaidView(order) {
@@ -413,20 +413,48 @@ $('[data-recent]').addEventListener('click', event => {
 /* ---------- marquee of passed reviews ---------- */
 const feedWin = $('[data-feed-win]');
 const feedList = $('[data-feed-list]');
+const feedToggle = $('[data-feed-toggle]');
+let feedData = null;
+let feedPaused = false;
+function renderFeed() {
+  if (!feedData) return;
+  const { items, now } = feedData;
+  const item = (row, hidden = false) => `<li class="v-feed__item"${hidden ? ' aria-hidden="true"' : ''}><span class="v-feed__ok">${CHECK}</span><div><b>${esc(row.code)}</b><span>本站处理通过</span></div><time datetime="${new Date(row.at).toISOString()}">${esc(ago(row.at, now))}</time></li>`;
+  // Measure only the original, consented records. Copies make one seamless loop,
+  // never add to totals and remain hidden from assistive technology.
+  feedWin.classList.remove('is-rolling');
+  feedList.innerHTML = items.length ? items.map(row => item(row)).join('') : '<li class="v-feed__empty">还没有公开的通过记录。</li>';
+  const height = feedList.scrollHeight;
+  const rolling = items.length > 1 && height > feedWin.clientHeight;
+  if (rolling) feedList.insertAdjacentHTML('beforeend', items.map(row => item(row, true)).join(''));
+  feedWin.classList.toggle('is-rolling', rolling);
+  feedWin.classList.toggle('is-paused', feedPaused);
+  feedWin.style.setProperty('--v-roll', `${Math.max(20, height / 22)}s`);
+  feedToggle.hidden = !rolling || reduceMotion.matches;
+}
+feedToggle.addEventListener('click', () => {
+  feedPaused = !feedPaused;
+  feedWin.classList.toggle('is-paused', feedPaused);
+  feedToggle.setAttribute('aria-pressed', String(feedPaused));
+  feedToggle.setAttribute('aria-label', feedPaused ? '继续信息流滚动' : '暂停信息流滚动');
+  feedToggle.textContent = feedPaused ? '继续' : '暂停';
+  feedWin.scrollTop = 0;
+});
+new ResizeObserver(renderFeed).observe(feedWin);
+reduceMotion.addEventListener('change', renderFeed);
 async function loadFeed() {
   try {
-    const data = await api('feed');
-    $('[data-stat="processed"]').textContent = data.today.processed;
-    $('[data-stat="passed"]').textContent = data.today.passed;
-    const item = (row, hidden) => `<li class="v-feed__item"${hidden ? ' aria-hidden="true"' : ''}><span class="v-feed__ok">${CHECK}</span><div><b>${esc(row.code)}</b><span>本站处理通过</span></div><time datetime="${new Date(row.at).toISOString()}">${esc(ago(row.at, data.now))}</time></li>`;
-    const rolling = data.items.length >= 5;
-    feedWin.classList.toggle('is-rolling', rolling);
-    feedWin.style.setProperty('--v-roll', `${data.items.length * 3}s`);
-    feedList.innerHTML = data.items.length
-      ? data.items.map(row => item(row, false)).join('') + (rolling ? data.items.map(row => item(row, true)).join('') : '')
-      : '<li class="v-feed__empty">还没有公开的通过记录。</li>';
+    feedData = await api('feed');
+    $('[data-stat="passed"]').textContent = feedData.today.passed;
+    $('[data-stat="total-passed"]').textContent = feedData.totalPassed ?? '—';
+    renderFeed();
   } catch {
-    feedList.innerHTML = '<li class="v-feed__empty">暂时无法获取最新通过记录。</li>';
+    $('[data-stat="passed"]').textContent = '—';
+    $('[data-stat="total-passed"]').textContent = '—';
+    feedData = null;
+    feedWin.classList.remove('is-rolling');
+    feedToggle.hidden = true;
+    feedList.innerHTML = '<li class="v-feed__empty">暂时无法获取最新通过记录，请稍后重试。</li>';
   }
 }
 

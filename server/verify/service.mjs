@@ -298,7 +298,7 @@ export function createService({ store, config, providers, now = () => Date.now()
     const counts = store.get("select count(*) as processed, coalesce(sum(status = 'passed'), 0) as passed from orders where decided_at >= ? and status in ('passed', 'failed')", day);
     const items = store.all("select code_tail, decided_at from orders where status = 'passed' and show_public = 1 order by decided_at desc limit 20")
       .map(row => ({ code: maskTail(row.code_tail), at: row.decided_at }));
-    return { now: t, today: { processed: counts.processed, passed: counts.passed }, items };
+    return { now: t, today: { processed: counts.processed, passed: counts.passed }, totalPassed: store.get("select count(*) as n from orders where status = 'passed'").n, items };
   }
 
   /* ---------- admin ---------- */

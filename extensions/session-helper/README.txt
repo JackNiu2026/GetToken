@@ -1,13 +1,13 @@
 GetToken Session Key 助手 0.1.0（测试版，真实安装验收待完成）
 
 仅适用于桌面 Chrome / Edge 普通窗口。Claude 和 GetToken 必须在同一浏览器资料中打开。
-已登录 Claude 的用户无需重新登录。安装后请刷新 https://gettoken.cc/verify/?helper=1。
+已登录 Claude 的用户无需重新登录。安装后请刷新 https://gettoken.cc/verify/。
 
 首次安装（开发者模式；尚未上架浏览器商店）：
 1. 将安装包解压到固定目录，不要删除该目录。
 2. 打开 chrome://extensions/ 或 edge://extensions/。
 3. 开启“开发者模式”，选择“加载已解压的扩展程序”，选择含 manifest.json 的目录。
-4. 打开 https://gettoken.cc/verify/?helper=1 并刷新，点击输入框上方“获取已登录的 Session Key”。
+4. 打开 https://gettoken.cc/verify/ 并刷新，点击输入框上方“获取已登录的 Session Key”。
 5. 在扩展窗口确认来源、回填网站及授权，再允许访问 Claude Cookie。
 6. 核对回填内容后，自行确认网站的提交授权并点击提交。
 

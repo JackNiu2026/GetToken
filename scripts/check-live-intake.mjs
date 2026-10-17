@@ -21,10 +21,13 @@ console.log('Production feed verified: today and cumulative passed counts availa
 
 const helperPage = await curlRequest(new URL('/verify/', SITE.origin).href);
 assert.equal(helperPage.status, 200);
-assert.match(await helperPage.text(), /data-session-extract/, 'Session Key helper button must be deployed');
+const helperHtml = await helperPage.text();
+assert.match(helperHtml, /data-session-extract/, 'Session Key helper button must be deployed');
+assert.match(helperHtml, /<div\b[^>]*\bdata-session-helper\b[^>]*>/);
+assert.doesNotMatch(helperHtml.match(/<div\b[^>]*\bdata-session-helper\b[^>]*>/)[0], /\bhidden\b/, 'Ordinary verify page must not hide the helper behind a test URL');
 const helperModule = await curlRequest(new URL('/assets/gettoken/verify-session-helper.mjs', SITE.origin).href);
 assert.equal(helperModule.status, 200, 'Helper webpage module must be available');
 const helperZip = await curlRequest(new URL('/assets/downloads/gettoken-session-helper.zip', SITE.origin).href);
 assert.equal(helperZip.status, 200, 'Developer-mode helper download must be available');
 assert.equal((await helperZip.text()).slice(0, 4), 'PK\u0003\u0004', 'Helper download must be a ZIP, not an HTML fallback');
-console.log('Production helper delivery verified: opt-in beta markup, webpage module and developer-mode ZIP available. Browser installation and real-account behavior are not tested by these delivery checks.');
+console.log('Production helper delivery verified: ordinary verify page has visible beta markup, webpage module and developer-mode ZIP available. Browser installation and real-account behavior are not tested by these delivery checks.');

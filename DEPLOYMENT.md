@@ -93,7 +93,7 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 ## 审核验证服务（/verify/ 与 /api/verify/）
 
-`/verify/` 是静态页面，订单、付款、审核结果由同一台服务器上的小后端处理：
+`/verify/` 是静态页面，淘宝资料提交、人工核单及结果由同一台服务器上的后端处理。当前使用外部淘宝订单流程，本站所有在线付款入口关闭，`VERIFY_PAY_MODE=off` 不阻止人工资料受理。操作见 [淘宝订单受理](docs/external-order-intake.md)。下文支付平台章节保留为历史资金运维参考，不代表当前已开放付款。
 
 - 代码在 `server/verify/`，用 Node.js 自带的 SQLite，没有第三方依赖。每次发布随网站一起安装到 `/opt/gettoken/verify/releases/<提交 SHA>/`，`current` 软链接指向当前版本，保留最近 5 个版本。
 - Node.js 固定为 v22.22.0 官方 linux-x64 版本（校验 SHA-256），首次发布时由 GitHub runner 下载后上传到 `/opt/gettoken/runtime/`。服务器需要 x86_64、glibc 2.28 以上；不满足时阻止发布，避免发布缺少支付 API 的版本。
@@ -106,12 +106,12 @@ flock /var/lock/gettoken-deploy.lock bash -c '
 
 1. 设置后台密码（至少 12 位）：`sudo gettoken-verify passwd`。后台地址 `https://gettoken.cc/verify/admin/`，页面与响应头设置 noindex，后台数据由 API 会话认证保护；robots 不阻挡登录壳读取该指令。
 2. 配置文件 `/etc/gettoken/verify.env` 在首次发布时自动生成，只有 root 可读，之后的发布不会覆盖。其中的 `VERIFY_SECRET` 用于加密代码，**不要修改或丢失**，换掉后已有订单的代码无法解密。
-3. 刚安装时 `VERIFY_PAY_MODE=off`，页面显示“在线支付暂未开通”。查看状态：`sudo gettoken-verify status`。
+3. 刚安装时 `VERIFY_PAY_MODE=off`，不提供站内支付；设置后台密码后即可受理淘宝资料。可配置 `VERIFY_ACCEPT_EXTERNAL_ORDERS=false` 暂停资料提交。查看状态：`sudo gettoken-verify status`。
 4. 修改 `verify.env` 后执行 `sudo systemctl restart gettoken-verify`。
 
 ### 测试模式
 
-`VERIFY_PAY_MODE=mock`：不接任何支付平台，付款二维码只是测试内容；在后台点开订单，用“模拟收款”让订单进入审核，“未通过”时退款也是模拟的。页面顶部会显示“测试模式”。验收完改回 `live` 或 `off`，不要长期开着。
+本轮无论 `VERIFY_PAY_MODE` 为何，新提交都走淘宝人工核单，不能通过该配置恢复站内支付。隔离测试可使用 `mock` 初始化服务，但同样提交虚构淘宝订单、人工核单和登记售后；历史支付的模拟提供方仅用于回归测试。生产保持 `off`，历史真实资金补偿如需保留，应保留原有有效商户配置。
 
 ### 接入支付宝与微信支付
 
@@ -151,9 +151,9 @@ WECHAT_PAY_PUBLIC_KEY_ID=PUB_KEY_ID_xxxxxxxx
 
 付款成功由支付平台的异步通知或查单确认。二维码过期与平台关闭分开处理：超时、网络错误和旧版在本地标记关闭的付款仍会补偿查单，只有平台确认终态才停止；未确认款项超过一天后按小时查询，不因回调丢失而丢弃。同订单的第二笔付款也会查单并自动全额退款。付款编号在请求平台前原子预留，同通道的并发获取合并；请求超时重试复用同一编号。升级会自动为旧数据库添加付款终态确认字段。
 
-审核结果只能在后台录入：点“未通过”会立即原路退回审核费 ¥300（技术费 ¥30 不退），退款失败时后台显示原因，可以点“重试”。如果非常迟到的款项确认时对应代码已经按规则删除，该笔款项会进入全额退款补偿，避免对不存在的代码开启审核。
+以下仅适用于历史站内支付订单，淘宝订单不走此路径。审核结果只能在后台录入：点“未通过”会立即原路退回审核费 ¥300（技术费 ¥30 不退），退款失败时后台显示原因，可以点“重试”。如果非常迟到的款项确认时对应代码已经按规则删除，该笔款项会进入全额退款补偿，避免对不存在的代码开启审核。
 
-本地验收可运行 `node scripts/test-verify-api.mjs`：它在临时目录中运行发布包、Node 22.22.0、真实 Nginx 与本地受信任 TLS，验证登录、订单、模拟到账、通过／未通过、退款与重启恢复；不接触生产服务器或真实资金。GitHub Actions 同样执行这一检查。
+本地验收可运行 `node scripts/test-verify-api.mjs`：它在临时目录中运行发布包、Node 22.22.0、真实 Nginx 与本地受信任 TLS，验证登录、淘宝资料提交、人工核单、通过／未通过、售后登记与重启恢复；不接触生产服务器或真实资金。GitHub Actions 同样执行这一检查。
 
 ## SEO 发布验收
 

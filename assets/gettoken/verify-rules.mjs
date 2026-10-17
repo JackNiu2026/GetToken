@@ -1,7 +1,8 @@
-// Fees, timings and the code format for /verify/. Shared by the page, the build and the API
-// (server/verify), so the amounts shown before payment are the amounts charged.
+// Shared timings and Session Key format. Fee constants apply only to historical
+// online payments; external Taobao amounts are not inferred from these values.
 export const VERIFY = Object.freeze({
-  open: false, // false: the navigation and page say 即将开放. Set true once live payments work, then rebuild.
+  intakeMode: 'external',
+  open: false, // Legacy online-payment gate; independent of external Taobao intake.
   techFeeMinor: 3000, // 人工技术费 ¥30, never refunded
   auditFeeMinor: 30000, // 审核费 ¥300, refunded when the review fails
   reviewHours: 24, // expected review time; drives the countdown only
@@ -9,12 +10,13 @@ export const VERIFY = Object.freeze({
   paymentMinutes: 15, // a payment QR code stays valid this long
   purgeDays: 7, // submitted codes are deleted this many days after the result
   codeMin: 40,
-  codeMax: 120,
+  codeMax: 4096,
 });
 
 // Public service terms; fill with verified business information, never secrets.
 // Session Key is required by the service owner; actual actions and evidence
-// still need to be defined before accepting production orders.
+// gate legacy online checkout. External intake instead requires the terms of the
+// original Taobao purchase to be checked manually before processing.
 export const SERVICE_CONTRACT = Object.freeze({
   approved: false, requiresSessionKey: true,
   scope: '', successEvidence: '', excludedCases: '',
@@ -54,6 +56,8 @@ export const maskTail = tail => `sk••••${tail}`;
 export const ORDER_PATTERN = /^GT-VF-\d{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
 
 export const STATUS_NAMES = Object.freeze({
+  submitted: '待核单',
+  rejected: '核单未通过',
   unpaid: '待付款',
   expired: '已过期',
   reviewing: '审核中',

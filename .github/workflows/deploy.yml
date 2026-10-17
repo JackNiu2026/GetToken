@@ -80,4 +80,6 @@ jobs:
       - name: Verify public production domain and deployed version
         env:
           DEPLOY_REVISION: ${{ github.sha }}
-        run: node scripts/check-live-seo.mjs --revision "$DEPLOY_REVISION" --output /tmp/gettoken-live-seo.json
+        run: |
+          node scripts/check-live-seo.mjs --revision "$DEPLOY_REVISION" --output /tmp/gettoken-live-seo.json
+          node scripts/check-live-intake.mjs

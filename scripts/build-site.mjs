@@ -13,7 +13,7 @@ import { PRODUCT_PAGES } from '../content/products.mjs';
 import { PRODUCT_FACTS } from '../content/product-facts.mjs';
 import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney, totalLabel } from '../assets/gettoken/catalog.mjs';
 import { inquiryState } from '../assets/gettoken/inquiry.mjs';
-import { VERIFY, yuan, totalMinor, SERVICE_CONTRACT, serviceDisclosure } from '../assets/gettoken/verify-rules.mjs';
+import { VERIFY } from '../assets/gettoken/verify-rules.mjs';
 import { ROOT, loadArticles, validateLibrary, inline, esc, dateIsValid } from './content.mjs';
 
 export { ROOT };
@@ -47,7 +47,7 @@ const articleRoute = a => `guides/${a.slug}/`;
 const productRoute = p => `${p.slug}/`;
 export const VERIFY_ROUTE = 'verify/';
 export const VERIFY_ADMIN_ROUTE = 'verify/admin/';
-const VERIFY_UPDATED = '2026-10-16';
+const VERIFY_UPDATED = '2026-10-17';
 // The product page that sells what a topic covers; shared topics (选购基础) have none.
 const productFor = topicSlug => PRODUCT_PAGES.find(p => p.topics.includes(topicSlug));
 // The product's own articles first, then shared guides that also cover it; each group newest first.
@@ -485,28 +485,26 @@ ${feed}
 /* ---------- /verify/ and its admin page ---------- */
 // The page is static; assets/gettoken/verify.mjs talks to the API under /api/verify/.
 const VERIFY_TITLE = 'Claude KYC认证：Session Key 提交与进度查询 - GetToken';
-const VERIFY_DESCRIPTION = `GetToken Claude KYC认证协助：提交本人账户的 Session Key，查看第三方人工处理进度。Claude 官方身份验证通过 Persona 完成，本服务不保证官方认证结果。人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退，审核费 ${yuan(VERIFY.auditFeeMinor)} 未通过时 ${VERIFY.refundHours} 小时内原路退回。`;
+const VERIFY_DESCRIPTION = 'GetToken Claude KYC认证协助：提交本人 Session Key 和淘宝订单号，人工核单后查看处理进度。本站不提供在线支付，官方身份认证须本人完成。';
 const VERIFY_FAQS = [
   ['Claude 官方 KYC需要准备什么？', '官方通过 Persona 验证身份，需要有效的政府签发实体照片证件，可能还需用手机实时自拍。请按 Claude 账户内提示由本人完成；Session Key 是登录凭据，不能替代身份证件或完成官方身份认证。'],
-  ['关闭页面或倒计时结束会怎样？', `关闭页面不影响本站订单处理，请使用原浏览器或保存的私密查询链接。${VERIFY.reviewHours} 小时是本服务的预计处理时间，不是 Claude 官方认证时限；超时仍会显示处理中，不会自动判定通过。`],
-  ['认证协助未通过如何退款？', `本站订单未通过时，审核费 ${yuan(VERIFY.auditFeeMinor)} 在出结果后 ${VERIFY.refundHours} 小时内原路退回；人工技术费 ${yuan(VERIFY.techFeeMinor)} 不退。退款进度在结果中显示。`],
-  ['Session Key 提交错了怎么办？', '未开放时请勿输入。已付款后发现错误，请保留订单号并联系支持方核实，不要重复付款；不得提交他人账户的会话凭据。'],
-  ['Session Key 会如何处理？', `Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。服务范围、撤销及提前删除处理方式未确认前不受理。开放后按约定用途加密保存，审核员可在后台查看；出结果 ${VERIFY.purgeDays} 天后自动删除完整值，仅保留末 4 位用于识别。`],
+  ['提交后什么时候开始处理？', `先人工核对淘宝订单及购买内容，核单通过后开始处理，预计 ${VERIFY.reviewHours} 小时。超时仍显示处理中，不会自动判定通过；官方状态以 Claude 账户显示为准。`],
+  ['需要在这里付款或上传截图吗？', '不需要。本轮仅受理淘宝订单号，不上传截图，也不在本站付款。售后与退款请通过淘宝原订单联系商家，按原订单约定处理；本站只展示商家登记的状态，不会自动发起退款。'],
+  ['如何查询已提交的订单？', '原浏览器可输入淘宝订单号或受理编号查询，也可使用提交后生成的完整私密查询链接。换设备需要私密链接；仅凭淘宝订单号不能在陌生设备查看资料。链接请妥善保存，不要公开分享。'],
+  ['Session Key 提交错了怎么办？', '请通过淘宝原订单联系商家核实修改或撤销，支持时段为 9:00–23:00；不要在聊天或订单备注发送完整 Session Key，不要重复购买。不得提交他人账户的会话凭据。'],
+  ['Session Key 会如何处理？', `Session Key 是登录会话凭据，持有者可能访问你的 Claude 账户。仅在确认淘宝订单约定的协助范围后提交；加密保存，仅授权审核员可查看。待核单超过 ${VERIFY.purgeDays} 天将关闭并删除完整值；出结果 ${VERIFY.purgeDays} 天后删除完整值，仅保留末 4 位。可通过淘宝原订单申请撤销与提前删除，并在 Claude 撤销相关会话。`],
 ];
 
 function verifyPage() {
   const route = VERIFY_ROUTE;
   const crumbs = [['首页', ''], ['Claude KYC认证', route]];
-  const tech = yuan(VERIFY.techFeeMinor);
-  const audit = yuan(VERIFY.auditFeeMinor);
-  const total = yuan(totalMinor());
   const body = `<div class="v-hero"><div class="g-shell">
 ${crumbNav(route, crumbs)}
 <div class="v-hero__text">
-<p class="g-eyebrow" data-service-state>Claude KYC认证 · 暂未受理</p>
+<p class="g-eyebrow" data-service-state>Claude KYC认证 · 淘宝订单提交</p>
 <h1>Claude KYC认证</h1>
-<p class="g-lead">先核对服务范围与受理状态，再决定是否提交本人 Session Key。GetToken 为第三方服务，非 Anthropic 官方认证入口；官方 KYC须由本人按 Claude 内的 Persona 提示完成。本页显示本站处理结果，不保证官方认证通过。</p>
-<ul class="v-facts"><li><b>${tech}</b>人工技术费 · 不退</li><li><b>${audit}</b>审核费 · 未通过退</li><li><b>${VERIFY.reviewHours} 小时</b>预计处理时间</li></ul>
+<p class="g-lead">提交本人 Session Key 与淘宝订单号，人工核单后查询处理进度。本站不收款；GetToken 为独立第三方服务，非 Anthropic 官方认证入口。官方 KYC须由本人按 Claude 内的 Persona 提示完成，本站结果不保证官方认证通过。</p>
+<ul class="v-facts"><li><b>淘宝订单</b>仅填写订单号</li><li><b>人工核单</b>核对后开始处理</li><li><b>私密查询</b>保存专属查询链接</li></ul>
 </div></div></div>
 <main id="main" class="g-shell">
 <p class="v-banner" data-mode-banner hidden></p>
@@ -515,24 +513,20 @@ ${crumbNav(route, crumbs)}
 <form class="v-card v-form" id="submit" data-form novalidate aria-labelledby="submit-title">
 <h2 class="g-visually-hidden" id="submit-title">提交 Claude KYC认证协助</h2>
 <div class="v-step"><span class="v-step__n" aria-hidden="true">1</span><h3><label for="v-code">填写 Session Key</label></h3><div class="v-step__body">
-<p class="v-hint" id="v-code-hint" data-service-disclosure>${esc(serviceDisclosure(SERVICE_CONTRACT))} Session Key 是登录凭据，不是 API Key 或身份证明；格式通过不代表有效。</p>
+<p class="v-hint" id="v-code-hint" data-service-disclosure>Session Key 是登录会话凭据，持有者可能访问你的账户；不是 API Key 或身份证明。请先在淘宝订单中确认协助范围，再提交本人账户凭据；格式通过不代表有效。</p>
 <div class="v-field"><textarea id="v-code" name="code" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="${VERIFY.codeMax + 40}" aria-describedby="v-code-hint v-code-state" data-code required></textarea>
 <div class="v-field__meta"><span id="v-code-state" data-code-state aria-live="polite"></span><span class="v-num" data-code-count>0 位</span></div></div>
 </div></div>
-<div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3>确认费用</h3><div class="v-step__body">
-<div class="v-fees">
-<div class="v-fee"><b>人工技术费<span class="v-tag v-tag--rose">不退</span></b><span>开放后按已确认的服务规则收取费用</span><strong>${tech}</strong></div>
-<div class="v-fee"><b>审核费<span class="v-tag v-tag--green">未通过可退</span></b><span>审核未通过时，${VERIFY.refundHours} 小时内原路退回</span><strong>${audit}</strong></div>
-<div class="v-fee v-fee--total"><b>合计</b><span>未通过时实际支出 ${tech}</span><strong>${total}</strong></div>
-</div>
-<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我确认账户归本人所有并授权约定范围的认证协助；已了解 Session Key 的访问权限，技术费 ${tech} 不退，审核费 ${audit} 未通过时退回。</span></label>
-<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
+<div class="v-step"><span class="v-step__n" aria-hidden="true">2</span><h3><label for="v-reference">填写淘宝订单号</label></h3><div class="v-step__body">
+<p class="v-hint" id="v-reference-hint">填写已购买商品的完整淘宝订单号，仅支持 10–32 位数字，无需上传截图。资料提交后需人工核单，不代表已确认付款。</p>
+<div class="v-field"><input id="v-reference" class="a-reason" name="reference" type="text" inputmode="numeric" minlength="10" maxlength="32" autocomplete="off" spellcheck="false" aria-describedby="v-reference-hint" data-external-reference required></div>
 </div></div>
-<div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>选择付款方式</h3><div class="v-step__body">
-<div class="v-channels" role="radiogroup" aria-label="付款方式" data-channels><label class="v-channel"><input type="radio" name="channel" value="wechat" checked><span>微信支付（暂不可付款）</span></label><label class="v-channel"><input type="radio" name="channel" value="alipay"><span>支付宝（暂不可付款）</span></label></div>
-<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit disabled>暂未受理</button>
+<div class="v-step"><span class="v-step__n" aria-hidden="true">3</span><h3>确认授权并提交</h3><div class="v-step__body">
+<label class="v-check"><input type="checkbox" name="agree" data-agree><span>我确认账户归本人所有，已了解 Session Key 的访问权限并授权淘宝订单约定范围内的认证协助；售后及退款按淘宝原订单约定处理。</span></label>
+<label class="v-check v-check--soft"><input type="checkbox" name="showPublic" data-show-public><span>本站处理通过后，同意展示打码记录（仅显示 Session Key 末 4 位，不代表官方认证结果）</span></label>
+<div class="v-submit"><button class="v-btn v-btn--grad v-btn--block" type="submit" data-submit disabled>正在连接提交服务…</button>
 <p class="v-error" data-form-error role="alert" hidden></p>
-<p class="v-hint v-center">到账后开始本站处理计时，官方认证以 Claude 账户显示为准。</p></div>
+<p class="v-hint v-center">本页不提供支付。提交后请保存私密查询链接，核单通过后开始处理计时。</p></div>
 </div></div>
 <noscript><p class="v-error">提交认证协助需要启用 JavaScript。</p></noscript>
 </form>
@@ -546,8 +540,8 @@ ${crumbNav(route, crumbs)}
 <p class="v-feed__foot">仅展示同意公开的本站订单；Session Key 已打码，不代表官方认证结果。</p>
 </aside>
 <section class="v-card v-query" id="query" aria-labelledby="query-title">
-<h2 id="query-title">已经提交过？</h2><p>在原浏览器输入订单号，或粘贴完整私密查询链接。链接遗失请联系支持方核实恢复，不要发送 Session Key。</p>
-<form data-query><label class="g-visually-hidden" for="v-query-id">订单号或私密查询链接</label><input id="v-query-id" name="order" placeholder="例如 GT-VF-1014-7KQ2AB" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
+<h2 id="query-title">已经提交过？</h2><p>在原浏览器输入淘宝订单号或受理编号，换设备请粘贴完整私密查询链接。链接遗失请通过淘宝原订单联系商家核实，不要发送 Session Key。</p>
+<form data-query><label class="g-visually-hidden" for="v-query-id">淘宝订单号、受理编号或私密查询链接</label><input id="v-query-id" name="order" placeholder="淘宝订单号 / 受理编号 / 私密链接" autocomplete="off" spellcheck="false" required><button class="v-btn v-btn--light v-btn--sm" type="submit">查询</button></form>
 <p class="v-error" data-query-error role="alert" hidden></p>
 <ul class="v-recent" data-recent hidden></ul>
 </section>
@@ -555,22 +549,22 @@ ${crumbNav(route, crumbs)}
 </div>
 <section class="g-section" id="flow" aria-labelledby="flow-title"><div class="g-section__head"><h2 id="flow-title">认证协助怎么进行</h2><p>本页跟踪本站订单，官方 KYC按 Claude 提示由本人完成。</p></div>
 <ol class="v-flow">
-<li><em>01</em><h3>提交 Session Key</h3><p>确认本人账户与授权范围，了解费用后在线付款。</p></li>
-<li><em>02</em><h3>自动确认到账</h3><p>到账后进入本站处理流程，显示 ${VERIFY.reviewHours} 小时预计倒计时。</p></li>
+<li><em>01</em><h3>提交 Session Key</h3><p>填写本人 Session Key 与淘宝订单号，确认授权范围。</p></li>
+<li><em>02</em><h3>人工核对订单</h3><p>核对淘宝订单、购买内容及实付金额，通过后开始预计处理计时。</p></li>
 <li><em>03</em><h3>人工认证协助</h3><p>逐单核对与处理；官方证件和自拍验证须本人完成。</p></li>
-<li><em>04</em><h3>查看处理结果</h3><p>本站订单未通过时退回审核费；官方状态请在 Claude 核对。</p></li>
+<li><em>04</em><h3>查看处理结果</h3><p>使用私密查询链接查看结果；售后在淘宝原订单处理。</p></li>
 </ol></section>
-<section class="g-section" id="rules" aria-labelledby="rules-title"><div class="g-section__head"><h2 id="rules-title">费用与退款规则</h2><p>付款前请确认，提交即视为同意以下规则。</p></div>
+<section class="g-section" id="rules" aria-labelledby="rules-title"><div class="g-section__head"><h2 id="rules-title">提交与售后约定</h2><p>本站仅受理资料与展示处理进度，交易条件以淘宝原订单约定为准。</p></div>
 <div class="v-rules">
-<div class="v-rule v-rule--keep"><h3><span>人工技术费 <span class="v-tag v-tag--rose">不退</span></span><strong>${tech}</strong></h3><ul><li>用于人工核对与认证流程协助</li><li>提交后即产生成本，无论结果如何都不退</li></ul></div>
-<div class="v-rule v-rule--back"><h3><span>审核费 <span class="v-tag v-tag--green">未通过可退</span></span><strong>${audit}</strong></h3><ul><li>审核通过：不退</li><li>审核未通过：出结果后 ${VERIFY.refundHours} 小时内原路退回</li><li>退款进度在结果里可以看到</li></ul></div>
+<div class="v-rule v-rule--keep"><h3><span>本人账户与授权</span></h3><ul><li>仅提交本人账户的 Session Key</li><li>提交前确认协助范围、交付内容与售后约定</li><li>官方证件和自拍认证须本人完成</li></ul></div>
+<div class="v-rule v-rule--back"><h3><span>通过淘宝原订单联系</span></h3><ul><li>支持时段：9:00–23:00</li><li>退款与售后由商家按原订单约定处理</li><li>本站登记状态不等于平台已到账，请在淘宝核实</li></ul></div>
 </div></section>
 <section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Claude KYC常见问题</h2><div class="g-faq">${VERIFY_FAQS.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
 </main>
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
     route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交认证协助' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=taobao-20261017"></script>\n`,
     schema: [crumbList(crumbs), {
       '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: 'Claude KYC认证', description: VERIFY_DESCRIPTION,
       dateModified: VERIFY_UPDATED, inLanguage: 'zh-CN', isPartOf: { '@id': website['@id'] },
@@ -594,8 +588,8 @@ function verifyAdminPage() {
 <div class="a-body">
 <section class="a-list" aria-label="订单列表">
 <div class="a-filters"><div class="a-tabs" role="tablist" aria-label="按状态筛选" data-filters></div>
-<form class="a-search" data-search><label class="g-visually-hidden" for="a-q">搜索</label><input id="a-q" name="q" placeholder="订单号 / 代码末 4 位" autocomplete="off"></form></div>
-<div class="a-table-wrap"><table class="a-table"><thead><tr><th>订单号</th><th>代码</th><th>状态</th><th>付款</th><th>剩余</th></tr></thead><tbody data-rows></tbody></table></div>
+<form class="a-search" data-search><label class="g-visually-hidden" for="a-q">搜索</label><input id="a-q" name="q" placeholder="受理编号 / 淘宝订单号 / 代码末 4 位" autocomplete="off"></form></div>
+<div class="a-table-wrap"><table class="a-table"><thead><tr><th>订单号</th><th>代码</th><th>状态</th><th>核单 / 付款</th><th>剩余</th></tr></thead><tbody data-rows></tbody></table></div>
 <div class="a-pager" data-pager></div>
 </section>
 <aside class="v-card a-detail" data-detail aria-live="polite"><p class="v-hint">点选左侧订单查看详情。</p></aside>
@@ -606,7 +600,7 @@ function verifyAdminPage() {
   return layout({
     route, current: 'verify', robots: 'noindex, nofollow', title: '审核后台 - GetToken', description: '审核验证订单管理，仅限管理员。', body,
     buy: { href: href(route, VERIFY_ROUTE), label: '返回审核页' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}?v=taobao-20261017"></script>\n`,
     schema: [],
   });
 }

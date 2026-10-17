@@ -82,6 +82,9 @@ chmod 755 "$release/scripts/configure-payments.sh" "$release/scripts/set-payment
   . /etc/gettoken/verify.env
   set +a
   runuser -u gettoken-verify -- "$runtime/bin/node" --disable-warning=ExperimentalWarning "$release/server/verify/cli.mjs" access-check
+  # Run as root so the initial plaintext credential stays outside the service
+  # account and database directory. Existing passwords and sessions are preserved.
+  "$runtime/bin/node" --disable-warning=ExperimentalWarning "$release/server/verify/bootstrap.mjs"
 )
 
 cat > /etc/systemd/system/gettoken-verify.service <<UNIT

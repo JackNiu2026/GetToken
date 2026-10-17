@@ -133,8 +133,30 @@ export function createService({ store, config, providers, now = () => Date.now()
   const external = id => store.get('select * from external_orders where order_id = ?', id);
   const externalView = o => {
     const e = external(o.id);
-    return e ? { source: e.source, reference: `尾号 ${e.reference_tail}`, checkedAt: e.checked_at } : null;
+    return e ? { source: e.source, ...(e.source === 'taobao' ? { reference: `尾号 ${e.reference_tail}` } : {}), checkedAt: e.checked_at } : null;
   };
+  function createSessionOrder({ code: raw, agree, showPublic, ip }) {
+    if (!acceptingExternalOrders()) throw new UserError('资料提交暂不可用，请稍后重试', 503);
+    const code = normalizeCode(raw), problem = codeProblem(code);
+    if (problem) throw new UserError(problem);
+    if (agree !== true) throw new UserError('请确认账户归属与资料提交授权');
+    return store.transaction(() => {
+      const fp = fingerprint(config.secret, code);
+      if (store.get("select id from orders where code_fp = ? and status in ('submitted', 'reviewing')", fp)) {
+        throw new UserError('此 Session Key 已在处理中，请使用原浏览器或私密链接查询', 409);
+      }
+      const t = now(), accessToken = token();
+      let id; do id = orderId(t); while (getOrder(id));
+      store.run("insert into orders(id, code_sealed, code_tail, code_fp, show_public, status, tech_fee, audit_fee, created_at, paid_at, due_at, ip_hash, access_hash) values(?, ?, ?, ?, ?, 'reviewing', 0, 0, ?, ?, ?, ?, ?)",
+        id, sealCode(config.secret, code), code.slice(-4), fp, showPublic === true ? 1 : 0, t, t, t + VERIFY.reviewHours * HOUR,
+        ip ? fingerprint(config.secret, `ip:${ip}`) : null, accessDigest(id, accessToken));
+      // Reuse the additive intake metadata table without storing a purchase reference.
+      store.run('insert into external_orders(order_id, source, reference_sealed, reference_hash, reference_tail) values(?, ?, ?, ?, ?)',
+        id, 'session', sealCode(config.secret, ''), fingerprint(config.secret, `session:${id}`), '');
+      event(id, 'user', 'session_submitted');
+      return { ...view(getOrder(id)), accessToken };
+    });
+  }
   function createExternalOrder({ code: raw, reference: rawReference, source = 'taobao', agree, showPublic, ip }) {
     if (!acceptingExternalOrders()) throw new UserError('资料提交暂不可用，请稍后重试', 503);
     const code = normalizeCode(raw), problem = codeProblem(code);
@@ -258,7 +280,7 @@ export function createService({ store, config, providers, now = () => Date.now()
     if (['passed', 'rejected'].includes(order.status)) out.reason = order.reason || null;
     if (order.status === 'failed') {
       out.reason = order.reason || null;
-      out.refund = out.external
+      out.refund = out.external?.source === 'session' ? null : out.external
         ? { status: order.refund_status, refundedAt: order.refunded_at }
         : { status: order.refund_status, amount: order.audit_fee, dueAt: order.refund_due_at, refundedAt: order.refunded_at };
     }
@@ -294,6 +316,11 @@ export function createService({ store, config, providers, now = () => Date.now()
       if (result === 'passed') {
         store.run("update orders set status = 'passed', decided_at = ?, reason = ? where id = ?", t, note, id);
       } else {
+        if (external(id)?.source === 'session') {
+          store.run("update orders set status = 'failed', decided_at = ?, reason = ? where id = ?", t, note, id);
+          event(id, actor, result, note);
+          return;
+        }
         if (external(id)) {
           store.run("update orders set status = 'failed', decided_at = ?, reason = ?, refund_status = 'pending', refund_due_at = null where id = ?", t, note, id);
           event(id, actor, result, note);
@@ -402,7 +429,7 @@ export function createService({ store, config, providers, now = () => Date.now()
     const repeats = store.get('select count(*) as n from orders where code_fp = ? and id != ?', o.code_fp, id).n;
     return {
       ...adminRow(o), code, codePurged: !!o.purged_at, repeats,
-      external: external(id) ? { ...externalView(o), reference: openCode(config.secret, external(id).reference_sealed), checkNote: external(id).check_note, refundNote: external(id).refund_note } : null,
+      external: external(id)?.source === 'taobao' ? { ...externalView(o), reference: openCode(config.secret, external(id).reference_sealed), checkNote: external(id).check_note, refundNote: external(id).refund_note } : externalView(o),
       payments: store.all('select id, channel, status, amount, trade_no as tradeNo, created_at as createdAt, paid_at as paidAt from payments where order_id = ? order by created_at', id),
       refunds: store.all('select id, kind, channel, amount, status, error, attempts, updated_at as updatedAt from refunds where order_id = ? order by created_at', id),
       events: store.all('select at, actor, kind, detail from events where order_id = ? order by id desc limit 50', id),
@@ -460,5 +487,5 @@ export function createService({ store, config, providers, now = () => Date.now()
     store.run('delete from sessions where expires_at < ?', t);
   }
 
-  return { createOrder, createExternalOrder, checkExternalOrder, recordExternalRefund, acceptingExternalOrders, requestPayment, lookup, feed, markPaid, markRefund, syncPayment, decide, retryRefund, runRefund, adminList, adminDetail, stats, tick, channels, acceptingNewOrders, sha256, event };
+  return { createOrder, createSessionOrder, createExternalOrder, checkExternalOrder, recordExternalRefund, acceptingExternalOrders, requestPayment, lookup, feed, markPaid, markRefund, syncPayment, decide, retryRefund, runRefund, adminList, adminDetail, stats, tick, channels, acceptingNewOrders, sha256, event };
 }

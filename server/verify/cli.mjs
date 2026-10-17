@@ -57,7 +57,7 @@ if (['access-check', 'issue-access', 'rotate-access'].includes(command)) {
   console.log(`可用付款方式：${Object.values(providers).map(p => p.label).join('、') || '无'}`);
   console.log(`后台密码：${store.setting('admin_password') ? '已设置' : '未设置（运行 gettoken-verify passwd）'}`);
   console.log(`站内付款新订单：${service.acceptingNewOrders() ? '开放' : '关闭（历史款项和退款继续处理）'}`);
-  if (config.externalIntake) console.log(`淘宝资料提交：${service.acceptingExternalOrders() ? '开放' : '关闭（检查后台密码与 VERIFY_ACCEPT_EXTERNAL_ORDERS）'}`);
+  if (config.externalIntake) console.log(`资料提交：${service.acceptingExternalOrders() ? '开放' : '关闭（检查后台密码与 VERIFY_ACCEPT_EXTERNAL_ORDERS）'}`);
   console.log(`订单：${counts.map(c => `${c.status} ${c.n}`).join('，') || '0'}`);
   const pending = store.get("select count(*) as n from refunds where status != 'success'").n;
   console.log(`未完成退款：${pending}`);

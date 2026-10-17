@@ -114,6 +114,7 @@ export function createApp({ service, store, providers, config, now = () => Date.
     ['GET', /^\/config$/, (req, res) => send(res, 200, {
       mode: config.mode,
       intakeMode: config.externalIntake ? 'external' : 'online',
+      submissionMode: config.keyOnlyIntake ? 'session-key' : 'taobao',
       acceptingOrders: config.externalIntake ? service.acceptingExternalOrders() : service.acceptingNewOrders(),
       serviceContract: config.serviceContract || SERVICE_CONTRACT,
       // External intake has no online payment channels.
@@ -126,7 +127,10 @@ export function createApp({ service, store, providers, config, now = () => Date.
     ['POST', /^\/orders$/, async (req, res) => {
       limit(req, 'create', 10, 3600_000);
       const body = await json(req);
-      send(res, 201, config.externalIntake
+      if (config.keyOnlyIntake && (body.reference !== undefined || (body.source && body.source !== 'session'))) throw new UserError('当前仅需提交 Session Key，无需填写订单号');
+      send(res, 201, config.keyOnlyIntake
+        ? service.createSessionOrder({ code: body.code, showPublic: body.showPublic, agree: body.agree, ip: clientIp(req) })
+        : config.externalIntake
         ? service.createExternalOrder({ code: body.code, reference: body.reference, source: body.source, showPublic: body.showPublic, agree: body.agree, ip: clientIp(req) })
         : await service.createOrder({ code: body.code, showPublic: body.showPublic, agree: body.agree, channel: body.channel, ip: clientIp(req) }));
     }],
@@ -165,7 +169,7 @@ export function createApp({ service, store, providers, config, now = () => Date.
       if (hash) store.run('delete from sessions where hash = ?', hash);
       send(res, 200, { ok: true }, { 'Set-Cookie': cookie('', 0) });
     }],
-    ['GET', /^\/admin\/me$/, (req, res) => send(res, 200, { loggedIn: !!session(req), passwordSet: !!store.setting('admin_password'), mode: config.mode, intakeMode: config.externalIntake ? 'external' : 'online' })],
+    ['GET', /^\/admin\/me$/, (req, res) => send(res, 200, { loggedIn: !!session(req), passwordSet: !!store.setting('admin_password'), mode: config.mode, keyOnlyIntake: !!config.keyOnlyIntake, intakeMode: config.externalIntake ? 'external' : 'online' })],
     ['GET', /^\/admin\/stats$/, (req, res) => { requireAdmin(req); send(res, 200, service.stats()); }],
     ['GET', /^\/admin\/orders$/, (req, res, _, query) => {
       requireAdmin(req);

@@ -1,6 +1,6 @@
 // /verify/: submit a Session Key and Taobao order, then privately query manual processing.
 // Every status and result shown here comes from the API; the page never decides an outcome.
-import { VERIFY, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES } from './verify-rules.mjs?v=taobao-20261017';
+import { VERIFY, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES } from './verify-rules.mjs?v=key-only-20261017';
 
 const API = new URL('../../api/verify/', import.meta.url);
 const STORE_KEY = 'gettoken-verify-orders';
@@ -15,7 +15,6 @@ const codeState = $('[data-code-state]');
 const codeCount = $('[data-code-count]');
 const submit = $('[data-submit]');
 const formError = $('[data-form-error]');
-const referenceField = $('[data-external-reference]');
 
 let config = null;
 let current = null; // last order payload from the API
@@ -134,7 +133,7 @@ function setFormError(message) {
 }
 
 // Fields remain editable while the server loads; only submission is gated.
-const canSubmit = () => config?.intakeMode === 'external' && config.acceptingOrders === true;
+const canSubmit = () => config?.intakeMode === 'external' && config.submissionMode === 'session-key' && config.acceptingOrders === true;
 async function referenceDigest(value) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return Array.from(new Uint8Array(bytes), n => n.toString(16).padStart(2, '0')).join('');
@@ -142,7 +141,7 @@ async function referenceDigest(value) {
 function renderIntake() {
   const ready = canSubmit();
   const stateLabel = $('[data-service-state]');
-  if (stateLabel) stateLabel.textContent = 'Claude KYC认证 · 淘宝订单提交';
+  if (stateLabel) stateLabel.textContent = 'Claude KYC认证 · Session Key 提交';
   submit.disabled = !ready;
   submit.textContent = ready ? '提交资料并获取查询链接' : config ? '暂不可提交，请稍后重试' : '服务连接失败，请刷新重试';
 }
@@ -162,17 +161,11 @@ form.addEventListener('submit', async event => {
     $('[data-agree]').focus();
     return;
   }
-  const reference = referenceField.value.trim();
-  if (!/^\d{10,32}$/.test(reference)) {
-    setFormError('请填写完整淘宝订单号（10–32 位数字）');
-    referenceField.focus(); return;
-  }
   submit.disabled = true;
   submit.textContent = '正在提交资料…';
   try {
-    const referenceHash = await referenceDigest(reference);
-    const order = await api('orders', { method: 'POST', body: { code, agree: true, showPublic: $('[data-show-public]').checked, source: 'taobao', reference } });
-    remember(order.id, order.accessToken, referenceHash);
+    const order = await api('orders', { method: 'POST', body: { code, agree: true, showPublic: $('[data-show-public]').checked, source: 'session' } });
+    remember(order.id, order.accessToken);
     form.reset();
     checkCode();
     showOrder(order, { scroll: true });
@@ -184,17 +177,17 @@ form.addEventListener('submit', async event => {
 });
 
 /* ---------- order panel ---------- */
-const TRACK = ['已提交', '核单', '处理中', '出结果'];
+const TRACK = ['已提交', '已受理', '处理中', '出结果'];
 const track = step => `<ol class="v-track" aria-label="进度">${TRACK.map((name, i) => `<li class="${i < step ? 'is-done' : i === step ? 'is-now' : ''}">${name}</li>`).join('')}</ol>`;
-const top = (order, tag) => `<div class="v-order__top"><span class="v-mono">订单 ${esc(order.id)}</span>${tag}</div>`;
+const top = (order, tag) => `<div class="v-order__top"><span class="v-mono">受理编号 ${esc(order.id)}</span>${tag}</div>`;
 const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
 const CROSS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
 const queryLink = id => { const url = new URL('/verify/', location.origin); url.searchParams.set('order', id); url.hash = `access=${accessKeys.get(id) || ''}`; return url.href; };
-const ownRef = order => `<div class="v-ref"><div><span>订单号（跨设备请保存私密查询链接）</span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(queryLink(order.id))}">复制查询链接</button></div>`;
+const ownRef = order => `<div class="v-ref"><div><span>受理编号（跨设备请保存私密查询链接）</span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(queryLink(order.id))}">复制查询链接</button></div>`;
 const again = (label = '提交新的认证协助') => `<button class="v-btn v-btn--ghost" type="button" data-new>${label}</button>`;
 
 function unpaidView(order) {
-  return `${top(order, '<span class="v-tag v-tag--gray">历史订单</span>')}<h2>站内支付已隐藏</h2><p class="v-sub">此历史订单尚未确认付款。请联系支持方核对，不要重复购买。</p>${ownRef(order)}<div class="v-acts">${again('提交淘宝订单')}</div>`;
+  return `${top(order, '<span class="v-tag v-tag--gray">历史订单</span>')}<h2>站内支付已隐藏</h2><p class="v-sub">此历史订单尚未确认付款。请联系支持方核对，不要重复购买。</p>${ownRef(order)}<div class="v-acts">${again('提交 Session Key')}</div>`;
 }
 function externalView(order) {
   const rejected = order.status === 'rejected';
@@ -210,10 +203,10 @@ function reviewingView(order) {
 ${track(2)}
 <div class="v-ring" data-ring><svg viewBox="0 0 232 232" aria-hidden="true"><defs><linearGradient id="v-ring-grad"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle class="v-ring__track" cx="116" cy="116" r="104"/><circle class="v-ring__bar" cx="116" cy="116" r="104" data-ring-bar/></svg><div class="v-ring__text"><b class="v-num" data-ring-time>--:--:--</b><span data-ring-label>预计剩余时间</span></div></div>
 <p class="v-sub v-center" style="margin-top:10px" data-ring-note>正在处理认证协助订单，本站结果录入后自动更新</p>
-<dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>${order.external ? '核单时间' : '付款时间'}</dt><dd class="v-num">${esc(stamp(order.paidAt))}</dd></div><div><dt>预计出结果</dt><dd class="v-num">${esc(stamp(order.dueAt))} 前</dd></div></dl>
+<dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>${order.external?.source === 'session' ? '提交时间' : order.external ? '核单时间' : '付款时间'}</dt><dd class="v-num">${esc(stamp(order.paidAt))}</dd></div><div><dt>预计出结果</dt><dd class="v-num">${esc(stamp(order.dueAt))} 前</dd></div></dl>
 ${ownRef(order)}
 <p class="v-note">关闭页面不影响本站处理。请保存私密查询链接；官方认证状态请在 Claude 账户内核对。</p>
-<div class="v-acts">${again('提交另一个淘宝订单')}</div>`;
+<div class="v-acts">${again('提交另一个 Session Key')}</div>`;
 }
 
 function confetti() {
@@ -226,9 +219,9 @@ function passedView(order) {
   return `<div class="v-result">${top(order, '<span class="v-tag v-tag--green">处理通过</span>')}${confetti()}
 <div class="v-badge v-badge--ok">${CHECK}</div>
 <h2 style="margin-top:16px">本站认证协助处理通过</h2>
-<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，官方认证状态请在 Claude 内核对。${order.reason ? `交付说明：${esc(order.reason)}。` : ''}如与约定不符，请保留订单和脱敏证据联系支持方，不要重复付款。</p>
+<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，官方认证状态请在 Claude 内核对。${order.reason ? `交付说明：${esc(order.reason)}。` : ''}如与约定不符，请保留订单和脱敏证据联系支持方，不要重复提交。</p>
 ${track(4)}
-<dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>处理用时</dt><dd>${esc(duration(order.decidedAt - order.paidAt))}</dd></div><div><dt>费用</dt><dd>${order.external ? '以淘宝原订单约定为准' : yuan(order.fees.total) + '（已完成）'}</dd></div></dl>
+<dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>处理用时</dt><dd>${esc(duration(order.decidedAt - order.paidAt))}</dd></div>${order.external?.source === 'session' ? '' : `<div><dt>费用</dt><dd>${order.external ? '以原订单约定为准' : yuan(order.fees.total) + '（已完成）'}</dd></div>`}</dl>
 ${ownRef(order)}
 <div class="v-acts">${again('返回服务说明')}</div></div>`;
 }
@@ -244,9 +237,9 @@ function failedView(order) {
   return `<div class="v-result">${top(order, '<span class="v-tag v-tag--rose">未通过</span>')}
 <div class="v-badge v-badge--no">${CROSS}</div>
 <h2 style="margin-top:16px">本站认证协助未通过</h2>
-<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，请查看未通过原因；退款按原交易渠道约定由商家处理，无需重复购买。</p>
+<p class="v-sub">${esc(stamp(order.decidedAt))} 已录入本站结果，请查看未通过原因。</p>
 ${order.reason ? `<p class="v-reason"><b>未通过原因</b>${esc(order.reason)}</p>` : ''}
-${order.external ? `<div class="v-refund"><div class="v-refund__row"><b>淘宝售后 <span class="v-tag ${done ? 'v-tag--green' : 'v-tag--amber'}">${done ? '商家已登记' : '待商家处理'}</span></b><span>${refundLine}</span></div></div>` : `<div class="v-refund">
+${order.external?.source === 'session' ? '' : order.external ? `<div class="v-refund"><div class="v-refund__row"><b>淘宝售后 <span class="v-tag ${done ? 'v-tag--green' : 'v-tag--amber'}">${done ? '商家已登记' : '待商家处理'}</span></b><span>${refundLine}</span></div></div>` : `<div class="v-refund">
 <div class="v-refund__row"><b>审核费</b><span>${refundLine}</span><strong>${yuan(refund.amount ?? order.fees.audit)}</strong></div>
 <div class="v-refund__row"><b>人工技术费</b><span>历史订单约定</span><strong>${yuan(order.fees.tech)}</strong></div></div>`}
 ${ownRef(order)}
@@ -328,7 +321,7 @@ function tick() {
 
 function schedulePoll() {
   clearTimeout(pollTimer);
-  if (!current || !['submitted', 'unpaid', 'reviewing'].includes(current.status) && !(current.status === 'failed' && current.refund?.status !== 'success')) return;
+  if (!current || !['submitted', 'unpaid', 'reviewing'].includes(current.status) && !(current.status === 'failed' && current.refund?.status && current.refund.status !== 'success')) return;
   const hidden = document.visibilityState === 'hidden';
   const qrLive = current.payment && current.payment.expiresAt > serverNow();
   const delay = current.status === 'unpaid' ? (hidden || !qrLive ? 15000 : 3000) : (hidden ? 120000 : 30000);
@@ -392,7 +385,7 @@ async function openOrder(raw, { scroll = true, quiet = false } = {}) {
   const id = input.toUpperCase();
   queryError.hidden = true;
   if (!ORDER_PATTERN.test(id)) {
-    if (!quiet) { queryError.textContent = '请使用本浏览器已提交的淘宝订单号、受理编号或完整私密查询链接；换设备需使用私密链接'; queryError.hidden = false; }
+    if (!quiet) { queryError.textContent = '请使用本浏览器已保存的受理编号或完整私密查询链接；换设备需使用私密链接'; queryError.hidden = false; }
     return;
   }
   try {
@@ -467,7 +460,7 @@ async function start() {
     if (latest && Date.now() - latest.at < 3 * 86400_000) {
       try {
         const order = await api(`orders/${encodeURIComponent(latest.id)}`);
-        if (['submitted', 'unpaid', 'reviewing'].includes(order.status)) showOrder(order);
+        if (order.external?.source === 'session' && order.status === 'reviewing') showOrder(order);
       } catch { /* the order list still offers it */ }
     }
   }

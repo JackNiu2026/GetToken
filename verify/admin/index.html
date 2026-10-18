@@ -4,59 +4,39 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0b0b10">
-<title>审核后台 - GetToken</title>
-<meta name="description" content="审核验证订单管理，仅限管理员。">
+<title>KYC审核后台 - GetToken</title>
+<meta name="description" content="KYC审核提交管理，仅限管理员。">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://gettoken.cc/verify/admin/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GetToken">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:title" content="审核后台 - GetToken">
-<meta property="og:description" content="审核验证订单管理，仅限管理员。">
+<meta property="og:title" content="KYC审核后台 - GetToken">
+<meta property="og:description" content="KYC审核提交管理，仅限管理员。">
 <meta property="og:url" content="https://gettoken.cc/verify/admin/">
 
 <link rel="alternate" type="application/rss+xml" title="GetToken AI 订阅指南" href="../../guides/feed.xml">
 <link rel="icon" href="../../assets/gettoken/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../../assets/guides/guides.css">
-<link rel="stylesheet" href="../../assets/gettoken/chrome.css?v=storefront-20261018">
-<script type="module" src="../../assets/gettoken/chrome.mjs?v=storefront-20261018"></script>
+<link rel="stylesheet" href="../../assets/gettoken/chrome.css?v=site-ui-20261018">
+<script type="module" src="../../assets/gettoken/chrome.mjs?v=site-ui-20261018"></script>
 <link rel="stylesheet" href="../../assets/gettoken/verify.css?v=verify-support-20261018">
 <script type="module" src="../../assets/gettoken/verify-admin.mjs?v=review-admin-20261018"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://gettoken.cc/#organization","name":"GetToken","url":"https://gettoken.cc/","logo":"https://gettoken.cc/assets/gettoken/logo.png"},{"@type":"WebSite","@id":"https://gettoken.cc/#website","name":"GetToken","url":"https://gettoken.cc/","inLanguage":"zh-CN","publisher":{"@id":"https://gettoken.cc/#organization"}}]}</script>
 </head>
 <body>
 <a class="g-skip" href="#main">跳到正文</a>
-<header class="site-header">
+<header class="site-header site-header--admin">
     <div class="shell header-inner">
       <a class="brand" href="../../" aria-label="GetToken 首页">
         <img class="brand-logo" src="../../assets/gettoken/logo.png" alt="" width="28" height="28">
         <span class="brand-word">GetToken</span>
       </a>
-      <nav class="desktop-nav" aria-label="主导航">
-        <a href="../../">首页</a>
-        <a href="../../claude/">Claude订阅</a>
-        <a href="../../codex/">Codex订阅</a>
-        <a href="../../gemini/">Gemini订阅</a>
-        <a href="../../grok/">Grok订阅</a>
-        <a href="../../verify/" class="is-current" aria-current="page">KYC审核</a>
-        <a href="../../ip/">住宅IP</a>
-        <a href="../../#news">AI新闻</a>
-      </nav>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单"><span></span><span></span></button>
+      <a class="admin-back" href="../../verify/">返回 KYC审核页</a>
     </div>
-    <nav class="mobile-nav" id="mobile-nav" aria-label="移动端主导航" hidden>
-        <a href="../../">首页</a>
-        <a href="../../claude/">Claude订阅</a>
-        <a href="../../codex/">Codex订阅</a>
-        <a href="../../gemini/">Gemini订阅</a>
-        <a href="../../grok/">Grok订阅</a>
-        <a href="../../verify/" class="is-current" aria-current="page">KYC审核</a>
-        <a href="../../ip/">住宅IP</a>
-        <a href="../../#news">AI新闻</a>
-    </nav>
   </header>
 <main id="main" class="g-shell a-main">
-<div class="a-top"><h1 class="a-title">审核后台</h1><p class="v-banner" data-mode-banner hidden></p><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-logout hidden>退出登录</button></div>
+<div class="a-top"><h1 class="a-title">KYC审核后台</h1><p class="v-banner" data-mode-banner hidden></p><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-logout hidden>退出登录</button></div>
 <form class="v-card a-login" data-login hidden>
 <h2>管理员登录</h2><p class="v-hint" data-login-hint>输入在服务器上设置的后台密码。</p>
 <label class="g-visually-hidden" for="a-password">后台密码</label><input id="a-password" type="password" name="password" autocomplete="current-password" required placeholder="后台密码">
@@ -79,21 +59,6 @@
 </div>
 </main>
 <div class="toast" role="status" aria-live="polite" data-toast></div>
-<footer class="site-footer" id="contact">
-    <div class="shell footer-main">
-      <div class="footer-brand">
-        <a class="brand" href="../../"><img class="brand-logo" src="../../assets/gettoken/logo.png" alt="" width="28" height="28" loading="lazy"><span class="brand-word">GetToken</span></a>
-        <p>Codex、Claude、Gemini、Grok 与住宅 IP 一站选购。<br>更好的工具，更自由的创造。</p>
-      </div>
-      <div class="footer-links">
-        <div><span>产品</span><a href="../../codex/">Codex</a><a href="../../claude/">Claude</a><a href="../../gemini/">Gemini</a><a href="../../grok/">Grok</a><a href="../../ip/">住宅 IP</a></div>
-        <div><span>指南</span><a href="../../guides/">AI 订阅指南</a><a href="../../#news">最新动态</a><a href="../../guides/basics/">选购基础</a><a href="../../guides/feed.xml">RSS 订阅</a></div>
-        <div><span>购买</span><a href="../../#products">选择产品</a><a href="../../#how">购买流程</a><a href="../../#scenes">使用场景</a><a href="../../verify/">审核验证</a></div>
-        <div><span>支持</span><a href="../../#faq">常见问题</a><a href="../../verify/#query">审核进度查询</a><a href="../../#contact">联系客服</a></div>
-      </div>
-    </div>
-    <p class="shell footer-note">GetToken 是独立第三方服务品牌，与 OpenAI、Google、xAI、Anthropic 无隶属关系。普通商品按页面受理状态咨询，未确认报价与交付条件前请勿付款；产品权益以当前官方说明与实际账号状态为准。</p>
-    <div class="shell footer-bottom"><span>© 2026 GetToken. All rights reserved.</span><span>独立服务品牌 · 非第三方官方平台</span></div>
-  </footer>
+
 </body>
 </html>

@@ -31,3 +31,10 @@ if (header && toggle && menu) {
   window.addEventListener('scroll', scrolled, { passive: true });
   scrolled();
 }
+
+// Guide pages: bring the current topic into view in the sideways-scrolling topic strip.
+const strip = document.querySelector('.g-subnav .g-shell');
+const topic = strip?.querySelector('[aria-current]');
+if (topic && strip.scrollWidth > strip.clientWidth) {
+  strip.scrollLeft += topic.getBoundingClientRect().left - strip.getBoundingClientRect().left - 16;
+}

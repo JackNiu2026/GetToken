@@ -25,7 +25,7 @@
 .brand { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .brand-logo { width: 28px; height: 28px; }
 .brand-word { font-size: 18px; font-weight: 700; letter-spacing: -.03em; }
-.desktop-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.desktop-nav { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; }
 .desktop-nav > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; color: var(--muted); font-size: 14px; white-space: nowrap; transition: color .2s, background .2s; }
 .desktop-nav > a:hover { color: var(--ink); background: rgba(255, 255, 255, .05); }
 .desktop-nav > a.is-current { color: var(--ink); background: rgba(255, 255, 255, .06); box-shadow: var(--glass-highlight); }
@@ -49,6 +49,8 @@
 
 /* Additions shared with home.css */
 .mobile-nav[hidden] { display: none; }
+.admin-back { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); font-size: 14px; }
+.admin-back:hover { color: var(--ink); }
 .footer-note { padding: 0 0 18px; font-size: 12px; line-height: 1.8; color: var(--faint); }
 
 @media (max-width: 1100px) {
@@ -66,7 +68,7 @@
 @media (max-width: 640px) {
   .site-header, .site-footer, .mobile-nav { --gutter: 18px; }
   .brand-word { font-size: 17px; }
-  .footer-links { flex-wrap: wrap; gap: 24px 48px; }
+  .footer-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 16px; }
   .footer-bottom { flex-direction: column; gap: 4px; }
 }
 @media (max-width: 370px) {

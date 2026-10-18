@@ -87,8 +87,8 @@ test('guide pages need only the shared header script; product and verify pages a
     const scripts=[...html.matchAll(/<script\b(?![^>]*type="application\/ld\+json")[^>]*>/gi)].map(m=>m[0]);
     // Every generated page runs the shared header (chrome.mjs); product and verify pages add their own module.
     const up='../'.repeat(route.split('/').filter(Boolean).length);
-    const modules={product:[`<script type="module" src="${up}assets/gettoken/product.mjs?v=storefront-20261018">`],verify:[`<script type="module" src="${up}assets/gettoken/verify.mjs?v=verify-support-20261018">`]};
-    assert.deepEqual(scripts,[`<script type="module" src="${up}assets/gettoken/chrome.mjs?v=storefront-20261018">`,...(modules[page.kind]||[])],`Scripts on ${route}`);
+    const modules={product:[`<script type="module" src="${up}assets/gettoken/product.mjs?v=site-ui-20261018">`],verify:[`<script type="module" src="${up}assets/gettoken/verify.mjs?v=verify-support-20261018">`]};
+    assert.deepEqual(scripts,[`<script type="module" src="${up}assets/gettoken/chrome.mjs?v=site-ui-20261018">`,...(modules[page.kind]||[])],`Scripts on ${route}`);
     assert.ok(Buffer.byteLength(html)<64*1024,route);
     assert.ok(gzipSync(html).length<16*1024,route);
     assert.doesNotMatch(html,/"@type":"(?:Offer|AggregateRating|Review)"/);

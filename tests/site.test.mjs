@@ -9,7 +9,7 @@ import { ROOT, ROUTES, PAGES, ARTICLES, PAGE_SIZE, FEED_ROUTE, chunk, generateSi
 import { SITE } from '../content/site.mjs';
 import { TOPICS } from '../content/topics.mjs';
 import { PRODUCT_PAGES } from '../content/products.mjs';
-import { PRODUCTS, getQuote, formatMoney } from '../assets/gettoken/catalog.mjs';
+import { PRODUCTS } from '../assets/gettoken/catalog.mjs';
 
 const base = SITE.origin.replace(/\/$/, '');
 const htmlFor = route => readFile(resolve(ROOT, route, 'index.html'), 'utf8');
@@ -75,7 +75,7 @@ test('internal links, fragment targets and static assets exist on every page, ho
 });
 
 test('topics, articles and pagination stay connected as the library grows', async () => {
-  assert.deepEqual(TOPICS.map(t => t.slug), ['codex', 'claude', 'claude-code', 'gemini', 'grok', 'basics']);
+  assert.deepEqual(TOPICS.map(t => t.slug), ['claude', 'claude-code', 'codex', 'gemini', 'grok', 'basics']);
   for (const topic of TOPICS) {
     const listed = ARTICLES.filter(a => a.topics.includes(topic.slug));
     assert.ok(listed.length > 0, `Topic without guides: ${topic.slug}`);
@@ -107,7 +107,7 @@ test('deployment archive contains all routes and excludes project sources', asyn
     execFileSync(process.execPath, ['scripts/package-site.mjs', archive], { cwd: ROOT });
     const entries = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n');
     for (const route of ROUTES) assert.ok(entries.includes(`${route}index.html`), route);
-    for (const file of ['robots.txt', 'sitemap.xml', 'assets/guides/guides.css', FEED_ROUTE]) assert.ok(entries.includes(file), file);
+    for (const file of ['robots.txt', 'sitemap.xml', '404.html', 'assets/guides/guides.css', FEED_ROUTE]) assert.ok(entries.includes(file), file);
     assert.ok(!entries.some(name => /^(scripts|content|tests|\.git)\//.test(name)));
     assert.ok(!entries.some(name => /^navigation\//.test(name)), 'The retired hub is served by a redirect, not a file');
     for (const file of ['assets/gettoken/product.css', 'assets/gettoken/product.mjs', 'assets/gettoken/shop.mjs', 'assets/gettoken/catalog.mjs']) assert.ok(entries.includes(file), file);
@@ -139,46 +139,34 @@ test('homepage keeps its brand sections, sends buyers to product pages and shows
   assert.match(html, /<script type="module" src="\.\/assets\/gettoken\/home\.mjs\?v=storefront-20261018"><\/script>/);
 });
 
-test('product pages expose catalog choices, factual availability and the existing IP cards', async () => {
+test('product pages share one plan picker with factual availability', async () => {
   assert.deepEqual(PRODUCT_PAGES.map(p => p.slug), Object.keys(PRODUCTS));
   const nginx = await readFile(join(ROOT, 'scripts/nginx-seo-locations.conf'), 'utf8');
   for (const p of PRODUCT_PAGES) {
     const catalog = PRODUCTS[p.slug];
     const html = await htmlFor(`${p.slug}/`);
     assert.ok(nginx.includes(`|${p.slug}`) || nginx.includes(`(?:guides|${p.slug}`), `Nginx aliases cover /${p.slug}/`);
-    if (p.slug === 'ip') {
-      const cards = [...html.matchAll(/<article class="plan plan--([abc])( is-featured)?" id="plan-([a-z0-9]+)" data-plan data-product="([a-z]+)" data-tier="([a-z0-9]+)">/g)];
-      assert.deepEqual(cards.map(m => m[1]), ['a', 'b', 'c'], p.slug);
-      assert.deepEqual(cards.map(m => Boolean(m[2])), [false, true, false], 'The middle tier is featured');
-      assert.deepEqual(cards.map(m => m[5]), Object.keys(catalog.tiers));
-      for (const [key, tier] of Object.entries(catalog.tiers)) {
-        assert.ok(html.includes(`${tier.name} <em>/ ${tier.hint}</em>`), `${p.slug} ${key}`);
-        const quote = getQuote(p.slug, key, 3);
-        assert.ok(html.includes(`<strong data-price>${formatMoney(quote.monthlyMinor, quote.currency)}</strong>`));
-        assert.ok(html.includes(`name="${p.slug}-${key}-period" value="3" data-period checked`), 'Quarterly is preselected');
-        assert.equal(html.includes(`name="${p.slug}-${key}-delivery"`), Boolean(catalog.deliveries), `${p.slug} delivery choice`);
-      }
-      assert.equal([...html.matchAll(/data-buy>/g)].length, 3);
-    } else {
-      assert.ok(html.includes(`data-subscription="${p.slug}"`));
-      const choices = [...html.matchAll(/name="[a-z]+-tier" value="([a-z0-9]+)" data-tier-choice( checked)?/g)];
-      assert.deepEqual(choices.map(m => m[1]), Object.keys(catalog.tiers));
-      assert.deepEqual(choices.map(m => Boolean(m[2])), [true, false, false]);
-      for (const tier of Object.values(catalog.tiers)) {
-        assert.ok(html.includes(tier.name) && html.includes(tier.desc));
-        for (const feature of tier.features) assert.ok(html.includes(feature));
-      }
-      assert.ok(html.includes(`name="${p.slug}-period" value="3" data-period checked`));
-      assert.ok(html.includes(`name="${p.slug}-delivery" value="topup" data-delivery checked`));
-      assert.equal([...html.matchAll(/data-inquiry>/g)].length, 1);
-      assert.ok(html.includes('data-selection-total>待报价'));
-      assert.ok(html.includes('暂未受理 · 查看说明'));
-      assert.ok(html.indexOf('id="plans"') < html.indexOf('id="steps"'));
-      assert.ok(html.indexOf('id="steps"') < html.indexOf('id="faq"'));
-      assert.ok(!html.includes('data-plan data-product='));
+    assert.ok(html.includes(`data-subscription="${p.slug}"`));
+    const choices = [...html.matchAll(/name="[a-z]+-tier" value="([a-z0-9]+)" data-tier-choice( checked)?/g)];
+    assert.deepEqual(choices.map(m => m[1]), Object.keys(catalog.tiers));
+    assert.deepEqual(choices.map(m => Boolean(m[2])), [true, false, false]);
+    for (const tier of Object.values(catalog.tiers)) {
+      assert.ok(html.includes(tier.name) && html.includes(tier.desc));
+      for (const feature of tier.features) assert.ok(html.includes(feature));
     }
+    assert.ok(html.includes(`name="${p.slug}-period" value="3" data-period checked`));
+    assert.equal(html.includes(`name="${p.slug}-delivery" value="topup" data-delivery checked`), Boolean(catalog.deliveries), `${p.slug} delivery choice`);
+    assert.equal([...html.matchAll(/data-inquiry>/g)].length, 1);
+    assert.ok(html.includes('data-selection-total>待报价'));
+    assert.ok(html.includes('暂未受理 · 查看说明'));
+    assert.ok(html.includes('class="g-btn g-btn--ghost" type="button" data-inquiry>'), 'A closed plan does not look like a buy button');
+    assert.ok(!html.includes('<span>订阅</span>'), 'The header already switches products');
+    assert.ok(html.indexOf('id="plans"') < html.indexOf('id="steps"'));
+    assert.ok(html.indexOf('id="steps"') < html.indexOf('id="faq"'));
+    assert.ok(!html.includes('data-plan data-product='));
+    assert.ok(html.includes('data-dock hidden'), 'Phones keep the selection in view');
     for (const id of ['pay-dialog', 'query-dialog', 'plans', 'faq']) assert.ok(html.includes(`id="${id}"`), `${p.slug} ${id}`);
-    assert.ok(html.includes('<script type="module" src="../assets/gettoken/product.mjs?v=storefront-20261018"></script>'));
+    assert.ok(html.includes('<script type="module" src="../assets/gettoken/product.mjs?v=site-ui-20261018"></script>'));
     assert.ok(html.includes('data-open-query'), 'Consultation opens the contact dialog');
     for (const [q, a] of p.faqs) assert.ok(html.includes(q) && html.includes(a));
     if (p.source) assert.ok(html.includes(`href="${p.source[1]}"`), 'Official prices cite their source');
@@ -199,7 +187,7 @@ test('every page shares the homepage header and footer, styled by the same rules
     .map(m => m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ''));
   const expected = labels(await htmlFor(''));
   assert.deepEqual(expected, ['首页', 'Claude订阅', 'Codex订阅', 'Gemini订阅', 'Grok订阅', 'KYC审核', '住宅IP', 'AI新闻']);
-  for (const route of [...ROUTES, 'verify/admin/']) {
+  for (const route of ROUTES) {
     const html = await readFile(join(ROOT, route, 'index.html'), 'utf8');
     assert.deepEqual(labels(html), expected, `Header differs on /${route}`);
     assert.equal((html.match(/<footer class="site-footer"/g) || []).length, 1, `Footer on /${route}`);
@@ -207,4 +195,6 @@ test('every page shares the homepage header and footer, styled by the same rules
     const mobile = html.match(/<nav class="mobile-nav"[\s\S]*?<\/nav>/)[0];
     assert.deepEqual([...mobile.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(m => m[1]), expected);
   }
+  const admin = await readFile(join(ROOT, 'verify/admin/index.html'), 'utf8');
+  assert.ok(admin.includes('site-header--admin') && !admin.includes('desktop-nav') && !admin.includes('site-footer'), 'The admin page has no storefront navigation');
 });

@@ -147,13 +147,13 @@ function renderIntake() {
   const stateLabel = $('[data-service-state]');
   if (stateLabel) stateLabel.textContent = 'Claude KYC认证 · Session Key 提交';
   submit.disabled = !ready;
-  submit.textContent = ready ? '提交资料并获取查询链接' : config ? '暂不可提交，请稍后重试' : '服务连接失败，请刷新重试';
+  submit.textContent = ready ? '提交资料并获取查询链接' : config ? '提交通道暂未开放' : '服务连接失败，请刷新重试';
 }
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
   setFormError('');
-  if (!canSubmit()) return setFormError('暂时无法提交资料，填写内容已保留，请稍后重试');
+  if (!canSubmit()) return setFormError(config ? '提交通道暂未开放，填写内容已保留。' : '暂时无法提交资料，填写内容已保留，请刷新后重试');
   const { code, problem } = checkCode(true);
   if (problem) {
     setFormError(problem);
@@ -436,7 +436,7 @@ function renderFeed() {
   // Measure only the original, consented records. Copies make one seamless loop,
   // never add to totals and remain hidden from assistive technology.
   feedWin.classList.remove('is-rolling');
-  feedList.innerHTML = items.length ? items.map(row => item(row)).join('') : '<li class="v-feed__empty">还没有公开的通过记录。</li>';
+  feedList.innerHTML = items.length ? items.map(row => item(row)).join('') : '<li class="v-feed__empty">还没有公开的通过记录，用户同意公开后会在这里显示。</li>';
   const height = feedList.scrollHeight;
   const rolling = items.length > 1 && height > feedWin.clientHeight;
   if (rolling) feedList.insertAdjacentHTML('beforeend', items.map(row => item(row, true)).join(''));
@@ -460,6 +460,11 @@ async function loadFeed() {
     feedData = await api('feed');
     $('[data-stat="passed"]').textContent = feedData.today.passed;
     $('[data-stat="total-passed"]').textContent = feedData.totalPassed ?? '—';
+    // Until the first public record, collapse the panel instead of showing zeros and empty space.
+    const empty = !feedData.items.length;
+    $('.v-side').classList.toggle('is-feed-empty', empty);
+    $('.v-feed__stats').hidden = empty && !feedData.totalPassed;
+    $('.v-live').hidden = empty;
     renderFeed();
   } catch {
     $('[data-stat="passed"]').textContent = '—';
@@ -468,6 +473,9 @@ async function loadFeed() {
     feedWin.classList.remove('is-rolling');
     feedToggle.hidden = true;
     feedList.innerHTML = '<li class="v-feed__empty">暂时无法获取最新通过记录，请稍后重试。</li>';
+    $('.v-side').classList.add('is-feed-empty');
+    $('.v-feed__stats').hidden = true;
+    $('.v-live').hidden = true;
   }
 }
 

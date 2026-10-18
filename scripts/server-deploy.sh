@@ -147,6 +147,7 @@ server {
     root $site_root/current;
     index index.html;
     autoindex off;
+    error_page 404 /404.html;
     gzip on;
     gzip_vary on;
     gzip_types text/css application/javascript application/xml text/xml image/svg+xml;

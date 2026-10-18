@@ -21,6 +21,7 @@ export const SITE = Object.freeze({
   // `wechatQr` is the customer-service WeChat QR image shown by every 微信咨询 / 订单查询
   // button (e.g. './assets/gettoken/pay/wechat-contact.png'; product pages resolve it from the site root).
   contact: Object.freeze({
+    qq: '40369953', // 审核结果页的 QQ 客服
     wechat: '',
     wechatQr: '',
     telegram: '',

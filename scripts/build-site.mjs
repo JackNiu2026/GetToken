@@ -577,7 +577,7 @@ ${crumbNav(route, crumbs)}
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
     route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交认证协助' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=review-admin-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=review-admin-20261018"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=verify-support-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=verify-support-20261018"></script>\n`,
     schema: [crumbList(crumbs), {
       '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: 'Claude KYC认证', description: VERIFY_DESCRIPTION,
       dateModified: VERIFY_UPDATED, inLanguage: 'zh-CN', isPartOf: { '@id': website['@id'] },
@@ -615,7 +615,7 @@ function verifyAdminPage() {
   return layout({
     route, current: 'verify', robots: 'noindex, nofollow', title: '审核后台 - GetToken', description: '审核验证订单管理，仅限管理员。', body,
     buy: { href: href(route, VERIFY_ROUTE), label: '返回审核页' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=review-admin-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}?v=review-admin-20261018"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=verify-support-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}?v=review-admin-20261018"></script>\n`,
     schema: [],
   });
 }

@@ -50,7 +50,7 @@ tests/
 
 审核页（`/verify/`）用于 Claude KYC 第三方协助，目前仅需填写本人 Session Key 并确认授权，提交成功直接进入人工处理，不需要淘宝订单号或核单。本站支付入口保持隐藏；处理结果不代表 Claude 官方身份认证通过。
 
-[审核后台](https://gettoken.cc/verify/admin/)支持查看提交和录入结果；预计审核时长 12 小时。首次登录与使用方法见[后台操作说明](docs/review-admin.md)。
+[审核后台](https://gettoken.cc/verify/admin/)支持查看提交和录入结果；预计审核时长 12 小时。审核验证页默认显示提交主页面，历史提交从结果查询进入；超时或已有结果时可通过按钮咨询 QQ 客服。首次登录与使用方法见[后台操作说明](docs/review-admin.md)。
 
 原浏览器可使用受理编号或最近记录查询，跨设备需保存完整私密查询链接；不要把 Session Key 当作查询口令或放入 URL。后台录入交付摘要或失败原因，不生成费用、付款或退款。历史淘宝与财务记录保留。操作见 [Session Key 提交](docs/session-key-intake.md)。
 

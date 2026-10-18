@@ -9,7 +9,7 @@ import { ROOT, ROUTES, PAGES, ARTICLES, PAGE_SIZE, FEED_ROUTE, chunk, generateSi
 import { SITE } from '../content/site.mjs';
 import { TOPICS } from '../content/topics.mjs';
 import { PRODUCT_PAGES } from '../content/products.mjs';
-import { PRODUCTS } from '../assets/gettoken/catalog.mjs';
+import { PRODUCTS, getQuote, formatMoney } from '../assets/gettoken/catalog.mjs';
 
 const base = SITE.origin.replace(/\/$/, '');
 const htmlFor = route => readFile(resolve(ROOT, route, 'index.html'), 'utf8');
@@ -159,7 +159,8 @@ test('product pages share one plan picker with factual availability', async () =
     if (catalog.deliveries) assert.ok(html.includes('data-selection-period>按月'));
     assert.equal(html.includes(`name="${p.slug}-delivery" value="topup" data-delivery checked`), Boolean(catalog.deliveries), `${p.slug} delivery choice`);
     assert.equal([...html.matchAll(/data-inquiry>/g)].length, 1);
-    assert.ok(html.includes('data-selection-total>待报价'));
+    const initial = getQuote(p.slug, Object.keys(catalog.tiers)[0], catalog.deliveries ? 1 : 3);
+    assert.ok(html.includes(`data-selection-total>${formatMoney(initial.totalMinor, initial.currency)}`));
     assert.ok(html.includes('暂未受理 · 查看说明'));
     assert.ok(html.includes('class="g-btn g-btn--ghost" type="button" data-inquiry>'), 'A closed plan does not look like a buy button');
     assert.ok(!html.includes('<span>订阅</span>'), 'The header already switches products');
@@ -168,7 +169,7 @@ test('product pages share one plan picker with factual availability', async () =
     assert.ok(!html.includes('data-plan data-product='));
     assert.ok(html.includes('data-dock hidden'), 'Phones keep the selection in view');
     for (const id of ['pay-dialog', 'query-dialog', 'plans', 'faq']) assert.ok(html.includes(`id="${id}"`), `${p.slug} ${id}`);
-    assert.ok(html.includes('<script type="module" src="../assets/gettoken/product.mjs?v=site-ui-20261018"></script>'));
+    assert.ok(html.includes('<script type="module" src="../assets/gettoken/product.mjs?v=prices-20261018"></script>'));
     assert.ok(html.includes('data-open-query'), 'Consultation opens the contact dialog');
     for (const [q, a] of p.faqs) assert.ok(html.includes(q) && html.includes(a));
     if (p.source) assert.ok(html.includes(`href="${p.source[1]}"`), 'Official prices cite their source');

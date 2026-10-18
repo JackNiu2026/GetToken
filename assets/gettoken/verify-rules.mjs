@@ -5,7 +5,7 @@ export const VERIFY = Object.freeze({
   open: false, // Legacy online-payment gate; independent of external Taobao intake.
   techFeeMinor: 3000, // 人工技术费 ¥30, never refunded
   auditFeeMinor: 30000, // 审核费 ¥300, refunded when the review fails
-  reviewHours: 24, // expected review time; drives the countdown only
+  reviewHours: 12, // expected review time; drives the countdown only
   refundHours: 24, // the audit fee goes back within this window after a failed review
   paymentMinutes: 15, // a payment QR code stays valid this long
   purgeDays: 7, // submitted codes are deleted this many days after the result

@@ -14,7 +14,7 @@ function fixture() {
   const nodes = new Map(), requests = [];
   function node(selector) {
     if (!nodes.has(selector)) nodes.set(selector, {
-      innerHTML: '', hidden: false, value: '', dataset: {}, listeners: {},
+      innerHTML: '', hidden: false, value: 'Synthetic audit evidence', dataset: {}, listeners: {},
       addEventListener(type, fn) { this.listeners[type] = fn; },
       querySelector: node, querySelectorAll: () => [],
       setAttribute() {}, focus() {}, classList: { add() {}, remove() {} },
@@ -97,4 +97,15 @@ test('obsolete list response does not replace latest search results', async () =
   f.requests[0].reply({ items: [f.order('OBSOLETE')], total: 1, size: 20 }); await old;
   assert.match(f.node('[data-rows]').innerHTML, /LATEST/);
   assert.doesNotMatch(f.node('[data-rows]').innerHTML, /OBSOLETE/);
+});
+
+
+test('blank review explanation keeps focus on the field without posting a decision', async () => {
+ const f=fixture();
+ const detail=f.run('openDetail("A")');f.requests[0].reply(f.order('A'));await detail;
+ f.node('[data-reason]').value='   ';
+ await f.click();
+ assert.equal(f.requests.length,1);
+ assert.equal(f.node('[data-decision-error]').hidden,false);
+ assert.match(f.node('[data-decision-error]').textContent,/填写审核说明/);
 });

@@ -16,8 +16,8 @@ assets/gettoken/
   motion.mjs        滚动动效：逐字出现、进场、数字递增、步骤连线、导航当前位置高亮
   scenes.mjs        首屏“轨道日出” WebGL 场景（开场升起、星空、夜面地球、大气辉光、日出、流星）
   catalog.mjs       产品、三档、参考报价与交付方式；旧备注码函数不用于订单
-  verify.mjs        审核验证页：Session Key + 淘宝订单号、私密查询、核单后的处理倒计时与结果
-  verify-admin.mjs  审核后台（/verify/admin/）：待核单列表、核对淘宝订单、查看代码、录入结果与登记淘宝售后
+  verify.mjs        审核验证页：仅提交 Session Key、私密查询、12 小时处理倒计时与结果
+  verify-admin.mjs  审核后台（/verify/admin/）：查看提交、搜索与筛选、复制 Session Key、录入审核结果和说明（保留历史记录处理）
   verify-rules.mjs  审核费用、时长与代码格式（页面、生成脚本与后端共用）
   verify.css        审核页与后台样式
   qr.mjs            二维码生成（把支付平台返回的付款链接画成二维码）
@@ -49,6 +49,8 @@ tests/
 产品页（如 `/claude/`）：卖点与购买保障 → 三档价格卡（蓝 / 紫粉推荐 / 绿，可选意向交付方式与 1/3/12 个月周期，不代表供应已确认）→ 怎么买、怎么验收 → 最新动态与选购指南 → 常见问题 → 其他产品。价格卡在生成时就写进 HTML，不开脚本也能看到价格与说明。
 
 审核页（`/verify/`）用于 Claude KYC 第三方协助，目前仅需填写本人 Session Key 并确认授权，提交成功直接进入人工处理，不需要淘宝订单号或核单。本站支付入口保持隐藏；处理结果不代表 Claude 官方身份认证通过。
+
+[审核后台](https://gettoken.cc/verify/admin/)支持查看提交和录入结果；预计审核时长 12 小时。首次登录与使用方法见[后台操作说明](docs/review-admin.md)。
 
 原浏览器可使用受理编号或最近记录查询，跨设备需保存完整私密查询链接；不要把 Session Key 当作查询口令或放入 URL。后台录入交付摘要或失败原因，不生成费用、付款或退款。历史淘宝与财务记录保留。操作见 [Session Key 提交](docs/session-key-intake.md)。
 

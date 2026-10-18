@@ -48,7 +48,7 @@ const articleRoute = a => `guides/${a.slug}/`;
 const productRoute = p => `${p.slug}/`;
 export const VERIFY_ROUTE = 'verify/';
 export const VERIFY_ADMIN_ROUTE = 'verify/admin/';
-const VERIFY_UPDATED = '2026-10-17';
+const VERIFY_UPDATED = '2026-10-18';
 // The product page that sells what a topic covers; shared topics (选购基础) have none.
 const productFor = topicSlug => PRODUCT_PAGES.find(p => p.topics.includes(topicSlug));
 // The product's own articles first, then shared guides that also cover it; each group newest first.
@@ -505,7 +505,7 @@ ${crumbNav(route, crumbs)}
 <p class="g-eyebrow" data-service-state>Claude KYC认证 · Session Key 提交</p>
 <h1>Claude KYC认证</h1>
 <p class="g-lead">仅需提交本人 Session Key，即可查询人工处理进度。本站不收款；GetToken 为独立第三方服务，非 Anthropic 官方认证入口。</p>
-<ul class="v-facts"><li><b>Session Key</b>仅需填写一项</li><li><b>人工处理</b>提交后进入处理</li><li><b>私密查询</b>保存专属查询链接</li></ul>
+<ul class="v-facts"><li><b>Session Key</b>仅需填写一项</li><li><b>人工处理</b>预计 ${VERIFY.reviewHours} 小时出结果</li><li><b>私密查询</b>保存专属查询链接</li></ul>
 </div></div></div>
 <main id="main" class="g-shell">
 <p class="v-banner" data-mode-banner hidden></p>
@@ -577,7 +577,7 @@ ${crumbNav(route, crumbs)}
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
     route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交认证协助' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=key-guide-20261017">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=key-guide-20261017"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=review-admin-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=review-admin-20261018"></script>\n`,
     schema: [crumbList(crumbs), {
       '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: 'Claude KYC认证', description: VERIFY_DESCRIPTION,
       dateModified: VERIFY_UPDATED, inLanguage: 'zh-CN', isPartOf: { '@id': website['@id'] },
@@ -591,21 +591,23 @@ function verifyAdminPage() {
   const body = `<main id="main" class="g-shell a-main">
 <div class="a-top"><h1 class="a-title">审核后台</h1><p class="v-banner" data-mode-banner hidden></p><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-logout hidden>退出登录</button></div>
 <form class="v-card a-login" data-login hidden>
-<h2>登录</h2><p class="v-hint" data-login-hint>输入在服务器上设置的后台密码。</p>
+<h2>管理员登录</h2><p class="v-hint" data-login-hint>输入在服务器上设置的后台密码。</p>
 <label class="g-visually-hidden" for="a-password">后台密码</label><input id="a-password" type="password" name="password" autocomplete="current-password" required placeholder="后台密码">
 <button class="v-btn v-btn--light v-btn--block" type="submit">登录</button>
-<p class="v-error" data-login-error role="alert" hidden></p>
+<p class="v-error" data-login-error role="alert" hidden></p><details class="a-login-help"><summary>首次登录或忘记密码？</summary><p class="v-hint">在服务器终端运行 <code>sudo gettoken-verify passwd</code> 设置新密码（至少 12 位）。此操作会退出已有登录，不影响提交记录。</p></details>
 </form>
 <div class="a-app" data-app hidden>
+<div class="a-toolbar"><p class="v-hint">点选提交查看 Session Key，填写审核说明后保存结果。预计审核时长 ${VERIFY.reviewHours} 小时。</p><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-admin-refresh>刷新提交</button></div>
+<p class="v-error" role="alert" data-admin-error hidden></p>
 <div class="a-kpis" data-stats></div>
 <div class="a-body">
-<section class="a-list" aria-label="订单列表">
-<div class="a-filters"><div class="a-tabs" role="tablist" aria-label="按状态筛选" data-filters></div>
-<form class="a-search" data-search><label class="g-visually-hidden" for="a-q">搜索</label><input id="a-q" name="q" placeholder="受理编号 / 淘宝订单号 / 代码末 4 位" autocomplete="off"></form></div>
-<div class="a-table-wrap"><table class="a-table"><thead><tr><th>订单号</th><th>代码</th><th>状态</th><th>核单 / 付款</th><th>剩余</th></tr></thead><tbody data-rows></tbody></table></div>
+<section class="a-list" aria-label="提交列表">
+<div class="a-filters"><div class="a-tabs" role="group" aria-label="按状态筛选" data-filters></div>
+<form class="a-search" data-search><label class="g-visually-hidden" for="a-q">搜索</label><input id="a-q" name="q" data-search-input placeholder="受理编号 / Session Key 末 4 位" autocomplete="off"><button class="v-btn v-btn--ghost v-btn--sm" type="submit">搜索</button></form></div>
+<div class="a-table-wrap"><table class="a-table"><thead><tr><th>受理编号</th><th>Session Key</th><th>状态</th><th>提交时间</th><th>预计剩余</th></tr></thead><tbody data-rows></tbody></table></div>
 <div class="a-pager" data-pager></div>
 </section>
-<aside class="v-card a-detail" data-detail aria-live="polite"><p class="v-hint">点选左侧订单查看详情。</p></aside>
+<aside class="v-card a-detail" data-detail aria-live="polite"><p class="v-hint">点选提交查看详情并录入审核结果。</p></aside>
 </div>
 </div>
 </main>
@@ -613,7 +615,7 @@ function verifyAdminPage() {
   return layout({
     route, current: 'verify', robots: 'noindex, nofollow', title: '审核后台 - GetToken', description: '审核验证订单管理，仅限管理员。', body,
     buy: { href: href(route, VERIFY_ROUTE), label: '返回审核页' },
-    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=sidebar-20261017">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}?v=sidebar-20261017"></script>\n`,
+    head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=review-admin-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}?v=review-admin-20261018"></script>\n`,
     schema: [],
   });
 }

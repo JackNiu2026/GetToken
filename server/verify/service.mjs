@@ -17,6 +17,17 @@ export class UserError extends Error {
 export function createService({ store, config, providers, now = () => Date.now(), log = () => {} }) {
   const event = (orderIdValue, actor, kind, detail = null) =>
     store.run('insert into events(order_id, at, actor, kind, detail) values(?, ?, ?, ?, ?)', orderIdValue, now(), actor, kind, detail);
+  // Move existing 24-hour active reviews to the current expected window using
+  // their original start time. Completed results and refunds remain untouched.
+  // Matching the old duration makes this safe to rerun after restart/rollback.
+  store.transaction(() => {
+    const duration = VERIFY.reviewHours * HOUR;
+    const active = store.all("select id, paid_at from orders where status = 'reviewing' and paid_at is not null and due_at = paid_at + ? and due_at != paid_at + ?", 24 * HOUR, duration);
+    for (const order of active) {
+      store.run('update orders set due_at = ? where id = ?', order.paid_at + duration, order.id);
+      event(order.id, 'system', 'review_window_updated', `预计 ${VERIFY.reviewHours} 小时`);
+    }
+  });
   const getOrder = id => store.get('select * from orders where id = ?', id);
   const channels = () => Object.keys(providers);
   const acceptingNewOrders = () => !config.externalIntake && channels().length > 0 && config.acceptNewOrders !== false
@@ -306,12 +317,15 @@ export function createService({ store, config, providers, now = () => Date.now()
 
   function decide(id, result, reason, actor = 'admin') {
     if (!['passed', 'failed'].includes(result)) throw new UserError('结果只能是通过或未通过');
-    const note = String(reason || '').trim().slice(0, 300) || null;
+    const suppliedNote = String(reason || '').trim();
+    const note = suppliedNote.slice(0, 300) || null;
     store.transaction(() => {
       const order = getOrder(id);
       if (!order) throw new UserError('找不到这个订单', 404);
       if (order.status !== 'reviewing') throw new UserError(order.status === 'unpaid' ? '订单还没有付款，不能录入结果' : '这个订单已经有结果了', 409);
       if ((config.mode === 'live' || external(id)) && !note) throw new UserError('请填写交付证据摘要或未通过原因；不得包含会话凭据');
+      const fullCode = order.code_sealed ? openCode(config.secret, order.code_sealed) : null;
+      if (note && ((fullCode && suppliedNote.includes(fullCode)) || /\bsk-ant-[A-Za-z0-9_-]{16,}/.test(suppliedNote))) throw new UserError('审核说明不能包含 Session Key，请删除登录凭据后重试');
       const t = now();
       if (result === 'passed') {
         store.run("update orders set status = 'passed', decided_at = ?, reason = ? where id = ?", t, note, id);

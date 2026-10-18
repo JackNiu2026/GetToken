@@ -1,6 +1,6 @@
 // /verify/: submit a Session Key, then privately query manual processing.
 // Every status and result shown here comes from the API; the page never decides an outcome.
-import { VERIFY, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES } from './verify-rules.mjs?v=key-only-20261017';
+import { VERIFY, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES } from './verify-rules.mjs?v=review-12h-20261018';
 import { initKeyGuide } from './verify-key-guide.mjs?v=key-guide-20261017';
 
 const API = new URL('../../api/verify/', import.meta.url);
@@ -258,7 +258,7 @@ const VIEWS = { submitted: externalView, rejected: externalView, unpaid: unpaidV
 
 // Redraws the panel only when what it shows has changed (status, QR code, expiry, refund).
 function render(order) {
-  const key = JSON.stringify([order.status, order.payment?.id, order.payment && order.payment.expiresAt <= serverNow(), order.refund?.status, order.reason, order.external]);
+  const key = JSON.stringify([order.status, order.payment?.id, order.payment && order.payment.expiresAt <= serverNow(), order.refund?.status, order.reason, order.external, order.dueAt]);
   if (key !== shownKey || panel.hidden) {
     shownKey = key;
     panel.innerHTML = VIEWS[order.status](order);

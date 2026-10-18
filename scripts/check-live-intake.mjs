@@ -10,6 +10,7 @@ assert.equal(config.intakeMode, 'external', 'Production must use non-payment int
 assert.equal(config.submissionMode, 'session-key', 'Only Session Key submissions may be offered');
 assert.deepEqual(config.channels, [], 'Online payment channels must remain hidden');
 assert.equal(config.fees, null, 'No assumed payment amounts may be advertised');
+assert.equal(config.reviewHours, 12, 'Expected review window must be 12 hours');
 assert.equal(config.acceptingOrders, true, 'Session Key submissions must be available; check operator password and intake pause flag');
 console.log('Production Session Key intake verified: available, external mode, no online payment channels or assumed fees. Read-only checks only.');
 
@@ -36,3 +37,16 @@ assert.equal(captions.status, 200);
 assert.match(captions.headers.get('content-type') || '', /text\/vtt/);
 assert.ok((await captions.text()).startsWith('WEBVTT'));
 console.log('Production tutorial verified: entry above Session Key input, player module, seekable MP4 and Chinese captions available. No credentials were read or submitted.');
+
+const adminPage = await curlRequest(new URL('/verify/admin/', SITE.origin).href);
+assert.equal(adminPage.status, 200, 'Admin login page must be available');
+const adminHtml = await adminPage.text();
+assert.match(adminHtml, /data-login/);
+assert.match(adminHtml, /data-admin-refresh/);
+assert.match(adminHtml, /预计审核时长 12 小时/);
+assert.match(adminHtml, /noindex, nofollow/);
+const adminModule = await curlRequest(new URL('/assets/gettoken/verify-admin.mjs?v=review-admin-20261018', SITE.origin).href);
+assert.equal(adminModule.status, 200, 'Admin script must be available');
+const adminOrders = await curlRequest(new URL('/api/verify/admin/orders', SITE.origin).href);
+assert.equal(adminOrders.status, 401, 'Submissions must require admin authentication');
+console.log('Production admin verified: login page and script available, submissions protected; expected review window is 12 hours. No admin login or data access performed.');

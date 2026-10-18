@@ -110,52 +110,32 @@ function buyLink(route, topicSlug) {
 /* ---------- Site header and footer ---------- */
 // One header and one footer for every page, the homepage included (between its HEADER and FOOTER
 // markers). Styles: home.css on the homepage, chrome.css elsewhere (kept identical by tests).
-// `current`: 'home' | 'product' | 'verify' | 'guides'. `contact`: 'dialog' opens the page's
-// customer-service dialog; 'link' goes to the homepage, which opens it (/#contact).
-const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg>';
-const GLYPH_CLASS = { codex: 'codex', claude: 'claude', gemini: 'gemini', grok: 'grok', ip: 'ip' };
-const SOON = '<em class="nav-soon">查看状态</em>';
+// `current`: 'home' | 'product' | 'verify' | 'guides'; product picks the active product link.
 const linkTo = (route, to = '') => (route === null ? `./${to}` : href(route, to));
 const anchor = (route, id) => (route === null ? `#${id}` : `${linkTo(route)}#${id}`);
 
-export function siteHeader({ route = null, current = 'home', product = null, cta, contact = 'dialog' }) {
-  const isHome = route === null;
-  const contactButton = cls => (contact === 'dialog'
-    ? `<button${cls ? ` class="${cls}"` : ''} type="button" data-open-query>联系客服</button>`
-    : `<a${cls ? ` class="${cls}"` : ''} href="${anchor(route, 'contact')}">联系客服</a>`);
-  const products = PRODUCT_PAGES.map(p => `<a href="${linkTo(route, productRoute(p))}"${p === product ? ' aria-current="page"' : ''}><span class="glyph glyph--${GLYPH_CLASS[p.slug]}">${esc(PRODUCTS[p.slug].glyph)}</span><span><strong>${esc(PRODUCTS[p.slug].name)}</strong><small>${esc(p.navHint)}</small></span></a>`);
-  const mark = name => (current === name ? ' class="is-current" aria-current="page"' : '');
+export function siteHeader({ route = null, current = 'home', product = null }) {
+  const items = [
+    ['首页', route === null ? '#top' : linkTo(route), current === 'home'],
+    ...['claude', 'codex', 'gemini', 'grok'].map(slug => [`${PRODUCTS[slug].name}订阅`, linkTo(route, `${slug}/`), product?.slug === slug]),
+    ['KYC审核', linkTo(route, VERIFY_ROUTE), current === 'verify'],
+    ['住宅IP', linkTo(route, 'ip/'), product?.slug === 'ip'],
+    ['AI新闻', anchor(route, 'news'), false],
+  ];
+  const links = items.map(([label, to, active]) => `<a href="${to}"${active ? ' class="is-current" aria-current="page"' : ''}>${label}</a>`).join('\n        ');
   return `<header class="site-header">
     <div class="shell header-inner">
-      <a class="brand" href="${isHome ? '#top' : linkTo(route)}" aria-label="GetToken 首页">
+      <a class="brand" href="${route === null ? '#top' : linkTo(route)}" aria-label="GetToken 首页">
         <img class="brand-logo" src="${linkTo(route, 'assets/gettoken/logo.png')}" alt="" width="28" height="28">
         <span class="brand-word">GetToken</span>
       </a>
       <nav class="desktop-nav" aria-label="主导航">
-        <details class="nav-products">
-          <summary${current === 'product' ? ' class="is-current"' : ''}>产品服务 ${CHEVRON}</summary>
-          <div class="nav-dropdown">
-            ${products.join('\n            ')}
-          </div>
-        </details>
-        <a href="${anchor(route, 'how')}">购买流程</a>
-        <a href="${anchor(route, 'faq')}">常见问题</a>
-        <a href="${linkTo(route, VERIFY_ROUTE)}"${mark('verify')}>审核验证${SOON}</a>
-        <a href="${linkTo(route, 'guides/')}"${mark('guides')}>AI 指南</a>
+        ${links}
       </nav>
-      <div class="header-actions">
-        ${contactButton('ghost-button')}
-        <a class="pill-button" href="${cta.href}">${esc(cta.label)}</a>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单"><span></span><span></span></button>
-      </div>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单"><span></span><span></span></button>
     </div>
     <nav class="mobile-nav" id="mobile-nav" aria-label="移动端主导航" hidden>
-      <a href="${anchor(route, 'products')}">产品服务</a>
-      <a href="${anchor(route, 'how')}">购买流程</a>
-      <a href="${anchor(route, 'faq')}">常见问题</a>
-      <a href="${linkTo(route, VERIFY_ROUTE)}">审核验证${SOON}</a>
-      <a href="${linkTo(route, 'guides/')}">AI 指南</a>
-      ${contactButton('')}
+        ${links}
     </nav>
   </header>`;
 }
@@ -182,9 +162,7 @@ export function siteFooter({ route = null, contact = 'dialog' }) {
 
 // `current` picks the highlighted header item; guide pages add the topic bar under the header.
 // `head` adds page-specific stylesheets and scripts; `robots` marks private pages noindex.
-function layout({ route, title, description, body, schema, type = 'website', modified, published, prev, next, tone, topic, product, current = product ? 'product' : 'guides', contact = product ? 'dialog' : 'link', head = '', robots = '', buy: buyOverride, tail = '' }) {
-  const guide = buyLink(route, topic);
-  const cta = buyOverride || (product ? { href: '#plans', label: '选购方案' } : { href: guide.href, label: guide.name ? `购买 ${guide.name}` : '选购产品' });
+function layout({ route, title, description, body, schema, type = 'website', modified, published, prev, next, tone, topic, product, current = product ? 'product' : 'guides', contact = product ? 'dialog' : 'link', head = '', robots = '', tail = '' }) {
   const subnav = current === 'guides'
     ? `<nav class="g-subnav" aria-label="指南专题"><div class="g-shell"><a href="${href(route, 'guides/')}"${route === 'guides/' ? ' aria-current="page"' : ''}>全部指南</a>${TOPICS.map(t => `<a href="${href(route, topicRoute(t))}"${route.startsWith(`guides/${t.slug}/`) ? ' aria-current="page"' : topic === t.slug ? ' aria-current="true"' : ''}>${esc(t.name)}</a>`).join('')}</div></nav>\n`
     : '';
@@ -207,13 +185,13 @@ ${robots ? '' : shareImageMeta(route)}
 ${type === 'article' ? `${published ? `<meta property="article:published_time" content="${published}">\n` : ''}<meta property="article:modified_time" content="${modified}">\n` : ''}<link rel="alternate" type="application/rss+xml" title="GetToken AI 订阅指南" href="${href(route, FEED_ROUTE)}">
 <link rel="icon" href="${href(route, 'assets/gettoken/favicon.svg')}" type="image/svg+xml">
 <link rel="stylesheet" href="${href(route, 'assets/guides/guides.css')}">
-<link rel="stylesheet" href="${href(route, 'assets/gettoken/chrome.css')}">
-<script type="module" src="${href(route, 'assets/gettoken/chrome.mjs')}"></script>
-${product ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/product.css')}">\n<script type="module" src="${href(route, 'assets/gettoken/product.mjs')}"></script>\n` : ''}${head}<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website, ...schema] })}</script>
+<link rel="stylesheet" href="${href(route, 'assets/gettoken/chrome.css')}?v=storefront-20261018">
+<script type="module" src="${href(route, 'assets/gettoken/chrome.mjs')}?v=storefront-20261018"></script>
+${product ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/product.css')}?v=storefront-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/product.mjs')}?v=storefront-20261018"></script>\n` : ''}${head}<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website, ...schema] })}</script>
 </head>
 <body${tone ? ` data-tone="${tone}"` : ''}>
 <a class="g-skip" href="#main">跳到正文</a>
-${siteHeader({ route, current, product, cta, contact })}
+${siteHeader({ route, current, product })}
 ${subnav}${body}
 ${siteFooter({ route, contact })}
 ${tail}</body>
@@ -409,6 +387,40 @@ ${deliveries}<fieldset class="choice choice--period"><legend>服务周期</legen
 </article>`;
 }
 
+function subscriptionPlans(p, catalog) {
+  const tiers = Object.keys(catalog.tiers);
+  const selected = tiers[0];
+  const tier = catalog.tiers[selected];
+  const quote = getQuote(p.slug, selected, 3, 'topup');
+  const state = inquiryState(p.slug, selected, quote.months);
+  const options = (name, values, checked, attr) => values.map(([value, label]) => `<label><input type="radio" name="${p.slug}-${name}" value="${value}" ${attr}${value === checked ? ' checked' : ''}><span>${label}</span></label>`).join('');
+  return `<section class="p-pricing p-config" id="plans" aria-labelledby="plans-title" data-subscription="${p.slug}"><div class="g-shell">
+<header class="g-section__head"><div><h2 id="plans-title">选择你的 ${esc(catalog.name)} 方案</h2><p>先选套餐，再确认交付方式与意向周期。</p></div><a class="p-more" href="#steps">查看办理流程 →</a></header>
+<nav class="p-brands" aria-label="订阅产品">${['claude', 'codex', 'gemini', 'grok'].map(slug => `<a href="${href(productRoute(p), `${slug}/`)}"${p.slug === slug ? ' aria-current="page"' : ''}>${PRODUCTS[slug].name}<span>订阅</span></a>`).join('')}</nav>
+<div class="p-config__grid">
+<div class="p-config__choices">
+<fieldset class="p-packages" id="plan-options"><legend>1. 选择套餐</legend><div class="p-packages__list">${tiers.map((key, i) => {
+    const item = catalog.tiers[key];
+    return `<label class="p-package plan--${PLAN_STYLES[i]}"><input type="radio" name="${p.slug}-tier" value="${key}" data-tier-choice${key === selected ? ' checked' : ''}><span class="p-package__body"><span class="p-package__head"><strong>${esc(item.name)}</strong><span class="p-package__price">${formatMoney(item.monthlyMinor, catalog.currency)}<small> / 月</small></span></span><span class="p-package__hint">${esc(item.hint)} · ${esc(item.badge)}</span><span class="p-package__desc">${esc(item.desc)}</span><span class="plan__tags">${item.features.map(f => `<span>${esc(f)}</span>`).join('')}</span></span></label>`;
+  }).join('')}</div></fieldset>
+<fieldset class="choice choice--two p-config__option"><legend>2. 选择交付方式</legend><div class="choice__options">${options('delivery', Object.entries(catalog.deliveries).map(([key, d]) => [key, `<b>${esc(d.name)}</b><small>${esc(d.hint)}</small>`]), quote.delivery, 'data-delivery')}</div></fieldset>
+<fieldset class="choice choice--period p-config__option"><legend>3. 选择意向周期</legend><div class="choice__options">${options('period', Object.entries(PERIOD_NAMES), String(quote.months), 'data-period')}</div></fieldset>
+<p class="p-config__note">周期仅表示需求，供应与履约方式须另行确认。此处无需填写账号资料。</p>
+</div>
+<aside class="p-order" aria-labelledby="selection-title">
+<h3 id="selection-title">已选方案</h3><p class="p-order__name" data-selection-name>${esc(catalog.name)} · ${esc(tier.name)}</p>
+<p class="p-order__desc" data-selection-desc>${esc(tier.desc)}</p>
+<ul class="p-order__features" data-selection-features>${tier.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+<dl class="p-order__details"><div><dt>交付方式</dt><dd data-selection-delivery>${esc(quote.deliveryName)}</dd></div><div><dt>意向周期</dt><dd data-selection-period>${PERIOD_NAMES[quote.months]}</dd></div><div><dt>月度报价</dt><dd data-selection-monthly>${formatMoney(quote.monthlyMinor, quote.currency)}</dd></div><div class="p-order__total"><dt>合计</dt><dd data-selection-total>${formatMoney(quote.totalMinor, quote.currency)}</dd></div></dl>
+<p class="p-order__status" role="status" aria-live="polite" data-selection-status>${esc(catalog.name)} · ${esc(tier.name)} · ${esc(quote.deliveryName)} · ${PERIOD_NAMES[quote.months]} · ${state.label}</p>
+<button class="g-btn g-btn--light" type="button" data-inquiry>${state.label} · 查看说明</button>
+<p class="p-order__note" data-selection-note>${esc(state.message)}</p>
+<a class="p-order__help" href="#faq">选购有疑问？查看常见问题 →</a>
+<noscript><p class="p-config__note">启用 JavaScript 后可更新右侧摘要并查看受理说明。当前摘要为默认方案；本页不提交订单。</p></noscript>
+</aside>
+</div></div></section>`;
+}
+
 function productPage(p) {
   const route = productRoute(p);
   const catalog = PRODUCTS[p.slug];
@@ -423,6 +435,7 @@ function productPage(p) {
   const crumbs = [['首页', ''], [catalog.name, route]];
   const refs = refList(catalog);
   const facts = PRODUCT_FACTS[p.slug];
+  const subscription = p.slug !== 'ip';
   const brief = [
     refs ? ['官方参考价', `${esc(refs)}<small>${esc(p.source[0])} · 仅供对照</small>`] : ['计价', '按账号地区、规格和供应核实后报价'],
     ['交付方式', catalog.deliveries ? Object.values(catalog.deliveries).map(d => esc(d.name)).join(' · ') : '报价前确认地区、规格与库存'],
@@ -447,30 +460,32 @@ ${crumbNav(route, crumbs)}
 <h1>${esc(p.h1)}</h1>
 <p class="g-lead">${esc(p.lead)}</p>
 <ul class="p-points">${p.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-<div class="p-actions"><a class="g-btn g-btn--light" href="#plans">查看三档价格</a><button class="g-btn g-btn--ghost" type="button" data-open-query>微信咨询</button></div>
+<div class="p-actions"><a class="g-btn g-btn--light" href="#plans">${subscription ? '选择订阅方案' : '查看三档价格'}</a>${subscription ? '<a class="g-btn g-btn--ghost" href="#steps">了解办理流程</a>' : '<button class="g-btn g-btn--ghost" type="button" data-open-query>微信咨询</button>'}</div>
 </div>
 <dl class="p-brief">${brief.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
 </div></div></div>
 <main id="main">
-<section class="p-pricing" id="plans" aria-labelledby="plans-title"><div class="g-shell">
+${subscription ? subscriptionPlans(p, catalog) : `<section class="p-pricing" id="plans" aria-labelledby="plans-title"><div class="g-shell">
 <header class="p-pricing__head"><p class="eyebrow">Pricing</p><h2 id="plans-title">${esc(catalog.name)} 三档价格</h2><p class="lead">${names.map(esc).join('、')} 三档，按档位、${catalog.deliveries ? '交付方式与' : ''}周期自由组合。</p></header>
 <div class="plans">
 ${tiers.map((key, i) => planCard(p, catalog, key, i)).join('\n')}
 </div>
-<p class="footnote"><span class="live-dot" aria-hidden="true"></span>普通商品不提供站内扫码付款；受理状态见各方案按钮。${esc(facts.note)}${facts.checked ? ` 官方资料核验：${facts.checked}。` : ''}${p.source ? `<a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${refs ? `官方参考价：${esc(refs)}` : esc(p.source[0])} ↗</a>` : ''}</p>
-</div></section>
+<p class="footnote"><span class="live-dot" aria-hidden="true"></span>普通商品不提供站内扫码付款；受理状态见各方案按钮。${esc(facts.note)}</p>
+</div></section>`}
 <div class="g-shell">
-<section class="g-section" aria-labelledby="steps-title"><div class="g-section__head"><h2 id="steps-title">怎么买、怎么验收</h2></div>
+${subscription ? `<p class="p-facts-note">${esc(facts.note)}${facts.checked ? ` 官方资料核验：${facts.checked}。` : ''}${p.source ? ` <a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${esc(p.source[0])} ↗</a>` : ''}</p>` : ''}
+<section class="g-section" id="steps" aria-labelledby="steps-title"><div class="g-section__head"><h2 id="steps-title">怎么买、怎么验收</h2></div>
 <ol class="p-steps">
 <li><h3>选档位与周期</h3><p>先阅读适用条件；所选周期仅表达意向，不代表已确认供应。</p></li>
 <li><h3>确认受理状态</h3><p>受理开放后咨询资格、报价、交付期限与售后规则。</p></li>
 <li><h3>取得书面确认</h3><p>按支持方登记的询价记录确认交易；未确认前不要付款。</p></li>
 <li class="p-steps__check"><h3>${catalog.deliveries ? '在账号里验收' : '确认线路'}</h3><p>${catalog.deliveries ? '核对套餐、有效期与用量。' : '与客服确认地区与线路，接入后测试连通。'}${verify ? ` <a href="${href(route, articleRoute(verify))}">验收方法 →</a>` : ''}</p></li>
 </ol></section>
-${feed}
+${subscription ? '' : feed}
 <section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">购买 ${esc(catalog.name)} 常见问题</h2><div class="g-faq">${p.faqs.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
+${subscription ? feed : ''}
 <nav class="g-section g-others" aria-labelledby="others-title"><h2 id="others-title">其他产品</h2><ul>${PRODUCT_PAGES.filter(o => o !== p).map(o => `<li data-tone="${o.tone}"><a href="${href(route, productRoute(o))}"><span class="g-mark" aria-hidden="true">${esc(PRODUCTS[o.slug].glyph)}</span>${esc(PRODUCTS[o.slug].name)}</a></li>`).join('')}</ul></nav>
-<aside class="g-cta" aria-label="咨询入口"><div><h2>还没想好选哪一档？</h2><p>把你的使用场景发给客服，帮你对照三档${catalog.deliveries ? '用量' : '线路'}后再付款。</p></div><button class="g-btn g-btn--light" type="button" data-open-query>微信咨询</button></aside>
+<aside class="g-cta" aria-label="咨询入口"><div><h2>还没想好选哪一档？</h2><p>${subscription ? '先对照使用场景与方案说明，再确认资格、报价和交付条件。' : '把你的使用场景发给客服，帮你对照三档线路后再付款。'}</p></div><button class="g-btn g-btn--light" type="button" data-open-query>${subscription ? '查看咨询与受理说明' : '微信咨询'}</button></aside>
 </div>
 </main>`;
   return layout({
@@ -576,7 +591,7 @@ ${crumbNav(route, crumbs)}
 </div></dialog>
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
-    route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body, buy: { href: '#submit', label: '提交认证协助' },
+    route, current: 'verify', title: VERIFY_TITLE, description: VERIFY_DESCRIPTION, body,
     head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=verify-support-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify.mjs')}?v=verify-support-20261018"></script>\n`,
     schema: [crumbList(crumbs), {
       '@type': 'WebPage', '@id': `${url(route)}#webpage`, url: url(route), name: 'Claude KYC认证', description: VERIFY_DESCRIPTION,
@@ -614,7 +629,6 @@ function verifyAdminPage() {
 <div class="toast" role="status" aria-live="polite" data-toast></div>`;
   return layout({
     route, current: 'verify', robots: 'noindex, nofollow', title: '审核后台 - GetToken', description: '审核验证订单管理，仅限管理员。', body,
-    buy: { href: href(route, VERIFY_ROUTE), label: '返回审核页' },
     head: `<link rel="stylesheet" href="${href(route, 'assets/gettoken/verify.css')}?v=verify-support-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/verify-admin.mjs')}?v=review-admin-20261018"></script>\n`,
     schema: [],
   });
@@ -633,7 +647,7 @@ function homepage() {
     return `          <li data-reveal><a class="news-card news-card--${t.tone}" href="./${articleRoute(a)}"><span class="news-card__meta"><b>${esc(t.name)}</b>${a.type === 'news' ? '<span>动态</span>' : ''}<time datetime="${a.updated}">${a.updated}</time></span><h3>${esc(a.title)}</h3><p>${esc(a.summary)}</p><span class="news-card__more">阅读全文 <span aria-hidden="true">→</span></span></a></li>`;
   }).join('\n');
   const withLatest = `${html.slice(0, start + LATEST_START.length)}\n        <ol class="news-grid">\n${items}\n        </ol>\n        ${html.slice(end)}`;
-  const header = siteHeader({ route: null, current: 'home', cta: { href: '#products', label: '立即选购' } });
+  const header = siteHeader({ route: null, current: 'home' });
   const homeTitle = html.match(/<title>([^<]+)<\/title>/)[1];
   const homeDescription = html.match(/<meta name="description" content="([^"]+)">/)[1];
   const seo = `<meta property="og:title" content="${homeTitle}">

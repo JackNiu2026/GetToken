@@ -4,7 +4,7 @@ import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney } from './catalog.mjs';
 import { $, $$, openPayment } from './shop.mjs';
 import { inquiryState } from './inquiry.mjs';
 
-// Choices remain native radio groups; the summary, the phone bar and the inquiry
+// Choices remain native radio groups (subscriptions have no period group); the summary, the phone bar and the inquiry
 // always use the same catalog quote.
 for (const root of $$('[data-subscription]')) {
   const product = root.dataset.subscription;
@@ -14,13 +14,15 @@ for (const root of $$('[data-subscription]')) {
   function renderSelection() {
     const quote = getQuote(product,
       $('[data-tier-choice]:checked', root).value,
-      Number($('[data-period]:checked', root).value),
+      Number($('[data-period]:checked', root)?.value ?? 1),
       $('[data-delivery]:checked', root)?.value ?? null);
     const state = inquiryState(product, quote.tier, quote.months);
-    const choice = [quote.deliveryName, PERIOD_NAMES[quote.months]].filter(Boolean).join(' · ');
+    // Subscriptions are billed by the month and have no period choice.
+    const term = $('[data-period]', root) ? PERIOD_NAMES[quote.months] : '按月';
+    const choice = [quote.deliveryName, term].filter(Boolean).join(' · ');
     put('name', `${catalog.name} · ${quote.tierName}`);
     put('delivery', quote.deliveryName);
-    put('period', PERIOD_NAMES[quote.months]);
+    put('period', term);
     put('monthly', formatMoney(quote.monthlyMinor, quote.currency));
     put('total', formatMoney(quote.totalMinor, quote.currency));
     put('status', `${quote.name} · ${quote.tierName} · ${choice} · ${state.label}`);

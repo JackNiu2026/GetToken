@@ -23,7 +23,8 @@ test('inquiry requires support and explicitly verified supply, not just a price 
   }
 });
 test('consultation summary preserves selection without implying an order', () => {
-  const summary = inquirySummary(getQuote('claude', 'pro', 12, 'topup'));
-  assert.match(summary, /Claude · Pro · 代充 · 意向周期 12 个月/);
+  const summary = inquirySummary(getQuote('claude', 'pro', 1, 'topup'));
+  assert.match(summary, /Claude · Pro · 代充 · 按月计费/, 'Subscriptions are billed by the month');
   assert.match(summary, /不是订单或成交报价/);
+  assert.match(inquirySummary(getQuote('ip', 'standard', 3)), /住宅 IP · 生产线路 · 线路规格待确认 · 意向周期 3 个月/);
 });

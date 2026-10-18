@@ -2,6 +2,8 @@
 // Every status and result shown here comes from the API; the page never decides an outcome.
 import { VERIFY, yuan, normalizeCode, codeProblem, ORDER_PATTERN, REFUND_NAMES } from './verify-rules.mjs?v=review-12h-20261018';
 import { initKeyGuide } from './verify-key-guide.mjs?v=key-guide-20261017';
+import { SITE } from './site.config.mjs?v=verify-support-20261018';
+import { qqSupportContact, orderSupportVisible } from './verify-support.mjs?v=verify-support-20261018';
 
 const API = new URL('../../api/verify/', import.meta.url);
 const STORE_KEY = 'gettoken-verify-orders';
@@ -186,6 +188,11 @@ const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke
 const CROSS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
 const queryLink = id => { const url = new URL('/verify/', location.origin); url.searchParams.set('order', id); url.hash = `access=${accessKeys.get(id) || ''}`; return url.href; };
 const ownRef = order => `<div class="v-ref"><div><span>受理编号 · <a href="${esc(queryLink(order.id))}" data-private-link>跨设备私密查询链接</a></span><b>${esc(order.id)}</b></div><button class="v-btn v-btn--ghost v-btn--sm" type="button" data-copy="${esc(order.id)}">复制受理编号</button></div>`;
+const supportContact = qqSupportContact(SITE.contact.qq);
+function supportView(order) {
+  if (!supportContact) return '';
+  return `<section class="v-order-support" data-order-support${orderSupportVisible(order, serverNow()) ? '' : ' hidden'} aria-labelledby="order-support-title"><h2 id="order-support-title">需要帮助？</h2><p class="v-hint">可向客服咨询处理进度或结果。联系时提供受理编号，请勿发送 Session Key 或私密查询链接。</p><a class="v-btn v-btn--light" href="${esc(supportContact.href)}" target="_blank" rel="noopener noreferrer" data-consult-support>咨询客服</a><p class="v-hint">QQ：<span class="v-mono">${esc(supportContact.qq)}</span> · 无法打开 QQ 时，可手动添加。</p></section>`;
+}
 const again = (label = '提交新的认证协助') => `<button class="v-btn v-btn--ghost" type="button" data-new>${label}</button>`;
 
 function unpaidView(order) {
@@ -205,6 +212,7 @@ function reviewingView(order) {
 ${track(2)}
 <div class="v-ring" data-ring><svg viewBox="0 0 232 232" aria-hidden="true"><defs><linearGradient id="v-ring-grad"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle class="v-ring__track" cx="116" cy="116" r="104"/><circle class="v-ring__bar" cx="116" cy="116" r="104" data-ring-bar/></svg><div class="v-ring__text"><b class="v-num" data-ring-time>--:--:--</b><span data-ring-label>预计剩余时间</span></div></div>
 <p class="v-sub v-center" style="margin-top:10px" data-ring-note>正在处理认证协助订单，本站结果录入后自动更新</p>
+${supportView(order)}
 <dl class="v-kv"><div><dt>Session Key</dt><dd class="v-mono">${esc(order.code)}</dd></div><div><dt>${order.external?.source === 'session' ? '提交时间' : order.external ? '核单时间' : '付款时间'}</dt><dd class="v-num">${esc(stamp(order.paidAt))}</dd></div><div><dt>预计出结果</dt><dd class="v-num">${esc(stamp(order.dueAt))} 前</dd></div></dl>
 ${ownRef(order)}
 <p class="v-note">关闭页面不影响本站处理。请保存私密查询链接；官方认证状态请在 Claude 账户内核对。</p>
@@ -261,7 +269,7 @@ function render(order) {
   const key = JSON.stringify([order.status, order.payment?.id, order.payment && order.payment.expiresAt <= serverNow(), order.refund?.status, order.reason, order.external, order.dueAt]);
   if (key !== shownKey || panel.hidden) {
     shownKey = key;
-    panel.innerHTML = VIEWS[order.status](order);
+    panel.innerHTML = VIEWS[order.status](order) + (order.status === 'reviewing' ? '' : supportView(order));
   }
 }
 
@@ -285,6 +293,7 @@ function showOrder(order, { scroll = false } = {}) {
 function closeOrder() {
   lookupVersion++;
   clearTimeout(pollTimer);
+  clearTimeout(tickTimer);
   current = null;
   shownKey = '';
   panel.hidden = true;
@@ -302,6 +311,8 @@ function tick() {
   clearTimeout(tickTimer);
   if (!current) return;
   const now = serverNow();
+  const support = $('[data-order-support]', panel);
+  if (support) support.hidden = !orderSupportVisible(current, now);
   if (current.status === 'reviewing') {
     const total = current.dueAt - current.paidAt;
     const left = current.dueAt - now;
@@ -315,7 +326,7 @@ function tick() {
       ring.classList.toggle('v-ring--late', late);
       $('[data-ring-time]', panel).textContent = clock(left);
       $('[data-ring-label]', panel).textContent = late ? '比预计稍久' : '预计剩余时间';
-      $('[data-ring-note]', panel).textContent = late ? '仍在处理本站订单，结果录入后本页自动更新' : '正在处理认证协助订单，本站结果录入后自动更新';
+      $('[data-ring-note]', panel).textContent = late ? '已到预计处理时间，仍在处理中；可点击下方“咨询客服”了解进度' : '正在处理认证协助订单，本站结果录入后自动更新';
     }
   }
   tickTimer = setTimeout(tick, 1000);
@@ -484,16 +495,8 @@ async function start() {
   }
   const fromUrl = new URL(location.href).searchParams.get('order');
   if (fromUrl) openOrder(fromUrl, { scroll: true });
-  else {
-    // Reopen the latest unfinished order from this browser.
-    const latest = recentOrders()[0];
-    if (latest && Date.now() - latest.at < 3 * 86400_000) {
-      try {
-        const order = await api(`orders/${encodeURIComponent(latest.id)}`);
-        if (order.external?.source === 'session' && order.status === 'reviewing') showOrder(order);
-      } catch { /* the order list still offers it */ }
-    }
-  }
+  // A normal /verify/ visit always starts on the form. Recent records remain
+  // available through explicit lookup; only a query URL opens an order on load.
   loadFeed();
   setInterval(loadFeed, 60000);
 }

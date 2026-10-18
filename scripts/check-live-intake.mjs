@@ -50,3 +50,15 @@ assert.equal(adminModule.status, 200, 'Admin script must be available');
 const adminOrders = await curlRequest(new URL('/api/verify/admin/orders', SITE.origin).href);
 assert.equal(adminOrders.status, 401, 'Submissions must require admin authentication');
 console.log('Production admin verified: login page and script available, submissions protected; expected review window is 12 hours. No admin login or data access performed.');
+
+
+const reviewScript = await curlRequest(new URL('/assets/gettoken/verify.mjs?v=verify-support-20261018', SITE.origin).href);
+assert.equal(reviewScript.status, 200);
+assert.match(await reviewScript.text(), /data-consult-support/);
+const supportScript = await curlRequest(new URL('/assets/gettoken/verify-support.mjs?v=verify-support-20261018', SITE.origin).href);
+assert.equal(supportScript.status, 200);
+assert.match(await supportScript.text(), /orderSupportVisible/);
+const supportSettings = await curlRequest(new URL('/assets/gettoken/site.config.mjs?v=verify-support-20261018', SITE.origin).href);
+assert.equal(supportSettings.status, 200);
+assert.match(await supportSettings.text(), /qq: '40369953'/);
+console.log('Production review support verified: updated navigation script, deadline support module and configured public QQ contact delivered. Read-only checks; no QQ messages or order lookups.');

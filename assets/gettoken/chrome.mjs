@@ -1,9 +1,8 @@
 // Shared header behaviour on generated pages (products, /verify/, /guides/): the phone menu, the
-// product menu and the scrolled state. The homepage does the same in home.mjs.
+// scrolled state. The homepage does the same in home.mjs.
 const header = document.querySelector('.site-header');
 const toggle = header?.querySelector('.menu-toggle');
 const menu = document.getElementById('mobile-nav');
-const products = header?.querySelector('.nav-products');
 
 function closeMenu() {
   if (!menu || menu.hidden) return;
@@ -20,15 +19,8 @@ if (header && toggle && menu) {
     toggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
   });
   menu.addEventListener('click', event => { if (event.target.closest('a, button')) closeMenu(); });
-  document.addEventListener('click', event => {
-    if (products && !products.contains(event.target)) products.open = false;
-  });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
-    if (products?.open) {
-      products.open = false;
-      products.querySelector('summary').focus();
-    }
     if (!menu.hidden) {
       closeMenu();
       toggle.focus();

@@ -1,7 +1,7 @@
 import { $, $$, onBeforeDialog, openDialog } from './shop.mjs';
 import {
   onScroll, initSplit, initReveal, initCounters, initChrome,
-  initConsoleTilt, initSteps, initScrollSpy, reduceMotion,
+  initConsoleTilt, initSteps, reduceMotion,
 } from './motion.mjs';
 import { initEarth } from './scenes.mjs';
 
@@ -10,7 +10,6 @@ import { initEarth } from './scenes.mjs';
 const header = $('.site-header');
 const menuToggle = $('.menu-toggle');
 const mobileNav = $('#mobile-nav');
-const productNav = $('.nav-products');
 const drawerViewport = window.matchMedia('(max-width: 960px)');
 const mobileViewport = window.matchMedia('(max-width: 640px)');
 
@@ -27,16 +26,8 @@ menuToggle.addEventListener('click', () => {
   menuToggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
 });
 $$('a', mobileNav).forEach(link => link.addEventListener('click', closeMenu));
-$$('a', productNav).forEach(link => link.addEventListener('click', () => { productNav.open = false; }));
-document.addEventListener('click', event => {
-  if (!productNav.contains(event.target)) productNav.open = false;
-});
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
-  if (productNav.open) {
-    productNav.open = false;
-    $('summary', productNav).focus();
-  }
   if (!mobileNav.hidden) {
     closeMenu();
     menuToggle.focus();
@@ -44,16 +35,13 @@ document.addEventListener('keydown', event => {
 });
 drawerViewport.addEventListener('change', () => { if (!drawerViewport.matches) closeMenu(); });
 
-onBeforeDialog(() => {
-  closeMenu();
-  productNav.open = false;
-});
+onBeforeDialog(closeMenu);
 
 // Other pages link 联系客服 to /#contact; open the customer-service dialog when they land here.
 function openContactFromHash() {
   if (location.hash !== '#contact') return;
   const dialog = $('#query-dialog');
-  if (dialog && !dialog.open) openDialog(dialog, $('.header-actions [data-open-query]'));
+  if (dialog && !dialog.open) openDialog(dialog, $('[data-open-query]'));
   history.replaceState(null, '', location.pathname + location.search);
 }
 window.addEventListener('hashchange', openContactFromHash);
@@ -150,7 +138,6 @@ initChrome({ bar: $('.scroll-progress'), header });
 initConsole($('[data-console]'));
 initConsoleTilt($('[data-console]'), $('[data-stage]'));
 initSteps($('[data-steps]'));
-initScrollSpy($$('.desktop-nav > a, .nav-products > summary'));
 initBuyBar();
 
 const horizon = $('[data-horizon]');

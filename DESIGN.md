@@ -194,11 +194,11 @@ Feature, product, tier and scene cards share the original layered dark fill, fin
 
 ### Pricing cards and radio choices
 
-Pricing lives on the product pages (`/codex/`, `/claude/` …), not the homepage. Each page shows three cards copied from the original homepage pricing module: the first tier uses the blue scheme, the second is featured with the violet-pink gradient border and 推荐 flag, the third uses the green scheme. Choices are native radio inputs over styled labels: the delivery choice (代充 / 独立账号) gains a tier-colored border and soft fill when checked; the checked period uses the solid tier accent. Keyboard focus outlines the visible sibling label. Guide pages contain no form controls.
+Pricing lives on the product pages, not the homepage. The four AI subscription pages use a two-column configurator: native package radio rows in the existing blue/violet/green tier palette, followed by delivery and intended period; a sticky summary shows the same catalog quote and availability. At 720px and below, choices and summary form one column. New package and summary panels use 16px radii and a fine border. Residential IP retains its original three pricing cards. Unpublished prices display 待报价; an inquiry does not create an order or enable payment.
 
 ### Navigation and contents
 
-The homepage keeps its original desktop dropdown (now linking to the five product pages), mobile menu and glass header. Product pages use the guide header with product links and an 选购方案 action. The guide header is sticky with a translucent blurred fill; the current topic uses a faint filled pill. Article contents is a sticky list with a left rule whose hover marker takes the topic tone.
+Every page shares the sticky glass header with exactly eight links: 首页、Claude订阅、Codex订阅、Gemini订阅、Grok订阅、KYC审核、住宅IP、AI新闻. AI新闻 points to the existing homepage #news section. Links have a 44px minimum height; at 960px and below, a scrollable menu exposes the same ordered links. Current product, homepage and KYC routes use a subtle filled active state. Article contents remains a sticky list in the established topic tone.
 
 ### Lists, disclosure and metadata
 

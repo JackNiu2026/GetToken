@@ -7,7 +7,7 @@ export const PRODUCT_PAGES = Object.freeze([
   {
     slug: 'codex',
     navHint: '开发者的下一份生产力',
-    updated: '2026-10-16',
+    updated: '2026-10-18',
     tone: 'blue',
     topics: ['codex'],
     title: 'Codex 代充与独立账号：ChatGPT Plus / Pro 三档价格 - GetToken',
@@ -27,7 +27,7 @@ export const PRODUCT_PAGES = Object.freeze([
   {
     slug: 'claude',
     navHint: '把灵感展开更多',
-    updated: '2026-10-16',
+    updated: '2026-10-18',
     tone: 'violet',
     topics: ['claude', 'claude-code'],
     title: 'Claude 代充与独立账号：Pro / Max 三档价格，含 Claude Code - GetToken',
@@ -47,7 +47,7 @@ export const PRODUCT_PAGES = Object.freeze([
   {
     slug: 'gemini',
     navHint: 'Google AI 会员一并开通',
-    updated: '2026-10-16',
+    updated: '2026-10-18',
     tone: 'cyan',
     topics: ['gemini'],
     title: 'Gemini 代充与独立账号：Google AI Plus / Pro / Ultra 三档价格 - GetToken',
@@ -67,7 +67,7 @@ export const PRODUCT_PAGES = Object.freeze([
   {
     slug: 'grok',
     navHint: '实时信息与长对话',
-    updated: '2026-10-16',
+    updated: '2026-10-18',
     tone: 'silver',
     topics: ['grok'],
     title: 'Grok 代充与独立账号：方案核对与受理状态 - GetToken',

@@ -136,30 +136,49 @@ test('homepage keeps its brand sections, sends buyers to product pages and shows
   assert.ok(html.includes('href="./guides/"'));
   const latest = [...html.matchAll(/class="news-card news-card--[a-z]+" href="\.\/guides\/([a-z0-9-]+)\/"/g)].map(m => m[1]);
   assert.deepEqual(latest, ARTICLES.slice(0, 3).map(a => a.slug), 'Latest block lists the three newest articles');
-  assert.match(html, /<script type="module" src="\.\/assets\/gettoken\/home\.mjs"><\/script>/);
+  assert.match(html, /<script type="module" src="\.\/assets\/gettoken\/home\.mjs\?v=storefront-20261018"><\/script>/);
 });
 
-test('product pages render three working price cards from the catalog', async () => {
+test('product pages expose catalog choices, factual availability and the existing IP cards', async () => {
   assert.deepEqual(PRODUCT_PAGES.map(p => p.slug), Object.keys(PRODUCTS));
   const nginx = await readFile(join(ROOT, 'scripts/nginx-seo-locations.conf'), 'utf8');
   for (const p of PRODUCT_PAGES) {
     const catalog = PRODUCTS[p.slug];
     const html = await htmlFor(`${p.slug}/`);
     assert.ok(nginx.includes(`|${p.slug}`) || nginx.includes(`(?:guides|${p.slug}`), `Nginx aliases cover /${p.slug}/`);
-    const cards = [...html.matchAll(/<article class="plan plan--([abc])( is-featured)?" id="plan-([a-z0-9]+)" data-plan data-product="([a-z]+)" data-tier="([a-z0-9]+)">/g)];
-    assert.deepEqual(cards.map(m => m[1]), ['a', 'b', 'c'], p.slug);
-    assert.deepEqual(cards.map(m => Boolean(m[2])), [false, true, false], 'The middle tier is featured');
-    assert.deepEqual(cards.map(m => m[5]), Object.keys(catalog.tiers));
-    for (const [key, tier] of Object.entries(catalog.tiers)) {
-      assert.ok(html.includes(`${tier.name} <em>/ ${tier.hint}</em>`), `${p.slug} ${key}`);
-      const quote = getQuote(p.slug, key, 3);
-      assert.ok(html.includes(`<strong data-price>${formatMoney(quote.monthlyMinor, quote.currency)}</strong>`));
-      assert.ok(html.includes(`name="${p.slug}-${key}-period" value="3" data-period checked`), 'Quarterly is preselected');
-      assert.equal(html.includes(`name="${p.slug}-${key}-delivery"`), Boolean(catalog.deliveries), `${p.slug} delivery choice`);
+    if (p.slug === 'ip') {
+      const cards = [...html.matchAll(/<article class="plan plan--([abc])( is-featured)?" id="plan-([a-z0-9]+)" data-plan data-product="([a-z]+)" data-tier="([a-z0-9]+)">/g)];
+      assert.deepEqual(cards.map(m => m[1]), ['a', 'b', 'c'], p.slug);
+      assert.deepEqual(cards.map(m => Boolean(m[2])), [false, true, false], 'The middle tier is featured');
+      assert.deepEqual(cards.map(m => m[5]), Object.keys(catalog.tiers));
+      for (const [key, tier] of Object.entries(catalog.tiers)) {
+        assert.ok(html.includes(`${tier.name} <em>/ ${tier.hint}</em>`), `${p.slug} ${key}`);
+        const quote = getQuote(p.slug, key, 3);
+        assert.ok(html.includes(`<strong data-price>${formatMoney(quote.monthlyMinor, quote.currency)}</strong>`));
+        assert.ok(html.includes(`name="${p.slug}-${key}-period" value="3" data-period checked`), 'Quarterly is preselected');
+        assert.equal(html.includes(`name="${p.slug}-${key}-delivery"`), Boolean(catalog.deliveries), `${p.slug} delivery choice`);
+      }
+      assert.equal([...html.matchAll(/data-buy>/g)].length, 3);
+    } else {
+      assert.ok(html.includes(`data-subscription="${p.slug}"`));
+      const choices = [...html.matchAll(/name="[a-z]+-tier" value="([a-z0-9]+)" data-tier-choice( checked)?/g)];
+      assert.deepEqual(choices.map(m => m[1]), Object.keys(catalog.tiers));
+      assert.deepEqual(choices.map(m => Boolean(m[2])), [true, false, false]);
+      for (const tier of Object.values(catalog.tiers)) {
+        assert.ok(html.includes(tier.name) && html.includes(tier.desc));
+        for (const feature of tier.features) assert.ok(html.includes(feature));
+      }
+      assert.ok(html.includes(`name="${p.slug}-period" value="3" data-period checked`));
+      assert.ok(html.includes(`name="${p.slug}-delivery" value="topup" data-delivery checked`));
+      assert.equal([...html.matchAll(/data-inquiry>/g)].length, 1);
+      assert.ok(html.includes('data-selection-total>待报价'));
+      assert.ok(html.includes('暂未受理 · 查看说明'));
+      assert.ok(html.indexOf('id="plans"') < html.indexOf('id="steps"'));
+      assert.ok(html.indexOf('id="steps"') < html.indexOf('id="faq"'));
+      assert.ok(!html.includes('data-plan data-product='));
     }
-    assert.equal([...html.matchAll(/data-buy>/g)].length, 3);
     for (const id of ['pay-dialog', 'query-dialog', 'plans', 'faq']) assert.ok(html.includes(`id="${id}"`), `${p.slug} ${id}`);
-    assert.ok(html.includes('<script type="module" src="../assets/gettoken/product.mjs"></script>'));
+    assert.ok(html.includes('<script type="module" src="../assets/gettoken/product.mjs?v=storefront-20261018"></script>'));
     assert.ok(html.includes('data-open-query'), 'Consultation opens the contact dialog');
     for (const [q, a] of p.faqs) assert.ok(html.includes(q) && html.includes(a));
     if (p.source) assert.ok(html.includes(`href="${p.source[1]}"`), 'Official prices cite their source');
@@ -179,11 +198,13 @@ test('every page shares the homepage header and footer, styled by the same rules
   const labels = html => [...html.match(/<nav class="desktop-nav"[\s\S]*?<\/nav>/)[0].matchAll(/<(?:a|summary)\b[^>]*>([\s\S]*?)<\/(?:a|summary)>/g)]
     .map(m => m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ''));
   const expected = labels(await htmlFor(''));
-  assert.equal(expected.length, 10, 'product menu (5) + menu label + 4 links');
+  assert.deepEqual(expected, ['首页', 'Claude订阅', 'Codex订阅', 'Gemini订阅', 'Grok订阅', 'KYC审核', '住宅IP', 'AI新闻']);
   for (const route of [...ROUTES, 'verify/admin/']) {
     const html = await readFile(join(ROOT, route, 'index.html'), 'utf8');
     assert.deepEqual(labels(html), expected, `Header differs on /${route}`);
     assert.equal((html.match(/<footer class="site-footer"/g) || []).length, 1, `Footer on /${route}`);
     assert.ok(html.includes('id="mobile-nav"'), `Phone menu on /${route}`);
+    const mobile = html.match(/<nav class="mobile-nav"[\s\S]*?<\/nav>/)[0];
+    assert.deepEqual([...mobile.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(m => m[1]), expected);
   }
 });

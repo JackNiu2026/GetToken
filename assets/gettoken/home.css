@@ -111,29 +111,16 @@ img, svg, canvas { display: block; }
 .brand { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .brand-logo { width: 28px; height: 28px; }
 .brand-word { font-size: 18px; font-weight: 700; letter-spacing: -.03em; }
-.desktop-nav { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; }
-.desktop-nav > a, .nav-products > summary { display: inline-flex; align-items: center; gap: 4px; min-height: 34px; padding: 0 12px; border-radius: 8px; color: var(--muted); font-size: 13px; transition: color .2s, background .2s; cursor: pointer; }
-.desktop-nav > a:hover, .nav-products > summary:hover, .nav-products[open] > summary { color: var(--ink); background: rgba(255, 255, 255, .05); }
-.desktop-nav > a.is-current, .nav-products > summary.is-current { color: var(--ink); background: rgba(255, 255, 255, .06); box-shadow: var(--glass-highlight); }
-.nav-products { position: relative; }
-.nav-products > summary { list-style: none; }
-.nav-products > summary::-webkit-details-marker { display: none; }
-.nav-products > summary svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.5; transition: transform .3s; }
-.nav-products[open] > summary svg { transform: rotate(180deg); }
-.nav-dropdown { position: absolute; left: 0; top: calc(100% + 8px); width: 248px; padding: 6px; border: 1px solid var(--glass-border); border-radius: 14px; background: rgba(17, 17, 26, .97); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: var(--glass-highlight), 0 24px 50px -16px rgba(0, 0, 0, .8); animation: drop .3s var(--ease); }
-@keyframes drop { from { opacity: 0; transform: translateY(-4px); } }
-.nav-dropdown a { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; transition: background .2s; }
-.nav-dropdown a:hover { background: rgba(255, 255, 255, .04); }
-.nav-dropdown strong { display: block; font-size: 13px; font-weight: 600; }
-.nav-dropdown small { display: block; font-size: 12px; color: var(--muted); }
-.header-actions { display: flex; align-items: center; gap: 8px; }
+.desktop-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.desktop-nav > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; color: var(--muted); font-size: 14px; white-space: nowrap; transition: color .2s, background .2s; }
+.desktop-nav > a:hover { color: var(--ink); background: rgba(255, 255, 255, .05); }
+.desktop-nav > a.is-current { color: var(--ink); background: rgba(255, 255, 255, .06); box-shadow: var(--glass-highlight); }
+.site-header a:focus-visible, .menu-toggle:focus-visible { outline: 2px solid var(--blue-2); outline-offset: 3px; }
 .menu-toggle { display: none; width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: transparent; }
 .menu-toggle span { display: block; width: 16px; height: 1.5px; margin: 4px auto; background: var(--ink); transition: transform .3s var(--ease); }
 .menu-toggle[aria-expanded="true"] span:first-child { transform: translateY(2.75px) rotate(45deg); }
 .menu-toggle[aria-expanded="true"] span:last-child { transform: translateY(-2.75px) rotate(-45deg); }
 .mobile-nav { display: none; }
-.nav-soon { margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(251, 191, 36, .13); color: #fbbf24; font-size: 11px; font-style: normal; font-weight: 600; line-height: 1.6; }
-.nav-dropdown a[aria-current] { background: rgba(255, 255, 255, .06); }
 
 /* ---------- Hero ---------- */
 /* The CSS glow is the fallback when WebGL is unavailable; the canvas paints over it. */
@@ -329,15 +316,16 @@ h2 { font-size: clamp(24px, 2.6vw, 34px); line-height: 1.3; font-weight: 700; le
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
-  .desktop-nav > a, .nav-products > summary { padding: 0 9px; }
+  .desktop-nav > a { padding: 0 8px; }
 }
 
 @media (max-width: 960px) {
   :root { --header-h: 58px; }
-  .desktop-nav, .header-actions > .ghost-button { display: none; }
+  .desktop-nav { display: none; }
   .menu-toggle { display: block; }
-  .mobile-nav { display: flex; flex-direction: column; padding: 4px var(--gutter) 16px; border-top: 1px solid var(--line); background: rgba(11, 11, 16, .97); }
+  .mobile-nav { display: flex; flex-direction: column; max-height: calc(100dvh - var(--header-h)); overflow-y: auto; overscroll-behavior: contain; padding: 4px var(--gutter) 16px; border-top: 1px solid var(--line); background: rgba(11, 11, 16, .97); }
   .mobile-nav a, .mobile-nav button { display: flex; align-items: center; min-height: 48px; padding: 0 2px; border: 0; border-bottom: 1px solid var(--line); background: none; font-size: 15px; color: var(--ink-2); text-align: left; }
+  .mobile-nav a[aria-current="page"] { color: var(--ink); background: rgba(255, 255, 255, .06); }
   .feature-grid, .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .scene-grid { grid-template-columns: 1fr; }
   .footer-main { flex-direction: column; }

@@ -151,7 +151,7 @@ test('product pages share one plan picker with factual availability', async () =
     assert.deepEqual(choices.map(m => m[1]), Object.keys(catalog.tiers));
     assert.deepEqual(choices.map(m => Boolean(m[2])), [true, false, false]);
     for (const tier of Object.values(catalog.tiers)) {
-      assert.ok(html.includes(tier.name) && html.includes(tier.desc));
+      assert.ok(html.replace(/<\/?small>/g, '').includes(tier.name) && html.includes(tier.desc));
       for (const feature of tier.features) assert.ok(html.includes(feature));
     }
     // Subscriptions are billed by the month: no period choice. 住宅 IP keeps its intended period.

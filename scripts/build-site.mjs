@@ -409,7 +409,7 @@ function planPicker(p, catalog) {
 <header class="p-buy__head"><h2 id="plans-title">${lines ? `选择${esc(catalog.name)} 线路` : `选择 ${esc(catalog.name)} 方案`}</h2><p>两步选好方案${lines ? '' : ' · 按月计费'} · 不需要填写账号资料</p></header>
 <fieldset class="p-step" id="plan-options">${legend(lines ? '选择线路' : '选择套餐')}<div class="p-tiers">${tiers.map(key => {
     const item = catalog.tiers[key];
-    return `<label class="p-tier"><input type="radio" name="${p.slug}-tier" value="${key}" data-tier-choice${key === selected ? ' checked' : ''}><span class="p-tier__body"><strong class="p-tier__name">${esc(item.name)}</strong><span class="p-tier__hint">${esc(item.hint)}<span class="p-tier__badge">${esc(item.badge)}</span></span><span class="p-tier__price">${monthly(item.monthlyMinor, catalog.currency)}${item.ref ? `<small>官方参考 ${esc(item.ref)}</small>` : ''}</span><span class="p-tier__desc">${esc(item.desc)}</span><span class="p-tier__features">${item.features.map(f => `<span>${CHECK}${esc(f)}</span>`).join('')}</span></span><span class="p-tier__tick" aria-hidden="true">${CHECK}</span></label>`;
+    return `<label class="p-tier"><input type="radio" name="${p.slug}-tier" value="${key}" data-tier-choice${key === selected ? ' checked' : ''}><span class="p-tier__body"><strong class="p-tier__name">${esc(item.name).replace(/（[^）]+）$/, '<small>$&</small>')}</strong><span class="p-tier__hint">${esc(item.hint)}<span class="p-tier__badge">${esc(item.badge)}</span></span><span class="p-tier__price">${monthly(item.monthlyMinor, catalog.currency)}${item.ref ? `<small>官方参考 ${esc(item.ref)}</small>` : ''}</span><span class="p-tier__desc">${esc(item.desc)}</span><span class="p-tier__features">${item.features.map(f => `<span>${CHECK}${esc(f)}</span>`).join('')}</span></span><span class="p-tier__tick" aria-hidden="true">${CHECK}</span></label>`;
   }).join('')}</div></fieldset>
 ${catalog.deliveries ? `<fieldset class="p-step choice choice--two">${legend('选择交付方式')}<div class="choice__options">${options('delivery', Object.entries(catalog.deliveries).map(([key, d]) => [key, `<b>${esc(d.name)}</b><small>${esc(d.hint)}</small>`]), quote.delivery, 'data-delivery')}</div></fieldset>
 ` : ''}${lines ? `<fieldset class="p-step choice choice--period">${legend('选择意向周期')}<div class="choice__options">${options('period', Object.entries(PERIOD_NAMES), String(quote.months), 'data-period')}</div></fieldset>
@@ -420,7 +420,6 @@ ${catalog.deliveries ? `<fieldset class="p-step choice choice--two">${legend('�
 <p class="p-checkout__state" data-state-badge data-state="${state.state}">${state.label}</p>
 <h3 id="selection-title">已选方案</h3>
 <p class="p-checkout__name" data-selection-name>${esc(catalog.name)} · ${esc(tier.name)}</p>
-<ul class="p-checkout__features" data-selection-features>${tier.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
 <dl class="p-checkout__details">${catalog.deliveries ? `<div><dt>交付方式</dt><dd data-selection-delivery>${esc(quote.deliveryName)}</dd></div>` : ''}<div><dt>${lines ? '意向周期' : '计费方式'}</dt><dd data-selection-period>${term}</dd></div>${priced(catalog) ? `<div><dt>月度报价</dt><dd data-selection-monthly>${formatMoney(quote.monthlyMinor, quote.currency)}</dd></div>` : ''}<div class="p-checkout__total${priced(catalog) ? '' : ' is-pending'}"><dt>${priced(catalog) ? '合计' : '报价'}</dt><dd data-selection-total>${formatMoney(quote.totalMinor, quote.currency)}</dd></div></dl>
 <p class="p-sr" role="status" aria-live="polite" data-selection-status data-state="${state.state}">${esc(catalog.name)} · ${esc(tier.name)}${quote.deliveryName ? ` · ${esc(quote.deliveryName)}` : ''} · ${term} · ${state.label}</p>
 <button class="g-btn ${button}" type="button" data-inquiry>${state.label} · 查看说明</button>
@@ -442,7 +441,7 @@ function productPage(p) {
   const topic = p.topics.length ? TOPICS.find(t => t.slug === p.topics[0]) : null;
   const verify = guides.find(a => a.slug.endsWith('-verification'));
   const modified = productModified(p);
-  const crumbs = [['首页', ''], [catalog.name, route]];
+  const crumbs = [['首页', ''], [catalog.deliveries ? `${catalog.name}订阅` : '住宅IP', route]];
   const body = `<div class="p-hero"><div class="g-shell">
 ${crumbNav(route, crumbs)}
 <div class="p-hero__head">
@@ -462,7 +461,7 @@ ${planPicker(p, catalog)}
 <li><h3>取得书面确认</h3><p>按支持方登记的询价记录确认交易；未确认前不要付款。</p></li>
 <li class="p-steps__check"><h3>${catalog.deliveries ? '在账号里验收' : '确认线路'}</h3><p>${catalog.deliveries ? '核对套餐、有效期与用量。' : '与客服确认地区与线路，接入后测试连通。'}${verify ? ` <a href="${href(route, articleRoute(verify))}">验收方法 →</a>` : ''}</p></li>
 </ol></section>
-<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">${esc(catalog.name)} 常见问题</h2><div><div class="g-faq">${p.faqs.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>${topic ? `<a class="p-more" href="${href(route, topicRoute(topic))}">更多 ${esc(topic.name)} 问题与动态 →</a>` : ''}</div></section>
+<section class="g-section p-faq" id="faq" aria-labelledby="faq-title"><div class="g-section__head"><h2 id="faq-title">${esc(catalog.name)} 常见问题</h2></div><div class="g-faq">${p.faqs.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>${topic ? `<a class="p-more" href="${href(route, topicRoute(topic))}">更多 ${esc(topic.name)} 问题与动态 →</a>` : ''}</section>
 </div>
 </main>`;
   return layout({

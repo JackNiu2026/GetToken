@@ -1,7 +1,6 @@
 import { $, $$, onBeforeDialog, openDialog } from './shop.mjs';
 import {
-  onScroll, initSplit, initReveal, initCounters, initChrome,
-  initConsoleTilt, initSteps, reduceMotion,
+  onScroll, initSplit, initReveal, initCounters, initChrome, initSteps,
 } from './motion.mjs';
 import { initEarth } from './scenes.mjs';
 
@@ -47,70 +46,6 @@ function openContactFromHash() {
 window.addEventListener('hashchange', openContactFromHash);
 openContactFromHash();
 
-/* ---------- Hero product console ---------- */
-function initConsole(root) {
-  if (!root) return;
-  const tabs = $$('[role="tab"]', root);
-  const panels = tabs.map(tab => document.getElementById(tab.getAttribute('aria-controls')));
-  const cycle = 6000;
-  root.style.setProperty('--cycle', `${cycle}ms`);
-  let index = 0;
-  let timer = 0;
-  let typeTimers = [];
-  let inView = true;
-
-  function type(panel) {
-    typeTimers.forEach(clearTimeout);
-    typeTimers = [];
-    const typer = $('[data-typer]', panel);
-    if (!typer || reduceMotion.matches) return;
-    const items = Array.from(typer.children);
-    typer.classList.add('is-typing');
-    items.forEach(item => item.classList.remove('is-typed'));
-    items.forEach((item, i) => {
-      typeTimers.push(setTimeout(() => item.classList.add('is-typed'), 250 + i * 420));
-    });
-  }
-
-  function select(i, { focus = false } = {}) {
-    index = (i + tabs.length) % tabs.length;
-    tabs.forEach((tab, k) => {
-      const on = k === index;
-      tab.setAttribute('aria-selected', String(on));
-      tab.tabIndex = on ? 0 : -1;
-      panels[k].hidden = !on;
-      panels[k].classList.toggle('is-active', on);
-    });
-    if (focus) tabs[index].focus();
-    type(panels[index]);
-    schedule();
-  }
-
-  function schedule() {
-    clearTimeout(timer);
-    if (reduceMotion.matches || root.hasAttribute('data-paused') || !inView) return;
-    timer = setTimeout(() => select(index + 1), cycle);
-  }
-
-  const pause = () => { root.setAttribute('data-paused', ''); clearTimeout(timer); };
-  const resume = () => { root.removeAttribute('data-paused'); select(index); };
-  tabs.forEach((tab, i) => tab.addEventListener('click', () => select(i)));
-  root.addEventListener('keydown', event => {
-    if (!event.target.matches('[role="tab"]')) return;
-    if (event.key === 'ArrowRight') select(index + 1, { focus: true });
-    if (event.key === 'ArrowLeft') select(index - 1, { focus: true });
-  });
-  root.addEventListener('pointerenter', pause);
-  root.addEventListener('pointerleave', resume);
-  root.addEventListener('focusin', pause);
-  root.addEventListener('focusout', event => { if (!root.contains(event.relatedTarget)) resume(); });
-  new IntersectionObserver(([entry]) => {
-    inView = entry.isIntersecting;
-    schedule();
-  }).observe(root);
-  select(0);
-}
-
 /* ---------- Mobile buy bar ---------- */
 function initBuyBar() {
   const bar = $('#buy-bar');
@@ -135,8 +70,6 @@ initSplit();
 initReveal();
 initCounters();
 initChrome({ bar: $('.scroll-progress'), header });
-initConsole($('[data-console]'));
-initConsoleTilt($('[data-console]'), $('[data-stage]'));
 initSteps($('[data-steps]'));
 initBuyBar();
 

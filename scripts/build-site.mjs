@@ -383,107 +383,86 @@ const PAY_DIALOGS = `<dialog class="sheet" id="pay-dialog" aria-labelledby="pay-
 `;
 
 const priced = catalog => Object.values(catalog.tiers).some(t => Number.isInteger(t.monthlyMinor));
-const refList = catalog => Object.values(catalog.tiers).filter(t => t.ref).map(t => `${t.name} ${t.ref}`);
 const monthly = (minor, currency) => (minor === null ? '<span class="is-pending">待报价</span>' : `${formatMoney(minor, currency)}<small> / 月</small>`);
+const CHECK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 8.4 2.6 2.6L12 5.4"/></svg>';
 
-// One configurator for every product page: tier, delivery (subscriptions only) and intended period
-// on the left, the selected plan on the right; on phones a bar keeps the selection in view.
+// The purchase panel: one framed block holding every choice (tier and delivery for subscriptions,
+// which are billed by the month; tier and intended period for 住宅 IP) and the checkout column, so
+// buying never blends into the reading content.
+// On phones a bar keeps the selection in view while the checkout column is off screen.
 function planPicker(p, catalog) {
   const tiers = Object.keys(catalog.tiers);
   const selected = tiers[0];
   const tier = catalog.tiers[selected];
-  const quote = getQuote(p.slug, selected, 3, catalog.deliveries ? Object.keys(catalog.deliveries)[0] : null);
-  const state = inquiryState(p.slug, selected, quote.months);
   const lines = !catalog.deliveries;
+  const quote = getQuote(p.slug, selected, lines ? 3 : 1, lines ? null : Object.keys(catalog.deliveries)[0]);
+  const state = inquiryState(p.slug, selected, quote.months);
+  const facts = PRODUCT_FACTS[p.slug];
+  const term = lines ? PERIOD_NAMES[quote.months] : '按月';
   const options = (name, values, checked, attr) => values.map(([value, label]) => `<label><input type="radio" name="${p.slug}-${name}" value="${value}" ${attr}${value === checked ? ' checked' : ''}><span>${label}</span></label>`).join('');
   let step = 1;
+  const legend = text => `<legend><span class="p-step__n" aria-hidden="true">${step++}</span>${text}</legend>`;
   const button = state.state === 'inquiry' ? 'g-btn--light' : 'g-btn--ghost';
-  return `<section class="p-pricing p-config" id="plans" aria-labelledby="plans-title" data-subscription="${p.slug}"><div class="g-shell">
-<header class="g-section__head"><div><h2 id="plans-title">${lines ? `选择${esc(catalog.name)}线路` : `选择你的 ${esc(catalog.name)} 方案`}</h2><p>${lines ? '先选线路档位，再确认意向周期。' : '先选套餐，再确认交付方式与意向周期。'}</p></div><a class="p-more" href="#steps">查看办理流程 →</a></header>
-<div class="p-config__grid">
-<div class="p-config__choices" data-choices>
-<fieldset class="p-packages" id="plan-options"><legend>${step++}. 选择${lines ? '线路' : '套餐'}</legend><div class="p-packages__list">${tiers.map(key => {
+  return `<section class="p-buy" id="plans" aria-labelledby="plans-title" data-subscription="${p.slug}"><div class="g-shell">
+<div class="p-buy__panel">
+<div class="p-buy__choices" data-choices>
+<header class="p-buy__head"><h2 id="plans-title">${lines ? `选择${esc(catalog.name)} 线路` : `选择 ${esc(catalog.name)} 方案`}</h2><p>两步选好方案${lines ? '' : ' · 按月计费'} · 不需要填写账号资料</p></header>
+<fieldset class="p-step" id="plan-options">${legend(lines ? '选择线路' : '选择套餐')}<div class="p-tiers">${tiers.map(key => {
     const item = catalog.tiers[key];
-    return `<label class="p-package"><input type="radio" name="${p.slug}-tier" value="${key}" data-tier-choice${key === selected ? ' checked' : ''}><span class="p-package__body"><span class="p-package__head"><strong>${esc(item.name)}</strong><span class="p-package__price">${monthly(item.monthlyMinor, catalog.currency)}</span></span><span class="p-package__hint">${esc(item.hint)} · ${esc(item.badge)}</span><span class="p-package__desc">${esc(item.desc)}</span><span class="plan__tags">${item.features.map(f => `<span>${esc(f)}</span>`).join('')}</span></span></label>`;
+    return `<label class="p-tier"><input type="radio" name="${p.slug}-tier" value="${key}" data-tier-choice${key === selected ? ' checked' : ''}><span class="p-tier__body"><strong class="p-tier__name">${esc(item.name)}</strong><span class="p-tier__hint">${esc(item.hint)}<span class="p-tier__badge">${esc(item.badge)}</span></span><span class="p-tier__price">${monthly(item.monthlyMinor, catalog.currency)}${item.ref ? `<small>官方参考 ${esc(item.ref)}</small>` : ''}</span><span class="p-tier__desc">${esc(item.desc)}</span><span class="p-tier__features">${item.features.map(f => `<span>${CHECK}${esc(f)}</span>`).join('')}</span></span><span class="p-tier__tick" aria-hidden="true">${CHECK}</span></label>`;
   }).join('')}</div></fieldset>
-${catalog.deliveries ? `<fieldset class="choice choice--two p-config__option"><legend>${step++}. 选择交付方式</legend><div class="choice__options">${options('delivery', Object.entries(catalog.deliveries).map(([key, d]) => [key, `<b>${esc(d.name)}</b><small>${esc(d.hint)}</small>`]), quote.delivery, 'data-delivery')}</div></fieldset>
-` : ''}<fieldset class="choice choice--period p-config__option"><legend>${step++}. 选择意向周期</legend><div class="choice__options">${options('period', Object.entries(PERIOD_NAMES), String(quote.months), 'data-period')}</div></fieldset>
-<p class="p-config__note">周期仅表示需求，供应与履约方式须另行确认。此处无需填写账号资料。</p>
+${catalog.deliveries ? `<fieldset class="p-step choice choice--two">${legend('选择交付方式')}<div class="choice__options">${options('delivery', Object.entries(catalog.deliveries).map(([key, d]) => [key, `<b>${esc(d.name)}</b><small>${esc(d.hint)}</small>`]), quote.delivery, 'data-delivery')}</div></fieldset>
+` : ''}${lines ? `<fieldset class="p-step choice choice--period">${legend('选择意向周期')}<div class="choice__options">${options('period', Object.entries(PERIOD_NAMES), String(quote.months), 'data-period')}</div></fieldset>
+` : ''}<p class="p-buy__fine">${lines ? '周期仅表示需求' : '订阅按单月计费'}，供应与履约须另行确认。${esc(facts.note)}${facts.checked ? ` 官方资料核验：${facts.checked}。` : ''}${p.source ? ` <a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${esc(p.source[0])} ↗</a>` : ''}</p>
 </div>
-<aside class="p-order" id="selection" aria-labelledby="selection-title">
-<h3 id="selection-title">已选方案</h3><p class="p-order__name" data-selection-name>${esc(catalog.name)} · ${esc(tier.name)}</p>
-<p class="p-order__desc" data-selection-desc>${esc(tier.desc)}</p>
-<ul class="p-order__features" data-selection-features>${tier.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
-<dl class="p-order__details">${catalog.deliveries ? `<div><dt>交付方式</dt><dd data-selection-delivery>${esc(quote.deliveryName)}</dd></div>` : ''}<div><dt>意向周期</dt><dd data-selection-period>${PERIOD_NAMES[quote.months]}</dd></div>${priced(catalog) ? `<div><dt>月度报价</dt><dd data-selection-monthly>${formatMoney(quote.monthlyMinor, quote.currency)}</dd></div>` : ''}<div class="p-order__total${priced(catalog) ? '' : ' is-pending'}"><dt>${priced(catalog) ? '合计' : '报价'}</dt><dd data-selection-total>${formatMoney(quote.totalMinor, quote.currency)}</dd></div></dl>
-<p class="p-order__status" role="status" aria-live="polite" data-selection-status data-state="${state.state}">${esc(catalog.name)} · ${esc(tier.name)}${quote.deliveryName ? ` · ${esc(quote.deliveryName)}` : ''} · ${PERIOD_NAMES[quote.months]} · ${state.label}</p>
+<div class="p-buy__side">
+<aside class="p-checkout" id="selection" aria-labelledby="selection-title">
+<p class="p-checkout__state" data-state-badge data-state="${state.state}">${state.label}</p>
+<h3 id="selection-title">已选方案</h3>
+<p class="p-checkout__name" data-selection-name>${esc(catalog.name)} · ${esc(tier.name)}</p>
+<ul class="p-checkout__features" data-selection-features>${tier.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+<dl class="p-checkout__details">${catalog.deliveries ? `<div><dt>交付方式</dt><dd data-selection-delivery>${esc(quote.deliveryName)}</dd></div>` : ''}<div><dt>${lines ? '意向周期' : '计费方式'}</dt><dd data-selection-period>${term}</dd></div>${priced(catalog) ? `<div><dt>月度报价</dt><dd data-selection-monthly>${formatMoney(quote.monthlyMinor, quote.currency)}</dd></div>` : ''}<div class="p-checkout__total${priced(catalog) ? '' : ' is-pending'}"><dt>${priced(catalog) ? '合计' : '报价'}</dt><dd data-selection-total>${formatMoney(quote.totalMinor, quote.currency)}</dd></div></dl>
+<p class="p-sr" role="status" aria-live="polite" data-selection-status data-state="${state.state}">${esc(catalog.name)} · ${esc(tier.name)}${quote.deliveryName ? ` · ${esc(quote.deliveryName)}` : ''} · ${term} · ${state.label}</p>
 <button class="g-btn ${button}" type="button" data-inquiry>${state.label} · 查看说明</button>
-<p class="p-order__note" data-selection-note>${esc(state.message)}</p>
-<a class="p-order__help" href="#faq">选购有疑问？查看常见问题 →</a>
-<noscript><p class="p-config__note">启用 JavaScript 后可更新摘要并查看受理说明。当前摘要为默认方案；本页不提交订单。</p></noscript>
+<p class="p-checkout__note" data-selection-note>${esc(state.message)}</p>
+<noscript><p class="p-checkout__note">启用 JavaScript 后可更新摘要并查看受理说明。当前摘要为默认方案；本页不提交订单。</p></noscript>
 </aside>
+</div>
 </div></div>
-<div class="p-dock" data-dock hidden><div><strong data-selection-name>${esc(catalog.name)} · ${esc(tier.name)}</strong><span data-dock-meta>${quote.deliveryName ? `${esc(quote.deliveryName)} · ` : ''}${PERIOD_NAMES[quote.months]} · ${state.label}</span></div><a class="g-btn g-btn--light" href="#selection">查看已选</a></div>
+<div class="p-dock" data-dock hidden><div><strong data-selection-name>${esc(catalog.name)} · ${esc(tier.name)}</strong><span data-dock-meta>${quote.deliveryName ? `${esc(quote.deliveryName)} · ` : ''}${term} · ${state.label}</span></div><a class="g-btn g-btn--light" href="#selection">查看已选</a></div>
 </section>`;
 }
 
+// A product page is a purchase page: short intro, the purchase panel, how buying works and the
+// product's own FAQ. Articles live under /guides/ (AI新闻); the FAQ links to the product's topic.
 function productPage(p) {
   const route = productRoute(p);
   const catalog = PRODUCTS[p.slug];
-  const tiers = Object.keys(catalog.tiers);
-  const names = tiers.map(k => catalog.tiers[k].name);
-  const articles = productArticles(p);
-  const news = articles.filter(a => a.type === 'news').slice(0, 6);
-  const guides = articles.filter(a => a.type !== 'news');
+  const guides = productArticles(p).filter(a => a.type !== 'news');
   const topic = p.topics.length ? TOPICS.find(t => t.slug === p.topics[0]) : null;
   const verify = guides.find(a => a.slug.endsWith('-verification'));
   const modified = productModified(p);
   const crumbs = [['首页', ''], [catalog.name, route]];
-  const refs = refList(catalog);
-  const facts = PRODUCT_FACTS[p.slug];
-  const subscription = p.slug !== 'ip';
-  const brief = [
-    refs.length ? ['官方参考价', `${refs.map(r => `<span>${esc(r)}</span>`).join('')}<small>${esc(p.source[0])} · 仅供对照</small>`] : ['计价', '按账号地区、规格和供应核实后报价'],
-    ['交付方式', catalog.deliveries ? Object.values(catalog.deliveries).map(d => esc(d.name)).join(' · ') : '报价前确认地区、规格与库存'],
-    ['服务周期', Object.values(PERIOD_NAMES).join(' · ')],
-    ['售后', '受理时确认支持范围与时段'],
-  ];
-  const guideList = list => `<ol>${list.map(a => `<li><a href="${href(route, articleRoute(a))}"><strong>${esc(a.title)}</strong><span>${esc(topicOf(a.topic).name)} · 约 ${a.minutes} 分钟</span></a></li>`).join('')}</ol>`;
-  const allLink = topic ? `<a class="p-more" href="${href(route, topicRoute(topic))}">全部 ${esc(catalog.name)} 动态与指南 →</a>` : '';
-  const feed = news.length
-    ? `<div class="g-section p-feed">
-<section aria-labelledby="news-title"><div class="g-section__head"><h2 id="news-title">${esc(catalog.name)} 最新动态</h2><p>只写会影响购买和使用的变化</p></div>
-<ol class="g-list">${news.map(a => row(route, a)).join('')}</ol>${allLink}</section>
-${guides.length ? `<aside class="p-guides" aria-labelledby="guides-title"><h2 id="guides-title">选购指南</h2><p>购买前后最常查的问题</p>${guideList(guides.slice(0, 6))}<a class="p-more" href="${href(route, 'guides/')}">全部指南 →</a></aside>` : ''}
-</div>`
-    : guides.length ? `<section class="g-section" aria-labelledby="guides-title"><div class="g-section__head"><h2 id="guides-title">${esc(catalog.name)} 选购指南</h2><p>购买前后最常查的问题，动态会在这里同步更新</p></div>
-<ol class="g-list">${guides.slice(0, 8).map(a => row(route, a)).join('')}</ol>${allLink}</section>` : '';
   const body = `<div class="p-hero"><div class="g-shell">
 ${crumbNav(route, crumbs)}
-<div class="p-hero__grid">
-<div>
-<div class="p-hero__name"><span class="g-mark g-mark--lg" aria-hidden="true">${esc(catalog.glyph)}</span><div><p class="g-eyebrow">${esc(p.eyebrow)}</p><p class="g-meta">三档：${names.map(esc).join(' / ')}</p></div></div>
-<h1>${esc(p.h1)}</h1>
+<div class="p-hero__head">
+<span class="g-mark g-mark--lg" aria-hidden="true">${esc(catalog.glyph)}</span>
+<div><p class="g-eyebrow">${esc(p.eyebrow)}</p><h1>${esc(p.h1)}</h1></div>
+</div>
 <p class="g-lead">${esc(p.lead)}</p>
 <ul class="p-points">${p.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-<div class="p-actions"><a class="g-btn g-btn--light" href="#plans">${subscription ? '选择订阅方案' : '选择线路方案'}</a><a class="g-btn g-btn--ghost" href="#steps">了解办理流程</a></div>
-</div>
-<dl class="p-brief">${brief.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
-</div></div></div>
+</div></div>
 <main id="main">
 ${planPicker(p, catalog)}
 <div class="g-shell">
-<p class="p-facts-note">${esc(facts.note)}${facts.checked ? ` 官方资料核验：${facts.checked}。` : ''}${p.source ? ` <a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${esc(p.source[0])} ↗</a>` : ''}</p>
-<section class="g-section" id="steps" aria-labelledby="steps-title"><div class="g-section__head"><h2 id="steps-title">怎么买、怎么验收</h2></div>
+<section class="g-section" id="steps" aria-labelledby="steps-title"><div class="g-section__head"><h2 id="steps-title">办理流程</h2></div>
 <ol class="p-steps">
-<li><h3>选档位与周期</h3><p>先阅读适用条件；所选周期仅表达意向，不代表已确认供应。</p></li>
+<li><h3>${catalog.deliveries ? '选档位与交付方式' : '选档位与周期'}</h3><p>${catalog.deliveries ? '先阅读适用条件；订阅按单月计费，所选方案不代表已确认供应。' : '先阅读适用条件；所选周期仅表达意向，不代表已确认供应。'}</p></li>
 <li><h3>确认受理状态</h3><p>受理开放后咨询资格、报价、交付期限与售后规则。</p></li>
 <li><h3>取得书面确认</h3><p>按支持方登记的询价记录确认交易；未确认前不要付款。</p></li>
 <li class="p-steps__check"><h3>${catalog.deliveries ? '在账号里验收' : '确认线路'}</h3><p>${catalog.deliveries ? '核对套餐、有效期与用量。' : '与客服确认地区与线路，接入后测试连通。'}${verify ? ` <a href="${href(route, articleRoute(verify))}">验收方法 →</a>` : ''}</p></li>
 </ol></section>
-<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">购买 ${esc(catalog.name)} 常见问题</h2><div class="g-faq">${p.faqs.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
-${feed}
-<nav class="g-section g-others" aria-labelledby="others-title"><h2 id="others-title">其他产品</h2><ul>${SHOWCASE.filter(o => o !== p).map(o => `<li data-tone="${o.tone}"><a href="${href(route, productRoute(o))}"><span class="g-mark" aria-hidden="true">${esc(PRODUCTS[o.slug].glyph)}</span>${esc(PRODUCTS[o.slug].name)}</a></li>`).join('')}</ul></nav>
-<aside class="g-cta" aria-label="咨询入口"><div><h2>还没想好选哪一档？</h2><p>${subscription ? '先对照使用场景与方案说明，再确认资格、报价和交付条件。' : '先对照使用场景与三档线路说明，再确认地区、规格和报价。'}</p></div><button class="g-btn g-btn--light" type="button" data-open-query>查看咨询与受理说明</button></aside>
+<section class="g-section g-split" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">${esc(catalog.name)} 常见问题</h2><div><div class="g-faq">${p.faqs.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>${topic ? `<a class="p-more" href="${href(route, topicRoute(topic))}">更多 ${esc(topic.name)} 问题与动态 →</a>` : ''}</div></section>
 </div>
 </main>`;
   return layout({

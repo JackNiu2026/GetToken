@@ -154,7 +154,9 @@ test('product pages share one plan picker with factual availability', async () =
       assert.ok(html.includes(tier.name) && html.includes(tier.desc));
       for (const feature of tier.features) assert.ok(html.includes(feature));
     }
-    assert.ok(html.includes(`name="${p.slug}-period" value="3" data-period checked`));
+    // Subscriptions are billed by the month: no period choice. 住宅 IP keeps its intended period.
+    assert.equal(html.includes(`name="${p.slug}-period" value="3" data-period checked`), !catalog.deliveries, `${p.slug} period choice`);
+    if (catalog.deliveries) assert.ok(html.includes('data-selection-period>按月'));
     assert.equal(html.includes(`name="${p.slug}-delivery" value="topup" data-delivery checked`), Boolean(catalog.deliveries), `${p.slug} delivery choice`);
     assert.equal([...html.matchAll(/data-inquiry>/g)].length, 1);
     assert.ok(html.includes('data-selection-total>待报价'));

@@ -18,5 +18,5 @@ export function inquiryState(product, tier, months, site = SITE) {
 }
 
 export function inquirySummary(quote) {
-  return `${quote.name} · ${quote.tierName} · ${quote.deliveryName || '线路规格待确认'} · 意向周期 ${quote.months} 个月。此为咨询需求，不是订单或成交报价。`;
+  return `${quote.name} · ${quote.tierName} · ${quote.deliveryName || '线路规格待确认'} · ${quote.deliveryName ? '按月计费' : `意向周期 ${quote.months} 个月`}。此为咨询需求，不是订单或成交报价。`;
 }

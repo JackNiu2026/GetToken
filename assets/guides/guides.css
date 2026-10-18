@@ -179,6 +179,13 @@ time { font-variant-numeric: tabular-nums; }
 .g-prose code { padding: 2px 6px; border-radius: 6px; background: rgba(255, 255, 255, .07); color: var(--ink); font: 14px var(--mono); }
 .g-note { padding: 16px 20px; border-radius: 12px; border: 1px solid rgba(var(--rgb), .3); background: rgba(var(--rgb), .07); color: var(--ink); }
 .g-table { margin-block: 8px 20px; overflow-x: auto; border-radius: 14px; border: 1px solid var(--line-2); }
+.g-missing { padding-block: 72px 96px; }
+.g-missing h1 { margin-top: 10px; font-size: clamp(28px, 4vw, 40px); line-height: 1.25; }
+.g-missing__links { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 28px; }
+.g-missing__links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--ink-2); font-size: 14px; }
+.g-missing__links a:hover { border-color: rgba(var(--rgb), .6); color: var(--ink); }
+/* Edge shadows appear only while more of a wide table is hidden to that side. */
+.g-table { background: linear-gradient(90deg, var(--bg) 30%, transparent) 0 0 / 32px 100% no-repeat local, linear-gradient(270deg, var(--bg) 30%, transparent) 100% 0 / 32px 100% no-repeat local, radial-gradient(farthest-side at 0 50%, rgba(255, 255, 255, .14), transparent) 0 0 / 14px 100% no-repeat scroll, radial-gradient(farthest-side at 100% 50%, rgba(255, 255, 255, .14), transparent) 100% 0 / 14px 100% no-repeat scroll; }
 .g-table table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px; line-height: 1.75; }
 .g-table th, .g-table td { padding: 13px 16px; text-align: left; vertical-align: top; }
 .g-table thead th { background: var(--bg-2); color: var(--muted); font-weight: 500; font-size: 13px; }
@@ -236,6 +243,12 @@ time { font-variant-numeric: tabular-nums; }
 }
 @media (max-width: 640px) {
   .g-shell { width: calc(100% - 36px); }
+  /* The topic strip scrolls sideways: fade the edge so the cut-off items read as more to see. */
+  .g-subnav .g-shell { padding-right: 32px; -webkit-mask: linear-gradient(90deg, #000 calc(100% - 40px), transparent); mask: linear-gradient(90deg, #000 calc(100% - 40px), transparent); }
+  /* Breadcrumbs stay on one line; the current page title is shortened instead. */
+  .g-crumbs ol { flex-wrap: nowrap; }
+  .g-crumbs li { flex: none; white-space: nowrap; }
+  .g-crumbs li:last-child { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }

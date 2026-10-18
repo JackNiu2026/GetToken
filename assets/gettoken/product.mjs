@@ -1,32 +1,36 @@
-// Subscription configurators and the legacy residential IP cards.
+// The plan picker on every product page (subscriptions and 住宅 IP).
 // Catalog content is rendered at build time; inquiries never create a payment.
-import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney, totalLabel } from './catalog.mjs';
+import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney } from './catalog.mjs';
 import { $, $$, openPayment } from './shop.mjs';
 import { inquiryState } from './inquiry.mjs';
 
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-// One shared configurator per subscription page. Choices remain native radio
-// groups; the summary and inquiry always use the same catalog quote.
+// Choices remain native radio groups; the summary, the phone bar and the inquiry
+// always use the same catalog quote.
 for (const root of $$('[data-subscription]')) {
   const product = root.dataset.subscription;
   const catalog = PRODUCTS[product];
-  const put = (name, value) => { $(`[data-selection-${name}]`, root).textContent = value; };
+  const put = (name, value) => { for (const el of $$(`[data-selection-${name}]`, root)) el.textContent = value; };
+  const button = $('[data-inquiry]', root);
   function renderSelection() {
     const quote = getQuote(product,
       $('[data-tier-choice]:checked', root).value,
       Number($('[data-period]:checked', root).value),
-      $('[data-delivery]:checked', root).value);
+      $('[data-delivery]:checked', root)?.value ?? null);
     const state = inquiryState(product, quote.tier, quote.months);
+    const choice = [quote.deliveryName, PERIOD_NAMES[quote.months]].filter(Boolean).join(' · ');
     put('name', `${catalog.name} · ${quote.tierName}`);
     put('desc', catalog.tiers[quote.tier].desc);
     put('delivery', quote.deliveryName);
     put('period', PERIOD_NAMES[quote.months]);
     put('monthly', formatMoney(quote.monthlyMinor, quote.currency));
     put('total', formatMoney(quote.totalMinor, quote.currency));
-    put('status', `${quote.name} · ${quote.tierName} · ${quote.deliveryName} · ${PERIOD_NAMES[quote.months]} · ${state.label}`);
+    put('status', `${quote.name} · ${quote.tierName} · ${choice} · ${state.label}`);
     put('note', state.message);
-    $('[data-inquiry]', root).textContent = `${state.label} · 查看说明`;
+    $('[data-selection-status]', root).dataset.state = state.state;
+    $('[data-dock-meta]', root).textContent = `${choice} · ${state.label}`;
+    button.textContent = `${state.label} · 查看说明`;
+    button.classList.toggle('g-btn--light', state.state === 'inquiry');
+    button.classList.toggle('g-btn--ghost', state.state !== 'inquiry');
     $('[data-selection-features]', root).replaceChildren(...quote.features.map(feature => {
       const li = document.createElement('li');
       li.textContent = feature;
@@ -37,55 +41,17 @@ for (const root of $$('[data-subscription]')) {
   root.addEventListener('change', event => {
     if (event.target.matches('input[type="radio"]')) renderSelection();
   });
-  $('[data-inquiry]', root).addEventListener('click', event => openPayment(renderSelection(), event.currentTarget));
+  button.addEventListener('click', event => openPayment(renderSelection(), event.currentTarget));
   renderSelection();
-}
 
-function animateValue(el, from, to, currency) {
-  if (reduceMotion.matches || from === to || from === null || to === null) {
-    el.textContent = formatMoney(to, currency);
-    return;
-  }
-  const step = currency === 'CNY' ? 100 : 1;
-  const start = performance.now();
-  const tick = now => {
-    const p = Math.min(1, (now - start) / 520);
-    const eased = 1 - Math.pow(1 - p, 3);
-    const value = Math.round((from + (to - from) * eased) / step) * step;
-    el.textContent = formatMoney(p === 1 ? to : value, currency);
-    if (p < 1) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
-
-for (const card of $$('[data-plan]')) {
-  const { product, tier } = card.dataset;
-  const priceEl = $('[data-price]', card);
-  const totalEl = $('[data-total]', card);
-  let shownMonthly;
-
-  const read = () => getQuote(
-    product,
-    tier,
-    Number($('input[data-period]:checked', card).value),
-    $('input[data-delivery]:checked', card)?.value ?? null,
-  );
-
-  function render() {
-    const quote = read();
-    animateValue(priceEl, shownMonthly === undefined ? quote.monthlyMinor : shownMonthly, quote.monthlyMinor, quote.currency);
-    shownMonthly = quote.monthlyMinor;
-    totalEl.textContent = totalLabel(quote);
-    $('[data-buy]', card).textContent = inquiryState(product, tier, quote.months).label;
-    if (quote.savingMinor > 0) {
-      const saving = document.createElement('b');
-      saving.textContent = ` 省 ${formatMoney(quote.savingMinor, quote.currency)}`;
-      totalEl.append(saving);
-    }
-    return quote;
-  }
-
-  card.addEventListener('change', event => { if (event.target.matches('input[type="radio"]')) render(); });
-  $('[data-buy]', card).addEventListener('click', event => openPayment(render(), event.currentTarget));
-  render();
+  // Phones stack the summary under the choices: show a bar while the choices are on screen
+  // and the summary is not. CSS keeps the bar hidden on wider screens.
+  const dock = $('[data-dock]', root);
+  const seen = new Map();
+  const observer = new IntersectionObserver(entries => {
+    for (const entry of entries) seen.set(entry.target, entry.isIntersecting);
+    dock.hidden = !(seen.get($('[data-choices]', root)) && !seen.get($('#selection', root)));
+  });
+  observer.observe($('[data-choices]', root));
+  observer.observe($('#selection', root));
 }

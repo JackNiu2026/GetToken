@@ -4,23 +4,6 @@
 // `updated` changes only when a topic's own copy changes.
 export const TOPICS = Object.freeze([
   {
-    slug: 'codex',
-    name: 'Codex',
-    updated: '2026-10-16',
-    mark: '>_',
-    tone: 'blue',
-    title: 'Codex 订阅、充值与代充指南',
-    description: 'Codex 订阅、额外使用额度、API 余额与代充怎么选：按登录方式核对购买内容，代充后如何验收账号、订阅与用量。',
-    short: '订阅、额外用量与 API 余额的区别，代充后的验收方法。',
-    intro: '先分清当前登录的是 ChatGPT 订阅还是 API，再判断需要续费、credits 还是排障。建议先读“订阅、额度与 API”，再按“代充验收”核对账号和权益；用量提示不能直接证明需要购买。',
-    facts: [
-      ['订阅权益', '用 ChatGPT 账号登录时先查当前方案；Pro 100/200/500 与旧倍数称呼不同，新旧账号额度也可能不同。'],
-      ['额外使用额度', '部分账号可以购买额外使用额度；这与升级订阅不是同一件事。'],
-      ['API 余额', 'API Key 的计费路径与订阅不同，购买会员不会自动获得等额 API 余额。'],
-    ],
-    source: ['OpenAI Codex 订阅说明', 'https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan'],
-  },
-  {
     slug: 'claude',
     name: 'Claude',
     updated: '2026-10-16',
@@ -53,6 +36,23 @@ export const TOPICS = Object.freeze([
       ['第三方月卡', '月卡名称不能证明接入官方订阅；购买前必须确认服务提供方、登录方式和额度规则。'],
     ],
     source: ['Claude Code 官方接入说明', 'https://code.claude.com/docs/en/overview'],
+  },
+  {
+    slug: 'codex',
+    name: 'Codex',
+    updated: '2026-10-16',
+    mark: '>_',
+    tone: 'blue',
+    title: 'Codex 订阅、充值与代充指南',
+    description: 'Codex 订阅、额外使用额度、API 余额与代充怎么选：按登录方式核对购买内容，代充后如何验收账号、订阅与用量。',
+    short: '订阅、额外用量与 API 余额的区别，代充后的验收方法。',
+    intro: '先分清当前登录的是 ChatGPT 订阅还是 API，再判断需要续费、credits 还是排障。建议先读“订阅、额度与 API”，再按“代充验收”核对账号和权益；用量提示不能直接证明需要购买。',
+    facts: [
+      ['订阅权益', '用 ChatGPT 账号登录时先查当前方案；Pro 100/200/500 与旧倍数称呼不同，新旧账号额度也可能不同。'],
+      ['额外使用额度', '部分账号可以购买额外使用额度；这与升级订阅不是同一件事。'],
+      ['API 余额', 'API Key 的计费路径与订阅不同，购买会员不会自动获得等额 API 余额。'],
+    ],
+    source: ['OpenAI Codex 订阅说明', 'https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan'],
   },
   {
     slug: 'gemini',

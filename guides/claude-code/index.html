@@ -23,8 +23,8 @@
 <link rel="alternate" type="application/rss+xml" title="GetToken AI 订阅指南" href="../../guides/feed.xml">
 <link rel="icon" href="../../assets/gettoken/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../../assets/guides/guides.css">
-<link rel="stylesheet" href="../../assets/gettoken/chrome.css?v=storefront-20261018">
-<script type="module" src="../../assets/gettoken/chrome.mjs?v=storefront-20261018"></script>
+<link rel="stylesheet" href="../../assets/gettoken/chrome.css?v=site-ui-20261018">
+<script type="module" src="../../assets/gettoken/chrome.mjs?v=site-ui-20261018"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://gettoken.cc/#organization","name":"GetToken","url":"https://gettoken.cc/","logo":"https://gettoken.cc/assets/gettoken/logo.png"},{"@type":"WebSite","@id":"https://gettoken.cc/#website","name":"GetToken","url":"https://gettoken.cc/","inLanguage":"zh-CN","publisher":{"@id":"https://gettoken.cc/#organization"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首页","item":"https://gettoken.cc/"},{"@type":"ListItem","position":2,"name":"AI 订阅指南","item":"https://gettoken.cc/guides/"},{"@type":"ListItem","position":3,"name":"Claude Code","item":"https://gettoken.cc/guides/claude-code/"}]},{"@type":"CollectionPage","@id":"https://gettoken.cc/guides/claude-code/#webpage","url":"https://gettoken.cc/guides/claude-code/","name":"Claude Code 订阅、额度与月卡指南","description":"Claude Code 用订阅还是 API 计费，月卡额度怎么查，同一周期的实际总成本如何比较。","dateModified":"2026-10-16","inLanguage":"zh-CN","isPartOf":{"@id":"https://gettoken.cc/#website"},"about":{"@type":"Thing","name":"Claude Code"},"mainEntity":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"Claude Code 充值怎么选？Claude 订阅与 API 计费区别","url":"https://gettoken.cc/guides/claude-code-subscription-api/"},{"@type":"ListItem","position":2,"name":"Claude Code 月卡多少钱才划算？订阅与按量总成本核对","url":"https://gettoken.cc/guides/claude-code-cost-checklist/"},{"@type":"ListItem","position":3,"name":"Claude Code 月卡额度怎么查？期限、限制与续费核对","url":"https://gettoken.cc/guides/claude-code-usage-checklist/"}]}}]}</script>
 </head>
 <body data-tone="orange">
@@ -43,7 +43,7 @@
         <a href="../../grok/">Grok订阅</a>
         <a href="../../verify/">KYC审核</a>
         <a href="../../ip/">住宅IP</a>
-        <a href="../../#news">AI新闻</a>
+        <a href="../../guides/" class="is-current" aria-current="page">AI新闻</a>
       </nav>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单"><span></span><span></span></button>
     </div>
@@ -55,10 +55,10 @@
         <a href="../../grok/">Grok订阅</a>
         <a href="../../verify/">KYC审核</a>
         <a href="../../ip/">住宅IP</a>
-        <a href="../../#news">AI新闻</a>
+        <a href="../../guides/" class="is-current" aria-current="page">AI新闻</a>
     </nav>
   </header>
-<nav class="g-subnav" aria-label="指南专题"><div class="g-shell"><a href="../../guides/">全部指南</a><a href="../../guides/codex/">Codex</a><a href="../../guides/claude/">Claude</a><a href="../../guides/claude-code/" aria-current="page">Claude Code</a><a href="../../guides/gemini/">Gemini</a><a href="../../guides/grok/">Grok</a><a href="../../guides/basics/">选购基础</a></div></nav>
+<nav class="g-subnav" aria-label="指南专题"><div class="g-shell"><a href="../../guides/">全部指南</a><a href="../../guides/claude/">Claude</a><a href="../../guides/claude-code/" aria-current="page">Claude Code</a><a href="../../guides/codex/">Codex</a><a href="../../guides/gemini/">Gemini</a><a href="../../guides/grok/">Grok</a><a href="../../guides/basics/">选购基础</a></div></nav>
 <div class="g-hero g-hero--topic"><div class="g-shell">
 <nav class="g-crumbs" aria-label="面包屑"><ol><li><a href="../../">首页</a></li><li><a href="../../guides/">AI 订阅指南</a></li><li><span aria-current="page">Claude Code</span></li></ol></nav>
 <div class="g-topic-hero"><span class="g-mark g-mark--lg" aria-hidden="true">&lt;/&gt;</span><div>
@@ -69,24 +69,23 @@
 <section class="g-facts" aria-labelledby="facts-title"><h2 id="facts-title">Claude Code 使用前先分清</h2><dl><div><dt>Claude 订阅</dt><dd>官方说明支持通过适用的 Pro 或 Max 订阅使用 Claude Code，权益以账号实际状态为准。</dd></div><div><dt>API 计费</dt><dd>API 与订阅是不同计费路径；部分 Max 附带独立 API credits，仍需在 Claude Platform 核实领取、限额和使用条件。</dd></div><div><dt>第三方月卡</dt><dd>月卡名称不能证明接入官方订阅；购买前必须确认服务提供方、登录方式和额度规则。</dd></div></dl></section>
 <section class="g-section" aria-labelledby="list-title"><div class="g-section__head"><h2 id="list-title">全部 Claude Code 指南</h2><p>共 3 篇，本专题文章在前，相关通用指南在后。</p></div>
 <ol class="g-list"><li class="g-row" data-tone="orange"><a href="../../guides/claude-code-subscription-api/"><span class="g-row__meta"><span class="g-chip">Claude Code</span><span><time datetime="2026-10-16">2026-10-16</time> · 约 3 分钟</span></span><h3>Claude Code 充值怎么选？Claude 订阅与 API 计费区别</h3><p>Claude Code 可以按适用订阅或 API 路径使用，实际费用取决于登录与凭据配置。先核对当前计费身份，再购买代充、账号或额度，避免重复支付同一权益。</p></a></li><li class="g-row" data-tone="orange"><a href="../../guides/claude-code-cost-checklist/"><span class="g-row__meta"><span class="g-chip">Claude Code</span><span><time datetime="2026-10-16">2026-10-16</time> · 约 3 分钟</span></span><h3>Claude Code 月卡多少钱才划算？订阅与按量总成本核对</h3><p>Claude Code 的成本取决于接入方式、任务消耗和额外收费。比较同一周期、同一使用方式的总成本，先核对计费来源；GetToken 报价未确认前，不给出虚构月卡价格。</p></a></li><li class="g-row" data-tone="orange"><a href="../../guides/claude-code-usage-checklist/"><span class="g-row__meta"><span class="g-chip">Claude Code</span><span><time datetime="2026-10-16">2026-10-16</time> · 约 3 分钟</span></span><h3>Claude Code 月卡额度怎么查？期限、限制与续费核对</h3><p>服务还有多少天，与当前还能使用多少额度，是两个问题。先确认接入路径，再在对应入口查看实际用量。</p></a></li></ol></section>
-<nav class="g-section g-others" aria-labelledby="others-title"><h2 id="others-title">其他专题</h2><ul><li data-tone="blue"><a href="../../guides/codex/"><span class="g-mark" aria-hidden="true">&gt;_</span>Codex</a></li><li data-tone="violet"><a href="../../guides/claude/"><span class="g-mark" aria-hidden="true">✦</span>Claude</a></li><li data-tone="cyan"><a href="../../guides/gemini/"><span class="g-mark" aria-hidden="true">◆</span>Gemini</a></li><li data-tone="silver"><a href="../../guides/grok/"><span class="g-mark" aria-hidden="true">G</span>Grok</a></li><li data-tone="green"><a href="../../guides/basics/"><span class="g-mark" aria-hidden="true">?</span>选购基础</a></li></ul></nav>
+<nav class="g-section g-others" aria-labelledby="others-title"><h2 id="others-title">其他专题</h2><ul><li data-tone="violet"><a href="../../guides/claude/"><span class="g-mark" aria-hidden="true">✦</span>Claude</a></li><li data-tone="blue"><a href="../../guides/codex/"><span class="g-mark" aria-hidden="true">&gt;_</span>Codex</a></li><li data-tone="cyan"><a href="../../guides/gemini/"><span class="g-mark" aria-hidden="true">◆</span>Gemini</a></li><li data-tone="silver"><a href="../../guides/grok/"><span class="g-mark" aria-hidden="true">G</span>Grok</a></li><li data-tone="green"><a href="../../guides/basics/"><span class="g-mark" aria-hidden="true">?</span>选购基础</a></li></ul></nav>
 <aside class="g-cta" aria-label="购买入口"><div><h2>需要开通 Claude Code？</h2><p>查看 Claude 方案与受理状态，受理开放后先确认资格、报价和交付条件。</p></div><a class="g-btn g-btn--light" href="../../claude/">Claude 价格与方案</a></aside>
 </main>
 <footer class="site-footer" id="contact">
     <div class="shell footer-main">
       <div class="footer-brand">
         <a class="brand" href="../../"><img class="brand-logo" src="../../assets/gettoken/logo.png" alt="" width="28" height="28" loading="lazy"><span class="brand-word">GetToken</span></a>
-        <p>Codex、Claude、Gemini、Grok 与住宅 IP 一站选购。<br>更好的工具，更自由的创造。</p>
+        <p>Claude、Codex、Gemini、Grok 订阅与住宅 IP 一站选购。<br>更好的工具，更自由的创造。</p>
       </div>
       <div class="footer-links">
-        <div><span>产品</span><a href="../../codex/">Codex</a><a href="../../claude/">Claude</a><a href="../../gemini/">Gemini</a><a href="../../grok/">Grok</a><a href="../../ip/">住宅 IP</a></div>
-        <div><span>指南</span><a href="../../guides/">AI 订阅指南</a><a href="../../#news">最新动态</a><a href="../../guides/basics/">选购基础</a><a href="../../guides/feed.xml">RSS 订阅</a></div>
-        <div><span>购买</span><a href="../../#products">选择产品</a><a href="../../#how">购买流程</a><a href="../../#scenes">使用场景</a><a href="../../verify/">审核验证</a></div>
-        <div><span>支持</span><a href="../../#faq">常见问题</a><a href="../../verify/#query">审核进度查询</a><a href="../../#contact">联系客服</a></div>
+        <div><span>产品</span><a href="../../claude/">Claude订阅</a><a href="../../codex/">Codex订阅</a><a href="../../gemini/">Gemini订阅</a><a href="../../grok/">Grok订阅</a><a href="../../ip/">住宅IP</a></div>
+        <div><span>服务</span><a href="../../verify/">KYC审核</a><a href="../../verify/#query">KYC进度查询</a><a href="../../#how">购买流程</a><a href="../../#faq">常见问题</a><a href="../../#contact">联系客服</a></div>
+        <div><span>AI新闻</span><a href="../../guides/">全部文章</a><a href="../../guides/basics/">选购基础</a><a href="../../guides/feed.xml">RSS 订阅</a></div>
       </div>
     </div>
     <p class="shell footer-note">GetToken 是独立第三方服务品牌，与 OpenAI、Google、xAI、Anthropic 无隶属关系。普通商品按页面受理状态咨询，未确认报价与交付条件前请勿付款；产品权益以当前官方说明与实际账号状态为准。</p>
-    <div class="shell footer-bottom"><span>© 2026 GetToken. All rights reserved.</span><span>独立服务品牌 · 非第三方官方平台</span></div>
+    <div class="shell footer-bottom"><span>© 2026 GetToken. All rights reserved.</span><span>独立第三方服务品牌</span></div>
   </footer>
 </body>
 </html>

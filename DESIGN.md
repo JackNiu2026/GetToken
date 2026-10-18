@@ -198,7 +198,7 @@ Pricing lives on the product pages, not the homepage. The four AI subscription p
 
 ### Navigation and contents
 
-Every page shares the sticky glass header with exactly eight links: 首页、Claude订阅、Codex订阅、Gemini订阅、Grok订阅、KYC审核、住宅IP、AI新闻. AI新闻 points to the existing homepage #news section. Links have a 44px minimum height; at 960px and below, a scrollable menu exposes the same ordered links. Current product, homepage and KYC routes use a subtle filled active state. Article contents remains a sticky list in the established topic tone.
+Every page shares the sticky glass header with exactly eight links: 首页、Claude订阅、Codex订阅、Gemini订阅、Grok订阅、KYC审核、住宅IP、AI新闻. AI新闻 points to /guides/ and is the active item on every guide page. The links are centred in the header. Links have a 44px minimum height; at 960px and below, a scrollable menu exposes the same ordered links. Current product, homepage and KYC routes use a subtle filled active state. Article contents remains a sticky list in the established topic tone.
 
 ### Lists, disclosure and metadata
 

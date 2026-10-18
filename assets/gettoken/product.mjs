@@ -35,11 +35,6 @@ for (const root of $$('[data-subscription]')) {
     button.textContent = `${state.label} · 查看说明`;
     button.classList.toggle('g-btn--light', state.state === 'inquiry');
     button.classList.toggle('g-btn--ghost', state.state !== 'inquiry');
-    $('[data-selection-features]', root).replaceChildren(...quote.features.map(feature => {
-      const li = document.createElement('li');
-      li.textContent = feature;
-      return li;
-    }));
     return quote;
   }
   root.addEventListener('change', event => {

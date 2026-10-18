@@ -194,7 +194,7 @@ Feature, product, tier and scene cards share the original layered dark fill, fin
 
 ### Pricing cards and radio choices
 
-Pricing lives on the product pages, not the homepage. The four AI subscription pages use a two-column configurator: native package radio rows in the existing blue/violet/green tier palette, followed by delivery and intended period; a sticky summary shows the same catalog quote and availability. At 720px and below, choices and summary form one column. New package and summary panels use 16px radii and a fine border. Residential IP retains its original three pricing cards. Unpublished prices display 待报价; an inquiry does not create an order or enable payment.
+Configuration lives on the product pages; the homepage shows catalog prices read-only in its product cards and a 价格速览 table, which collapses into per-product grids at 640px. The four AI subscription pages use a two-column configurator: native package radio rows in the existing blue/violet/green tier palette, followed by delivery and intended period; a sticky summary shows the same catalog quote and availability. At 720px and below, choices and summary form one column. New package and summary panels use 16px radii and a fine border. Residential IP retains its original three pricing cards. Unpublished prices display 待报价; an inquiry does not create an order or enable payment.
 
 ### Navigation and contents
 

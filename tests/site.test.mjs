@@ -123,19 +123,25 @@ const untouchedHashes = {
   "assets/gettoken/scenes.mjs": "b018d2e84ab4e1476f553b6df4236da8e783a6296e4e33c2d13a2d18353cb5c9",
 };
 
-test('homepage keeps its brand sections, sends buyers to product pages and shows no prices', async () => {
+test('homepage lists every product with catalog prices and no retired sections', async () => {
   await generateSite();
   for (const [file, expected] of Object.entries(untouchedHashes)) {
     assert.equal(createHash('sha256').update(await readFile(join(ROOT, file))).digest('hex'), expected, file);
   }
   const html = await readFile(join(ROOT, 'index.html'), 'utf8');
   assert.ok(!html.includes('guides.css'));
-  for (const id of ['top', 'main', 'why', 'products', 'how', 'scenes', 'news', 'faq']) assert.ok(html.includes(`id="${id}"`), id);
-  for (const gone of ['id="pricing"', 'id="tiers"', 'data-preset', '<dialog class="sheet" id="pay-dialog"', 'data-product=', '¥XX', '$XX']) assert.ok(!html.includes(gone), `Homepage must not contain ${gone}`);
-  for (const p of PRODUCT_PAGES) assert.ok(html.includes(`href="./${p.slug}/"`), `Homepage links to /${p.slug}/`);
+  for (const id of ['top', 'main', 'products', 'why', 'pricing', 'how']) assert.ok(html.includes(`id="${id}"`), id);
+  for (const gone of ['id="faq"', 'id="news"', 'id="scenes"', 'data-console', 'news-card', 'data-preset', '<dialog class="sheet" id="pay-dialog"', '¥XX', '$XX']) assert.ok(!html.includes(gone), `Homepage must not contain ${gone}`);
+  for (const p of PRODUCT_PAGES) assert.ok(html.includes(`class="product product--${p.slug}" href="./${p.slug}/"`), `Homepage card for /${p.slug}/`);
+  assert.ok(html.includes('class="product product--kyc" href="./verify/"'), 'The tools card opens KYC审核');
   assert.ok(html.includes('href="./guides/"'));
-  const latest = [...html.matchAll(/class="news-card news-card--[a-z]+" href="\.\/guides\/([a-z0-9-]+)\/"/g)].map(m => m[1]);
-  assert.deepEqual(latest, ARTICLES.slice(0, 3).map(a => a.slug), 'Latest block lists the three newest articles');
+  for (const p of PRODUCT_PAGES) {
+    const catalog = PRODUCTS[p.slug];
+    for (const tier of Object.values(catalog.tiers)) {
+      if (Number.isInteger(tier.monthlyMinor)) assert.ok(html.includes(`${tier.name} · ${formatMoney(tier.monthlyMinor, catalog.currency)}`), `${p.slug} ${tier.name} price`);
+    }
+  }
+  assert.ok(html.includes('暂未受理'), 'The hero and price table say nothing is taking inquiries yet');
   assert.match(html, /<script type="module" src="\.\/assets\/gettoken\/home\.mjs\?v=storefront-20261018"><\/script>/);
 });
 

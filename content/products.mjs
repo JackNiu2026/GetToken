@@ -1,11 +1,12 @@
 // Product pages. Each becomes /<slug>/ with the price cards from assets/gettoken/catalog.mjs,
 // the buying steps, the latest news and guides from `topics`, and the FAQ below.
-// `navHint` is the one-line description in the header's product menu.
+// `navHint` is the one-line description in the header's product menu; `card` is the homepage card line.
 // `updated` changes only when this copy changes; the page date is the later of this and its newest article.
 // Official prices are quoted for comparison only and must name their source.
 export const PRODUCT_PAGES = Object.freeze([
   {
     slug: 'codex',
+    card: '在终端、IDE 和网页里写代码：读懂仓库、改完细节、跑通检查。',
     navHint: '开发者的下一份生产力',
     updated: '2026-10-18',
     tone: 'blue',
@@ -26,6 +27,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'claude',
+    card: '写作、研究与编程的长期搭档。三档都含 Claude Code，按每天的使用强度选。',
     navHint: '把灵感展开更多',
     updated: '2026-10-18',
     tone: 'violet',
@@ -46,6 +48,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'gemini',
+    card: 'Google AI 会员：高级模型、Deep Research 与云端存储一起开通。',
     navHint: 'Google AI 会员一并开通',
     updated: '2026-10-18',
     tone: 'cyan',
@@ -66,6 +69,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'grok',
+    card: '实时信息与长对话，追热点、做调研更快。下单前先核对当前方案与购买入口。',
     navHint: '实时信息与长对话',
     updated: '2026-10-18',
     tone: 'green',
@@ -86,6 +90,7 @@ export const PRODUCT_PAGES = Object.freeze([
   },
   {
     slug: 'ip',
+    card: '给每个店铺和账号一个独立的网络环境，适合跨境电商与多账号运营。',
     navHint: '给连接一个独立身份',
     updated: '2026-10-16',
     tone: 'orange',

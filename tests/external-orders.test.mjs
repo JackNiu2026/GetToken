@@ -49,7 +49,7 @@ test('manual checking, delivery and Taobao refund registration never call paymen
   assert.throws(() => f.service.checkExternalOrder(o.id, 'true', 'check'), /结果不正确/);
   f.service.checkExternalOrder(o.id, true, 'Synthetic purchase and ownership checked');
   const checked = await f.service.lookup(o.id);
-  assert.equal(checked.status, 'reviewing'); assert.equal(checked.dueAt - checked.paidAt, 24 * 3600000);
+  assert.equal(checked.status, 'reviewing'); assert.equal(checked.dueAt - checked.paidAt, 12 * 3600000);
   assert.throws(() => f.service.checkExternalOrder(o.id, true, 'twice'), error => error.status === 409);
   assert.throws(() => f.service.decide(o.id, 'failed'), /证据摘要/);
   f.service.decide(o.id, 'failed', 'Synthetic unsuccessful delivery');

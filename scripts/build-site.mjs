@@ -652,7 +652,12 @@ function homepage() {
 <meta property="og:url" content="${url('')}">
 ${shareImageMeta('')}
 <script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website] })}</script>`;
-  return between(between(between(withLatest, 'HEADER', header), 'FOOTER', siteFooter({ route: null })), 'SEO', seo);
+  // The hero says plainly whether anything is taking inquiries yet (site.config.mjs).
+  const accepting = PRODUCT_PAGES.some(p => Object.keys(PRODUCTS[p.slug].tiers).some(tier => [1, 3, 12].some(months => inquiryState(p.slug, tier, months).state === 'inquiry')));
+  const status = accepting
+    ? '<span><i class="dot dot--open" aria-hidden="true"></i>部分方案已开放咨询，付款前先确认报价与交付</span>'
+    : '<span><i class="dot" aria-hidden="true"></i>当前暂未受理，可先查看方案与价格</span>';
+  return between(between(between(between(withLatest, 'HEADER', header), 'FOOTER', siteFooter({ route: null })), 'SEO', seo), 'STATUS', status);
 }
 
 // Replaces what sits between <!-- NAME:START … --> and <!-- NAME:END --> in index.html.

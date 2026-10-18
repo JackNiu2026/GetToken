@@ -1,6 +1,6 @@
 // The purchase panel on every product page (subscriptions and 住宅 IP).
 // Catalog content is rendered at build time; inquiries never create a payment.
-import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney } from './catalog.mjs';
+import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney } from './catalog.mjs?v=prices-20261018';
 import { $, $$, openPayment } from './shop.mjs';
 import { inquiryState } from './inquiry.mjs';
 

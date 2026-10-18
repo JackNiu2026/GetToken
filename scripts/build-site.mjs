@@ -203,7 +203,7 @@ ${type === 'article' ? `${published ? `<meta property="article:published_time" c
 <link rel="stylesheet" href="${href(route, 'assets/guides/guides.css')}">
 <link rel="stylesheet" href="${href(route, 'assets/gettoken/chrome.css')}?v=site-ui-20261018">
 <script type="module" src="${href(route, 'assets/gettoken/chrome.mjs')}?v=site-ui-20261018"></script>
-${product ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/product.css')}?v=site-ui-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/product.mjs')}?v=site-ui-20261018"></script>\n` : ''}${head}<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website, ...schema] })}</script>
+${product ? `<link rel="stylesheet" href="${href(route, 'assets/gettoken/product.css')}?v=site-ui-20261018">\n<script type="module" src="${href(route, 'assets/gettoken/product.mjs')}?v=prices-20261018"></script>\n` : ''}${head}<script type="application/ld+json">${json({ '@context': 'https://schema.org', '@graph': [organization, website, ...schema] })}</script>
 </head>
 <body${tone ? ` data-tone="${tone}"` : ''}>
 <a class="g-skip" href="#main">跳到正文</a>

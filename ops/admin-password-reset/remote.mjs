@@ -13,6 +13,12 @@ if (existsSync(doneFile)) {
  process.exit(0);
 }
 if(mode==='prepare') {
+ // Approval may arrive after the handoff expires. Rotate the key rather than
+ // extending the old request or accepting an expired encrypted payload.
+ if (existsSync(metaFile) && Date.now()>JSON.parse(readFileSync(metaFile,'utf8')).expiresAt) {
+  if (existsSync(keyFile)) unlinkSync(keyFile);
+  unlinkSync(metaFile);
+ }
  if (!existsSync(keyFile)) {
   const keys=generateKeyPairSync('rsa',{modulusLength:3072});
   writeFileSync(keyFile,keys.privateKey.export({format:'pem',type:'pkcs8'}),{mode:0o600,flag:'wx'});

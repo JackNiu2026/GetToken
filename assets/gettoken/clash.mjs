@@ -1,4 +1,4 @@
-import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=chain-auto-20261103';
+import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=chain-pool-20261103';
 
 const $ = id => document.getElementById(`clash-${id}`);
 const form = $('form');
@@ -21,9 +21,9 @@ function render() {
     const result = buildSubscription(data);
     yaml = result.yaml;
     $('yaml').textContent = yaml;
-    $('output-title').textContent = result.format === 'shadowrocket' ? '小火箭配置' : result.connection === 'chain' ? 'Clash 链式配置' : 'Clash 配置';
+    $('output-title').textContent = result.format === 'shadowrocket' ? '小火箭配置' : result.connection === 'chain' ? 'Clash 组链节点配置' : 'Clash 配置';
     $('copy-yaml').disabled = false;
-    $('count').textContent = `${result.count} 个节点`;
+    $('count').textContent = result.connection === 'chain' ? `${result.count} 个住宅 + 前置订阅` : `${result.count} 个节点`;
     $('count').classList.add('is-ready');
     $('source').removeAttribute('aria-invalid');
     return { data, result };
@@ -139,7 +139,7 @@ function nextStep(method, format, connection) {
     : local
       ? '订阅 → 新建 → Local（本地）→ 导入下载的 YAML → 保存并选中配置 → PROXY 选择节点 → 开启系统代理。'
       : '复制上方 HTTPS 链接 → 订阅页粘贴并导入 → 选中配置 → PROXY 选择节点 → 开启系统代理。';
-  if (connection === 'chain') $('next-detail').textContent = (local ? '订阅 → 新建 Local（本地）→ 导入下载的 YAML 并选中配置。' : '复制上方 HTTPS 链接 → 订阅页粘贴并导入 → 选中配置。') + ' 等待前置订阅加载，在“链式出口”组选择住宅节点，再开启系统代理并使用规则模式。前置在后台自动选择，无需切换分组或另一份订阅。';
+  if (connection === 'chain') $('next-detail').textContent = (local ? '订阅 → 新建 Local（本地）→ 导入下载的 YAML 并选中配置。' : '复制上方 HTTPS 链接 → 订阅页粘贴并导入 → 选中配置。') + ' 等待前置订阅加载，“链式节点”组会同时显示前置和住宅节点。点击客户端“链式代理”，按“前置 → 住宅 SOCKS5”的顺序添加并保存，再开启系统代理。仅选中单个节点不会形成代理链。';
 }
 function updateClient() {
   const shadowrocket = $('format').value === 'shadowrocket';
@@ -155,9 +155,11 @@ updateClient();
 
 function updateConnection() {
   const chained = $('format').value === 'clash' && $('connection').value === 'chain';
+  $('routing').options[0].textContent = chained ? '全部交给“链式节点”组（默认）' : '全部交给 PROXY 分组（默认）';
+  $('routing').options[1].textContent = chained ? '局域网及中国大陆 IP 直连，其余交给“链式节点”' : '局域网及中国大陆 IP 直连，其余走 PROXY';
   $('upstream-fields').hidden = !chained;
   $('upstream').disabled = !chained;
   $('upstream').required = chained;
-  $('chain-path').textContent = chained ? '本机 → 前置节点 → 住宅 SOCKS5 → 网站。目标网站看到住宅代理的出口 IP。' : '直连由本机连接 SOCKS5。入口需要中转时，选择链式代理。';
+  $('chain-path').textContent = chained ? '同组展示前置与住宅节点，导入后通过客户端“链式代理”手动选择先后顺序。' : '直连由本机连接 SOCKS5。入口需要中转时，选择链式代理。';
 }
 $('connection').addEventListener('change', updateConnection);

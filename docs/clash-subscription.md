@@ -64,14 +64,16 @@ Clash 新增 `routing` 参数，默认 `all` 保持原有 MATCH,PROXY；`bypass-
 
 UDP 默认关闭，仅在供应商支持时启用；不是认证失败的修复手段。转换只验证格式，不探测真实代理。生成、下载后展示对应的导入步骤，并明确尚未测试代理连通性。不要将真实凭据写入示例或提交到仓库，secret Gist 也可被持有链接者读取。
 
-## 链式代理（Clash Verge Rev / Mihomo）
+## 手动组链节点（Clash Verge Rev v2.4.5+）
 
-选择“链式代理”，填写原始前置节点订阅的 HTTPS URL，以及住宅 SOCKS5。共享构建函数新增 `connection: 'direct' | 'chain'`（默认 direct）和 `upstreamUrl`。前置链接最多 4096 字符，禁止 URL 登录信息、片段、控制字符和本站生成的订阅 URL；错误不回显 URL。直连忽略未使用的前置 URL；小火箭拒绝 chain，防止静默丢失代理链。
+选择“手动组链”，填写原始前置节点订阅的 HTTPS URL，以及住宅 SOCKS5。共享构建函数参数为 `connection: 'direct' | 'chain'`（默认 direct）和 `upstreamUrl`。chain 生成的是供客户端手动组链的节点配置，不是自动组好的代理链。前置 URL 最多 4096 字符，禁止 URL 登录信息、片段、控制字符和本站生成的订阅 URL；错误不回显 URL。直连忽略未使用的前置 URL；小火箭拒绝 chain。
 
-生成的 `proxy-providers.upstream` 由客户端直接下载，每小时更新，支持当前 Mihomo 可解析的节点订阅；推荐含 `proxies` 的 Clash YAML。仅含 provider 引用、不含节点的完整配置不可直接用。网站不请求该 URL，不提供代理探测或订阅内容验证。首次下载要求客户端能直接访问该地址，不通过住宅节点，避免循环依赖。
+只有一个可见的“链式节点”select 组：`proxies` 列出住宅节点，`use: [upstream]` 同时加入前置 provider 节点。前置统一加“前置 · ”前缀，住宅统一加“住宅 · ”前缀，防止重名。无隐藏分组，无自动选前置逻辑，住宅节点不预设 dialer-proxy，避免与客户端的“链式代理”功能重复组链。前置 provider 覆盖旧 dialer-proxy 为 DIRECT，只导入独立出站节点，排除 direct/reject/dns/compatible。
 
-前置节点统一添加“前置 · ”前缀，并覆盖原节点的 dialer-proxy 为 DIRECT；只导入独立出站节点，排除 direct/reject/dns/compatible。住宅节点统一添加“住宅 · ”前缀，使用 `dialer-proxy: UPSTREAM-AUTO`；两个命名空间避免源节点与分组重名。UPSTREAM-AUTO 是使用 upstream 的隐藏 fallback 自动组，每 300 秒检测，lazy=false，按订阅顺序选择可用前置，并用 empty-fallback: REJECT 阻止空订阅时的流量。“链式出口”是唯一可见的选择组，只列住宅节点，没有 DIRECT 或前置单节点选项。无需手动切换两个组。已加载前置失效时不自动直连住宅入口。显式选择的局域网/中国大陆 IP 直连规则仍生效。
+导入并选中该配置后，等待前置加载；“链式节点”组会同时出现两类节点。点击客户端右上角“链式代理”，按“前置节点（入口、在上）→住宅 SOCKS5（出口、在下）”的顺序配置并保存启用。仅把节点放同组、或只选中一个节点都不会自动串联。连接路径应为电脑 → 选中的前置 → 选中的住宅 SOCKS5 → 网站。客户端的代理链配置负责添加实际 dialer 关联；网站仅准备节点池。
 
-实际链路：电脑 → 后台自动选择的前置节点 → “链式出口”中选中的住宅 SOCKS5 → 网站。前置测速只验证前半段；住宅节点测速才验证完整链路。UDP 需两段同时支持。前置更新后由自动组重新选择，选择缓存可能短暂保留旧节点；住宅凭据变化则重新生成配置。隐藏组需要客户端支持 hidden 字段，建议使用新版 Clash Verge Rev。测速地址为 https://www.gstatic.com/generate_204，可达性影响自动选择；前置测速快不保证它到住宅入口也快。生成链接会将含前置订阅令牌的完整 YAML 加密存储 30 天；链接持有人仍能读取全部内容，仅下载文件不上传本站。
+`proxy-providers.upstream` 每小时由客户端直接更新，推荐返回含 proxies 列表的 Clash YAML；仅引用其他 provider 而不含节点的配置不可直接用。网站不请求或验证前置链接，首次加载要求客户端能直接访问该 HTTPS 地址。订阅更新后，若原前置被删除或失效，需在客户端重新选择并保存代理链；不承诺客户端保存的链自动跟随远程节点变化。
 
-可选真实内核集成检查：`node tests/helpers/mihomo-chain.mjs /path/to/mihomo`。该检查只使用本地可信测试证书、HTTPS 订阅及两段认证 SOCKS5，验证自动选择、隐藏组 API 状态、切换住宅出口仍经前置、链路顺序、远程更新、命名冲突覆盖和前置失败无直连回退，需要 openssl 和 Mihomo 二进制。
+生成链接会将含前置订阅令牌的完整 YAML 加密存储 30 天，链接持有人可读取全部内容；仅下载文件不上传本站。旧链接是旧配置快照，需重新生成并替换，才能使用同组节点池。
+
+可选内核检查：`node tests/helpers/mihomo-chain.mjs /path/to/mihomo`。使用本地 HTTPS 订阅和认证 SOCKS5 服务，验证核心 API 的同组节点列表，并模拟客户端应用前后节点的 dialer 关系，检查两段连接、出口切换和重新选择前置；不等同于启动了真实 Clash Verge UI。需要 openssl 和 Mihomo。

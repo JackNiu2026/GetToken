@@ -225,7 +225,7 @@ test('Clash direct rules precede the proxy fallback and never replace Shadowrock
   assert.throws(() => buildSubscription({ source, routing: 'invalid' }), /分流规则/);
 });
 
-test('chain mode builds a provider-backed upstream group and isolates residential names', () => {
+test('manual chain mode exposes upstream and residential candidates in the same group', () => {
   const source = 'socks5://u:p@203.0.113.10:1080#PRE-PROXY\nsocks5://203.0.113.11:1081#前置%20·%20demo';
   const { yaml, connection } = buildSubscription({ source, connection: 'chain', upstreamUrl: 'https://provider.example/sub?token=private%26token&x=1' });
   assert.equal(connection, 'chain');
@@ -233,16 +233,14 @@ test('chain mode builds a provider-backed upstream group and isolates residentia
   assert.ok(yaml.includes('interval: 3600\n    proxy: DIRECT'));
   assert.ok(yaml.includes('additional-prefix: "前置 · "\n      dialer-proxy: DIRECT'));
   assert.ok(yaml.includes('exclude-type: direct|reject|dns|compatible'));
-  assert.equal((yaml.match(/dialer-proxy: UPSTREAM-AUTO/g) || []).length, 2);
+  assert.equal((yaml.match(/dialer-proxy:/g) || []).length, 1, 'only upstream override resets old dialer; residential nodes remain unbound');
   assert.ok(yaml.includes('name: "住宅 · PRE-PROXY"'));
   assert.ok(yaml.includes('name: "住宅 · 前置 · demo"'));
-  assert.ok(yaml.includes('name: UPSTREAM-AUTO\n    type: fallback\n    hidden: true'));
+  assert.ok(yaml.includes('proxy-groups:\n  - name: 链式节点\n    type: select\n    proxies:\n      - "住宅 · PRE-PROXY"\n      - "住宅 · 前置 · demo"\n    use:\n      - upstream'));
+  assert.ok(!yaml.includes('hidden:') && !yaml.includes('UPSTREAM-AUTO'));
   assert.ok(!yaml.includes('      - DIRECT'));
   assert.ok(!yaml.includes('type: relay'));
-  assert.ok(yaml.includes('    lazy: false'));
-  assert.ok(yaml.includes('    empty-fallback: REJECT'));
-  assert.ok(yaml.includes('  - name: 链式出口\n    type: select'));
-  assert.ok(yaml.endsWith('  - MATCH,链式出口\n'));
+  assert.ok(yaml.endsWith('  - MATCH,链式节点\n'));
 });
 
 test('chain URL validation rejects malformed inputs without reflecting tokens', () => {

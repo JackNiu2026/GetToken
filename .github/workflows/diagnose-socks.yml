@@ -1,0 +1,25 @@
+name: Diagnose authorized SOCKS5 subscription
+on:
+  push:
+    branches: [diagnostics/socks-check-20261102]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: gettoken-production
+      cancel-in-progress: false
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only diagnosis of the authorized subscription
+        env:
+          DEPLOY_HOST: ${{ vars.GETTOKEN_HOST || '39.97.40.89' }}
+          DEPLOY_USER: ${{ vars.GETTOKEN_USER || 'root' }}
+          DEPLOY_PORT: ${{ vars.GETTOKEN_PORT || '22' }}
+          DEPLOY_SSH_KEY: ${{ secrets.GETTOKEN_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.GETTOKEN_KNOWN_HOSTS }}
+          SUBSCRIPTION_HASH: 8337740faeff1aa067b5eaa720d5da8f0f2ddc4f69d7ab3320230aff8e2712f0
+        run: bash scripts/diagnose-socks-ssh.sh

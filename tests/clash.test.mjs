@@ -224,3 +224,47 @@ test('Clash direct rules precede the proxy fallback and never replace Shadowrock
   assert.equal(buildSubscription({ source, format: 'shadowrocket', routing: 'bypass-cn' }).yaml, buildSubscription({ source, format: 'shadowrocket' }).yaml);
   assert.throws(() => buildSubscription({ source, routing: 'invalid' }), /分流规则/);
 });
+
+test('chain mode builds a provider-backed upstream group and isolates residential names', () => {
+  const source = 'socks5://u:p@203.0.113.10:1080#PRE-PROXY\nsocks5://203.0.113.11:1081#前置%20·%20demo';
+  const { yaml, connection } = buildSubscription({ source, connection: 'chain', upstreamUrl: 'https://provider.example/sub?token=private%26token&x=1' });
+  assert.equal(connection, 'chain');
+  assert.ok(yaml.includes('url: "https://provider.example/sub?token=private%26token&x=1"'));
+  assert.ok(yaml.includes('interval: 3600\n    proxy: DIRECT'));
+  assert.ok(yaml.includes('additional-prefix: "前置 · "\n      dialer-proxy: DIRECT'));
+  assert.ok(yaml.includes('exclude-type: direct|reject|dns|compatible'));
+  assert.equal((yaml.match(/dialer-proxy: PRE-PROXY/g) || []).length, 2);
+  assert.ok(yaml.includes('name: "住宅 · PRE-PROXY"'));
+  assert.ok(yaml.includes('name: "住宅 · 前置 · demo"'));
+  assert.ok(yaml.includes('name: PRE-PROXY\n    type: select\n    proxies:\n      - REJECT\n    use:\n      - upstream'));
+  assert.ok(!yaml.includes('      - DIRECT'));
+  assert.ok(!yaml.includes('type: relay'));
+});
+
+test('chain URL validation rejects malformed inputs without reflecting tokens', () => {
+  const source = '203.0.113.10:1080';
+  for (const upstreamUrl of [undefined, '', 'not-a-url', 'http://provider.example/private-token', 'https://user:private-token@provider.example/sub', 'https://provider.example/sub#private-token', 'https://provider.example/pri\nvate-token', 'https://provider.example/' + 'a'.repeat(4096), 'https://gettoken.cc/api/clash/subscriptions/private-token']) {
+    assert.throws(() => buildSubscription({ source, connection: 'chain', upstreamUrl }), e => !e.message.includes('private-token'));
+  }
+  assert.throws(() => buildSubscription({ source, connection: 'typo' }), /直连或链式/);
+  assert.throws(() => buildSubscription({ source, connection: 'chain', upstreamUrl: 'https://provider.example/sub', format: 'shadowrocket' }), /仅支持 Clash/);
+  const direct = buildSubscription({ source });
+  assert.equal(buildSubscription({ source, connection: 'direct', upstreamUrl: 'https://provider.example/private-token' }).yaml, direct.yaml);
+  assert.ok(!direct.yaml.includes('proxy-providers:') && !direct.yaml.includes('dialer-proxy:'));
+});
+
+test('chain subscriptions serve encrypted configuration and reject incompatible clients', async t => {
+  const f = await fixture(t);
+  const input = { source: '203.0.113.10:1080:demo:password', connection: 'chain', upstreamUrl: 'https://provider.example/sub?token=private-upstream-token' };
+  const created = await f.create(input);
+  assert.equal(created.status, 201);
+  const data = await created.json();
+  assert.ok(!JSON.stringify(data).includes('private-upstream-token'));
+  assert.ok(!JSON.stringify(f.store.get('select * from clash_subscriptions')).includes('private-upstream-token'));
+  const loaded = await fetch(f.base + data.path);
+  assert.equal(await loaded.text(), buildSubscription(input).yaml);
+  assert.equal((await f.create({ ...input, format: 'shadowrocket' })).status, 400);
+  const failed = await f.create({ ...input, upstreamUrl: 'http://provider.example/private-upstream-token' });
+  assert.equal(failed.status, 400);
+  assert.ok(!(await failed.text()).includes('private-upstream-token'));
+});

@@ -17,8 +17,11 @@ for (const type of ['desktop-nav', 'mobile-nav']) {
   assert.match(nav, />订阅转换<\/a>/, 'Both navigation menus must include the converter');
   assert.doesNotMatch(nav, />住宅IP<\/a>/, 'The former residential IP navigation item must be replaced');
 }
-for (const format of ['clash', 'shadowrocket']) {
-const input = { source: 'socks5://smoke:test%40password@203.0.113.10:1080#部署验证\nsocks5h://[2001:db8::1]:1080\n203.0.113.20:1080:user:p@ss:word%40\nsocks://ZGVtbzoxMjM0OnBhcnQ6dGFpbEAyMDMuMC4xMTMuMTA6MTA4MA==', name: '部署验证（示例地址）', udp: false, format };
+assert.match(html, /id="clash-connection"/, 'Connection mode must be available');
+assert.match(html, /id="clash-upstream"/, 'Chain mode must accept an upstream subscription');
+for (const variant of [{ format: 'clash' }, { format: 'shadowrocket' }, { format: 'clash', connection: 'chain', upstreamUrl: 'https://provider.example/sub?token=synthetic-deploy-check' }]) {
+const { format } = variant;
+const input = { source: 'socks5://smoke:test%40password@203.0.113.10:1080#部署验证\nsocks5h://[2001:db8::1]:1080\n203.0.113.20:1080:user:p@ss:word%40\nsocks://ZGVtbzoxMjM0OnBhcnQ6dGFpbEAyMDMuMC4xMTMuMTA6MTA4MA==', name: '部署验证（示例地址）', udp: false, ...variant };
 const created = await request('/api/clash/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-GetToken-Clash': '1' }, body: JSON.stringify(input) });
 assert.equal(created.status, 201, 'Subscription API must create a private link');
 const subscription = await created.json();
@@ -37,5 +40,5 @@ try {
   assert.equal(revoked.status, 200, 'The synthetic subscription must be revoked');
 }
 assert.equal((await request(subscription.path)).status, 404, 'Revoked links must stop serving credentials');
-console.log(`Production ${format} conversion verified: mixed SOCKS5 formats, IPv6, YAML payload, navigation and revocation. Synthetic documentation IPs only; subscription removed.`);
+console.log(`Production ${variant.connection === 'chain' ? 'chain' : format} conversion verified: mixed SOCKS5 formats, IPv6, YAML payload, navigation and revocation. Synthetic documentation IPs only; subscription removed.`);
 }

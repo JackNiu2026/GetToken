@@ -67,3 +67,8 @@
 .c-next-step strong { font-size: 14px; }
 .c-next-step p { margin-top: 8px; font-size: 14px; line-height: 1.85; color: var(--ink-2); }
 .c-next-step .c-help-link { display: inline-block; font-size: 13px; }
+
+.c-upstream { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.c-main input[type="url"] { width: 100%; min-height: 44px; border: 1px solid var(--line-2); border-radius: 8px; padding: 11px 13px; background: var(--bg); color: var(--ink); caret-color: var(--link); }
+.c-upstream input { font-family: var(--mono) !important; font-size: 13px !important; }
+@media (max-width: 600px) { .c-upstream input { font-size: 16px !important; } }

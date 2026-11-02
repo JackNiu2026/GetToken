@@ -113,10 +113,23 @@ export function parseProxies(source) {
   });
 }
 
-export function buildClashConfig({ source, name = 'SOCKS5 订阅', udp = false, routing = 'all' } = {}) {
+export function validateUpstreamUrl(value) {
+  const message = '前置订阅需为有效的 HTTPS 链接（最多 4096 字符），不能包含登录信息或片段';
+  if (typeof value !== 'string' || value.length > 4096 || !cleanText(value) || !/^https:\/\//i.test(value.trim())) throw new Error(message);
+  let url;
+  try { url = new URL(value.trim()); } catch { throw new Error(message); }
+  if (url.protocol !== 'https:' || url.username || url.password || url.hash || /\s/.test(value.trim())) throw new Error(message);
+  if (['gettoken.cc', 'www.gettoken.cc'].includes(url.hostname) && url.pathname.startsWith('/api/clash/subscriptions')) throw new Error('请填写供应商的原始前置订阅，不要使用本站生成的订阅链接');
+  return url.href;
+}
+
+export function buildClashConfig({ source, name = 'SOCKS5 订阅', udp = false, routing = 'all', connection = 'direct', upstreamUrl = '' } = {}) {
   if (typeof name !== 'string' || !name.trim() || name.length > 60 || !cleanText(name)) throw new Error('订阅名称需为 1–60 字，不能包含换行');
   if (typeof udp !== 'boolean') throw new Error('UDP 选项不正确');
   if (!['all', 'bypass-cn'].includes(routing)) throw new Error('请选择有效的 Clash 分流规则');
+  if (!['direct', 'chain'].includes(connection)) throw new Error('请选择直连或链式代理');
+  const upstream = connection === 'chain' ? validateUpstreamUrl(upstreamUrl) : '';
+  const chained = connection === 'chain';
   const directRules = routing === 'bypass-cn' ? [
     'IP-CIDR,127.0.0.0/8,DIRECT,no-resolve',
     'IP-CIDR,10.0.0.0/8,DIRECT,no-resolve',
@@ -128,23 +141,28 @@ export function buildClashConfig({ source, name = 'SOCKS5 订阅', udp = false, 
     'IP-CIDR6,fe80::/10,DIRECT,no-resolve',
     'GEOIP,CN,DIRECT',
   ] : [];
-  const proxies = parseProxies(source);
+  const proxies = parseProxies(source).map(p => ({ ...p, name: chained ? `住宅 · ${p.name}` : p.name }));
   const yaml = [
-    `# ${name.trim()}`, 'mixed-port: 7897', 'allow-lan: false', 'mode: rule', 'log-level: info', 'proxies:',
+    `# ${name.trim()}`, 'mixed-port: 7897', 'allow-lan: false', 'mode: rule', 'log-level: info',
+    ...(chained ? ['profile:', '  store-selected: true', 'proxy-providers:', '  upstream:', '    type: http', `    url: ${quote(upstream)}`, '    interval: 3600', '    proxy: DIRECT', '    exclude-type: direct|reject|dns|compatible', '    override:', '      additional-prefix: "前置 · "', '      dialer-proxy: DIRECT', '    health-check:', '      enable: false'] : []),
+    'proxies:',
     ...proxies.flatMap(p => [
       `  - name: ${quote(p.name)}`, '    type: socks5', `    server: ${quote(p.host)}`, `    port: ${p.port}`,
       ...(p.username ? [`    username: ${quote(p.username)}`, `    password: ${quote(p.password)}`] : []),
-      `    udp: ${udp}`,
+      `    udp: ${udp}`, ...(chained ? ['    dialer-proxy: PRE-PROXY'] : []),
     ]),
-    'proxy-groups:', '  - name: PROXY', '    type: select', '    proxies:',
-    ...proxies.map(p => `      - ${quote(p.name)}`), '      - DIRECT',
+    'proxy-groups:',
+    ...(chained ? ['  - name: PRE-PROXY', '    type: select', '    proxies:', '      - REJECT', '    use:', '      - upstream'] : []),
+    '  - name: PROXY', '    type: select', '    proxies:',
+    ...proxies.map(p => `      - ${quote(p.name)}`), ...(chained ? [] : ['      - DIRECT']),
     'rules:', ...directRules.map(rule => `  - ${rule}`), '  - MATCH,PROXY', '',
   ].join('\n');
-  return { yaml, count: proxies.length, name: name.trim() };
+  return { yaml, count: proxies.length, name: name.trim(), connection };
 }
 
 export function buildSubscription({ format = 'clash', ...input } = {}) {
   if (!['clash', 'shadowrocket'].includes(format)) throw new Error('请选择 Clash 或小火箭订阅格式');
+  if (format === 'shadowrocket' && input.connection === 'chain') throw new Error('链式代理仅支持 Clash Verge Rev / Mihomo，请切换客户端或选择直连');
   const result = buildClashConfig(input);
   if (format === 'shadowrocket') {
     // Shadowrocket accepts a YAML proxies list (same representation as Sub-Store's producer).

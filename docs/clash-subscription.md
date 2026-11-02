@@ -63,3 +63,15 @@ node scripts/package-verify.mjs
 Clash 新增 `routing` 参数，默认 `all` 保持原有 MATCH,PROXY；`bypass-cn` 在末尾代理规则之前添加 IPv4/IPv6 回环、私网和链路本地地址直连，以及 GEOIP,CN,DIRECT。需客户端使用规则模式并具备可用 GeoIP 数据库，不包含域名分流。小火箭输出仍只有 proxies 节点列表，不附带 Clash 规则。已有订阅内容不变，修改选项后须生成新链接或重新下载文件。
 
 UDP 默认关闭，仅在供应商支持时启用；不是认证失败的修复手段。转换只验证格式，不探测真实代理。生成、下载后展示对应的导入步骤，并明确尚未测试代理连通性。不要将真实凭据写入示例或提交到仓库，secret Gist 也可被持有链接者读取。
+
+## 链式代理（Clash Verge Rev / Mihomo）
+
+选择“链式代理”，填写原始前置节点订阅的 HTTPS URL，以及住宅 SOCKS5。共享构建函数新增 `connection: 'direct' | 'chain'`（默认 direct）和 `upstreamUrl`。前置链接最多 4096 字符，禁止 URL 登录信息、片段、控制字符和本站生成的订阅 URL；错误不回显 URL。直连忽略未使用的前置 URL；小火箭拒绝 chain，防止静默丢失代理链。
+
+生成的 `proxy-providers.upstream` 由客户端直接下载，每小时更新，支持当前 Mihomo 可解析的节点订阅；推荐含 `proxies` 的 Clash YAML。仅含 provider 引用、不含节点的完整配置不可直接用。网站不请求该 URL，不提供代理探测或订阅内容验证。首次下载要求客户端能直接访问该地址，不通过住宅节点，避免循环依赖。
+
+前置节点统一添加“前置 · ”前缀，并覆盖原节点的 dialer-proxy 为 DIRECT；只导入独立出站节点，排除 direct/reject/dns/compatible。住宅节点统一添加“住宅 · ”前缀，使用 `dialer-proxy: PRE-PROXY`；两个命名空间避免源节点与分组重名。PRE-PROXY 是使用 upstream 的手动选择组，初始为 REJECT，用户需改选可用前置；PROXY 只列住宅节点，没有 DIRECT 选项。已加载前置失效时不自动直连住宅入口。显式选择的局域网/中国大陆 IP 直连规则仍生效。
+
+实际链路：电脑 → PRE-PROXY 中选中的前置节点 → PROXY 中选中的住宅 SOCKS5 → 网站。前置测速只验证前半段；住宅节点测速才验证完整链路。UDP 需两段同时支持。前置更新后节点消失时可能需要重新选择，住宅凭据变化则重新生成配置。生成链接会将含前置订阅令牌的完整 YAML 加密存储 30 天；链接持有人仍能读取全部内容，仅下载文件不上传本站。
+
+可选真实内核集成检查：`node tests/helpers/mihomo-chain.mjs /path/to/mihomo`。该检查只使用本地可信测试证书、HTTPS 订阅及两段认证 SOCKS5，验证链路顺序、远程更新、命名冲突覆盖和前置失败无直连回退，需要 openssl 和 Mihomo 二进制。

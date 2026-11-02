@@ -1,4 +1,4 @@
-import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=imports-20261102';
+import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=chain-20261103';
 
 const $ = id => document.getElementById(`clash-${id}`);
 const form = $('form');
@@ -11,7 +11,7 @@ function error(message = '') {
   $('error').hidden = !message;
   if (message) $('feedback').textContent = '';
 }
-function values() { return { source: $('source').value, name: $('name').value, udp: $('udp').checked, format: $('format').value, routing: $('format').value === 'clash' ? $('routing').value : 'all' }; }
+function values() { return { source: $('source').value, name: $('name').value, udp: $('udp').checked, format: $('format').value, routing: $('format').value === 'clash' ? $('routing').value : 'all', connection: $('format').value === 'clash' ? $('connection').value : 'direct', upstreamUrl: $('format').value === 'clash' && $('connection').value === 'chain' ? $('upstream').value : '' }; }
 function render() {
   error();
   $('feedback').textContent = '';
@@ -21,7 +21,7 @@ function render() {
     const result = buildSubscription(data);
     yaml = result.yaml;
     $('yaml').textContent = yaml;
-    $('output-title').textContent = result.format === 'shadowrocket' ? '小火箭配置' : 'Clash 配置';
+    $('output-title').textContent = result.format === 'shadowrocket' ? '小火箭配置' : result.connection === 'chain' ? 'Clash 链式配置' : 'Clash 配置';
     $('copy-yaml').disabled = false;
     $('count').textContent = `${result.count} 个节点`;
     $('count').classList.add('is-ready');
@@ -29,8 +29,9 @@ function render() {
     return { data, result };
   } catch (e) {
     error(e.message);
-    $('source').setAttribute('aria-invalid', 'true');
-    $('source').focus();
+    const target = /^(前置订阅|请填写供应商)/.test(e.message) ? $('upstream') : $('source');
+    target.setAttribute('aria-invalid', 'true');
+    target.focus();
     return null;
   }
 }
@@ -81,7 +82,7 @@ form.addEventListener('submit', async event => {
     $('expiry').textContent = `有效期至 ${new Date(data.expiresAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}（北京时间）。`;
     $('subscription').hidden = false;
     if (matchMedia('(max-width: 900px)').matches) $('subscription').scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-    nextStep('remote', data.format);
+    nextStep('remote', data.format, output.result.connection);
     $('feedback').textContent = '订阅已生成，尚未测试代理连通性。';
     if (previous) {
       try { await request(previous.path, { method: 'DELETE', headers: { 'X-GetToken-Clash-Manage': previous.manageToken } }); $('feedback').textContent += ' 本页的上一个链接已失效，请在客户端替换为新链接。'; }
@@ -97,7 +98,7 @@ $('download').addEventListener('click', () => {
   const link = document.createElement('a');
   link.href = url; link.download = output.result.format === 'shadowrocket' ? 'gettoken-shadowrocket.yaml' : 'gettoken-clash.yaml'; document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  nextStep('local', output.result.format);
+  nextStep('local', output.result.format, output.result.connection);
   $('feedback').textContent = output.result.format === 'shadowrocket' ? '小火箭节点配置已生成；远程订阅请使用“生成订阅链接”。' : 'YAML 文件已生成，尚未测试代理连通性。';
 });
 $('copy-yaml').addEventListener('click', () => copy(yaml, $('yaml')));
@@ -124,12 +125,12 @@ $('example').addEventListener('click', () => {
 });
 form.addEventListener('input', () => {
   $('next-step').hidden = true;
-  error(); $('source').removeAttribute('aria-invalid');
+  error(); $('source').removeAttribute('aria-invalid'); $('upstream').removeAttribute('aria-invalid');
   $('feedback').textContent = subscription ? '输入已修改。重新生成会替换本页上一个订阅链接。' : '';
   if (yaml) { $('count').textContent = '输入已修改，需重新转换'; $('count').classList.remove('is-ready'); $('copy-yaml').disabled = true; }
 });
 
-function nextStep(method, format) {
+function nextStep(method, format, connection) {
   $('next-step').hidden = false;
   const local = method === 'local';
   $('next-title').textContent = format === 'shadowrocket' ? '下一步：在小火箭中导入节点订阅' : local ? '下一步：在 Clash Verge 中新建本地配置' : '下一步：在 Clash Verge 中导入订阅';
@@ -138,12 +139,25 @@ function nextStep(method, format) {
     : local
       ? '订阅 → 新建 → Local（本地）→ 导入下载的 YAML → 保存并选中配置 → PROXY 选择节点 → 开启系统代理。'
       : '复制上方 HTTPS 链接 → 订阅页粘贴并导入 → 选中配置 → PROXY 选择节点 → 开启系统代理。';
+  if (connection === 'chain') $('next-detail').textContent += ' 链式配置：等待前置订阅加载，在 PRE-PROXY 将 REJECT 切换为可用前置节点，再在 PROXY 选择住宅节点；如前置列表为空，请检查客户端的 provider 下载日志。';
 }
 function updateClient() {
   const shadowrocket = $('format').value === 'shadowrocket';
+  $('connection-options').hidden = shadowrocket;
+  $('connection').disabled = shadowrocket;
+  updateConnection();
   $('routing-options').hidden = shadowrocket;
   $('routing').disabled = shadowrocket;
   $('download').textContent = shadowrocket ? '下载节点 YAML' : '下载 YAML，本地导入';
 }
 $('format').addEventListener('change', updateClient);
 updateClient();
+
+function updateConnection() {
+  const chained = $('format').value === 'clash' && $('connection').value === 'chain';
+  $('upstream-fields').hidden = !chained;
+  $('upstream').disabled = !chained;
+  $('upstream').required = chained;
+  $('chain-path').textContent = chained ? '本机 → 前置节点 → 住宅 SOCKS5 → 网站。目标网站看到住宅代理的出口 IP。' : '直连由本机连接 SOCKS5。入口需要中转时，选择链式代理。';
+}
+$('connection').addEventListener('change', updateConnection);

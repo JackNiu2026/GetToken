@@ -58,3 +58,12 @@
 @media (hover: hover) { .c-button:hover { border-color: var(--link); } .c-text-button:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; } }
 @media (max-width: 900px) { .c-workspace { grid-template-columns: minmax(0, 1fr); } .c-output { border-left: 0; border-top: 1px solid var(--line-2); } .c-code { min-height: 220px; } .c-instructions { gap: 32px; } }
 @media (max-width: 600px) { .c-intro { display: block; margin-top: 24px; } .c-intro p br { display: none; } .c-help-link { display: inline-block; margin-top: 8px; } .c-editor, .c-output { padding: 20px 16px; } .c-options { grid-template-columns: minmax(0, 1fr); gap: 14px; } .c-main label > span:not(:first-child) { display: block; margin: 4px 0 0; } .c-main .c-checkbox span { margin: 0; } .c-button { padding-inline: 16px; } .c-instructions { grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 40px; } }
+
+.c-import-guides { min-width: 0; }
+.c-import-guides section + section { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--line); }
+.c-import-guides h3 { font-size: 19px; line-height: 1.5; }
+.c-import-guides ol { margin-top: 20px; }
+.c-next-step { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line-2); }
+.c-next-step strong { font-size: 14px; }
+.c-next-step p { margin-top: 8px; font-size: 14px; line-height: 1.85; color: var(--ink-2); }
+.c-next-step .c-help-link { display: inline-block; font-size: 13px; }

@@ -1,8 +1,8 @@
 import { MAX_PROXIES, MAX_SOURCE, SUBSCRIPTION_DAYS } from '../assets/gettoken/clash-config.mjs';
 
 export const CLASH_BODY = `<main id="main" class="c-main g-shell">
-<nav class="g-crumbs" aria-label="面包屑"><ol><li><a href="../">首页</a></li><li><a href="../ip/">住宅IP</a></li><li><span aria-current="page">订阅转换</span></li></ol></nav>
-<div class="c-intro"><div><h1>SOCKS5 订阅转换</h1><p>粘贴代理信息，选择 Clash 或小火箭，生成对应的订阅链接。<br>支持批量转换和 YAML 配置下载。</p></div><a class="c-help-link" href="#instructions">如何导入</a></div>
+<nav class="g-crumbs" aria-label="面包屑"><ol><li><a href="../">首页</a></li><li><span aria-current="page">订阅转换</span></li></ol></nav>
+<div class="c-intro"><div><h1>SOCKS5 订阅转换</h1><p>将 SOCKS5 代理转换为 Clash 或小火箭配置。<br>下载 YAML 本地导入，或生成可在客户端导入的订阅链接。</p></div><a class="c-help-link" href="#instructions">如何导入</a></div>
 <noscript><p class="c-error">请启用 JavaScript 后转换代理配置。</p></noscript>
 <div class="c-workspace">
 <section class="c-editor" aria-labelledby="input-title">
@@ -13,12 +13,14 @@ export const CLASH_BODY = `<main id="main" class="c-main g-shell">
 <textarea id="clash-source" name="source" rows="8" required maxlength="${MAX_SOURCE}" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="clash-formats" placeholder="socks5://user:password@203.0.113.10:1080#我的节点&#10;203.0.113.20:1080:user:password&#10;203.0.113.30:1080"></textarea>
 <p class="c-hint" id="clash-formats">支持 IP:端口:账号:密码、账号:密码@IP:端口、socks5://、socks5h:// 和 Base64 socks:// 分享链接。IPv6 地址需加方括号；URI 凭据中的特殊字符用百分号编码，冒号格式中的密码原样保留。</p>
 <div class="c-target"><label for="clash-format">目标客户端</label><select id="clash-format" name="format"><option value="clash">Clash / Clash Verge</option><option value="shadowrocket">小火箭 Shadowrocket</option></select><p class="c-hint">选择客户端后再生成。小火箭使用独立的 YAML 节点订阅，保留完整账号密码。</p></div>
+<div class="c-target" id="clash-routing-options"><label for="clash-routing">Clash 分流规则</label><select id="clash-routing" name="routing" aria-describedby="clash-routing-hint"><option value="all">全部交给 PROXY 分组（默认）</option><option value="bypass-cn">局域网及中国大陆 IP 直连，其余走 PROXY</option></select><p class="c-hint" id="clash-routing-hint">分流在客户端的规则模式下生效。中国大陆 IP 直连使用 GEOIP,CN，需客户端具备可用的 GeoIP 数据库；不包含按域名分流。</p></div>
 <div class="c-options"><div><label for="clash-name">订阅名称</label><input id="clash-name" name="name" value="SOCKS5 订阅" maxlength="60" required autocomplete="off"></div><label class="c-checkbox"><input type="checkbox" id="clash-udp" name="udp"><span>启用 UDP <small>需代理服务支持</small></span></label></div>
 <p class="c-privacy">生成订阅会将配置加密保存到本站 ${SUBSCRIPTION_DAYS} 天。持有链接的人可读取代理凭据，请妥善保管。下载 YAML 仅在本机处理。</p>
-<div class="c-actions"><button class="c-button c-button--primary" type="submit" id="clash-generate">生成订阅链接</button><button class="c-button" type="button" id="clash-download">下载 YAML</button></div>
+<div class="c-actions"><button class="c-button c-button--primary" type="button" id="clash-download">下载 YAML，本地导入</button><button class="c-button" type="submit" id="clash-generate">生成订阅链接</button></div>
 </fieldset>
 <p class="c-error" id="clash-error" role="alert" hidden></p>
 <p class="c-feedback" id="clash-feedback" role="status" aria-live="polite"></p>
+<div class="c-next-step" id="clash-next-step" hidden><strong id="clash-next-title"></strong><p id="clash-next-detail"></p><a class="c-help-link" href="#instructions">查看完整导入步骤</a></div>
 </form>
 </section>
 <section class="c-output" aria-labelledby="clash-output-title">
@@ -28,14 +30,16 @@ export const CLASH_BODY = `<main id="main" class="c-main g-shell">
 <div class="c-actions"><button class="c-button c-button--small" type="button" id="clash-copy-url">复制链接</button><a class="c-button c-button--small" id="clash-import">导入 Clash Verge</a><button class="c-text-button c-revoke" id="clash-revoke" type="button">使链接失效</button></div>
 <p class="c-hint" id="clash-expiry"></p><p class="c-hint">这是生成时的配置快照。修改代理后需生成新链接；关闭页面后，原链接仍有效至到期。</p>
 </div>
-<div class="c-preview-head"><span>YAML 预览</span><button type="button" class="c-text-button" id="clash-copy-yaml" disabled>复制配置</button></div>
+<div class="c-preview-head"><span>YAML 配置预览 · 含代理凭据</span><button type="button" class="c-text-button" id="clash-copy-yaml" disabled>复制配置</button></div>
 <pre class="c-code" tabindex="0" aria-label="YAML 配置预览"><code id="clash-yaml"># 在左侧填入 SOCKS5 代理信息
 # 生成订阅或下载文件后，将在这里预览配置
 # 预览包含代理凭据，请勿截图分享</code></pre>
 </section>
 </div>
-<section class="c-instructions" id="instructions" aria-labelledby="instructions-title"><div><h2 id="instructions-title">在客户端中使用</h2><p>Clash 输出完整 YAML 配置；小火箭输出 YAML 节点列表。两种格式均通过本站私密链接拉取。</p></div>
-<ol><li><strong>填写代理并选择客户端</strong><p>支持带账号密码或无需认证的代理。“填入示例”使用文档保留地址，仅用于演示格式。</p></li><li><strong>生成并导入订阅链接</strong><p>Clash Verge：在“订阅”页粘贴链接后导入。小火箭：点右上角“+”，类型选择“Subscribe / 订阅”，在 URL 中粘贴链接并保存。也可以使用页面上的客户端导入按钮。</p></li><li><strong>选择节点并连接</strong><p>Clash 在 PROXY 分组选择节点，开启系统代理或 TUN；选择 DIRECT 则直连。小火箭选中新增订阅内的节点，再按自己的路由配置连接。节点订阅不会替换小火箭原有分流规则。</p></li></ol>
-</section>
-<div class="c-notes"><details><summary>只有 YAML 文件，怎么导入？</summary><p>Clash Verge 可在“订阅”页面新建本地配置并选择下载的 YAML 文件。小火箭建议选择对应客户端后生成链接，以 Subscribe 类型导入。静态预览没有订阅 API 时仍能下载配置。</p></details><details><summary>订阅链接和代理连接有什么区别？</summary><p>订阅链接用于下载代理配置。转换不会检测代理连通性、改变 IP 所属地区或延长代理有效期；实际连接和 UDP 转发取决于代理服务本身。</p></details><details><summary>如何更新或删除订阅？</summary><p>修改代理信息后重新生成链接，再导入客户端。当前页面可使用“使链接失效”立即删除对应订阅；配置会在 ${SUBSCRIPTION_DAYS} 天后自动失效。失效不会删除客户端已经下载的配置。</p></details></div>
+<section class="c-instructions" id="instructions" aria-labelledby="instructions-title"><div><h2 id="instructions-title">两种导入方式</h2><p>socks5:// 是代理节点链接，不是 Clash 的远程订阅地址。这里将它转换为 YAML；生成的 HTTPS 订阅链接用于下载这份配置。</p><p>不需要托管文件或上传到 Gist。仅在本机使用时，直接下载 YAML 即可。</p></div>
+<div class="c-import-guides">
+<section aria-labelledby="local-import-title"><h3 id="local-import-title">方式一：本地文件导入</h3><p>适合 Clash Verge，配置仅在浏览器本机生成。</p><ol><li><strong>下载 YAML</strong><p>填写代理信息，选择 Clash / Clash Verge，按需设置分流规则和 UDP，然后点击“下载 YAML，本地导入”。</p></li><li><strong>新建 Local 配置</strong><p>打开 Clash Verge → 订阅 → 新建，类型选择 Local（本地），导入下载的 YAML 文件并保存。不同版本的入口名称可能略有差异。</p></li><li><strong>启用配置并连接</strong><p>选中这份配置，在 PROXY 分组选择你的节点，然后开启“系统代理”，或按需开启 TUN。选择 DIRECT 会直接连接。需要按上述规则分流时，请使用“规则”模式。</p></li></ol></section>
+<section aria-labelledby="remote-import-title"><h3 id="remote-import-title">方式二：订阅链接导入</h3><ol><li><strong>生成订阅链接</strong><p>选择客户端后点击“生成订阅链接”，本站会托管这次生成的 YAML 配置 ${SUBSCRIPTION_DAYS} 天。</p></li><li><strong>复制链接到客户端</strong><p>Clash Verge：在“订阅”页顶部粘贴 HTTPS 链接并导入；也可以点“导入 Clash Verge”。然后选中配置、选择节点并开启系统代理。</p><p>小火箭：点击右上角“+”，类型选择 Subscribe / 订阅，粘贴链接并保存；也可点“导入小火箭”。选中订阅内的节点后连接，继续使用小火箭自己的路由设置。</p></li></ol></section>
+</div></section>
+<div class="c-notes"><details><summary>导入成功，但代理连接失败怎么办？</summary><p>导入成功只说明客户端读取到了配置，不代表代理可用。确认供应商后台选中 SOCKS5，并复制该协议对应的端口、用户名和代理密码；HTTP 和 SOCKS5 的端口可能不同，不能只改协议名称。若提示 User was rejected 或 authentication failed，先核对凭据和代理账户状态；超时或连接重置需检查线路及供应商的访问限制。Ping 无响应不能证明代理不可用。</p></details><details><summary>UDP 和分流规则应该怎么选？</summary><p>默认不启用 UDP；只有供应商明确支持 SOCKS5 UDP 转发时才勾选。UDP 不会修复 TCP 连接或账号认证失败。默认将流量交给 PROXY 分组，也可选择局域网及中国大陆 IP 直连。分流选项只作用于 Clash 配置，小火箭节点订阅不覆盖原有路由规则。</p></details><details><summary>订阅和 YAML 文件可以分享吗？</summary><p>两者都包含代理账号密码；订阅链接持有人可以读取凭据。不要公开上传到仓库、网盘或 Gist；secret Gist 仅隐藏列表，获得链接的人仍可读取。下载 YAML 仅在本机处理，生成本站订阅则会加密保存配置 ${SUBSCRIPTION_DAYS} 天，但不为代理连接提供加密隧道。</p></details><details><summary>如何更新或删除订阅？</summary><p>每次生成的是配置快照，不会自动跟随供应商更新。修改代理或分流选项后，需重新下载文件，或生成新链接并在客户端替换。本页可用“使链接失效”撤销订阅，${SUBSCRIPTION_DAYS} 天后也会自动失效；这些操作不会删除客户端已下载的配置。</p></details></div>
 </main>`;

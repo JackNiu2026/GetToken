@@ -1,4 +1,4 @@
-import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=clients-20261102';
+import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=imports-20261102';
 
 const $ = id => document.getElementById(`clash-${id}`);
 const form = $('form');
@@ -11,7 +11,7 @@ function error(message = '') {
   $('error').hidden = !message;
   if (message) $('feedback').textContent = '';
 }
-function values() { return { source: $('source').value, name: $('name').value, udp: $('udp').checked, format: $('format').value }; }
+function values() { return { source: $('source').value, name: $('name').value, udp: $('udp').checked, format: $('format').value, routing: $('format').value === 'clash' ? $('routing').value : 'all' }; }
 function render() {
   error();
   $('feedback').textContent = '';
@@ -81,7 +81,8 @@ form.addEventListener('submit', async event => {
     $('expiry').textContent = `有效期至 ${new Date(data.expiresAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}（北京时间）。`;
     $('subscription').hidden = false;
     if (matchMedia('(max-width: 900px)').matches) $('subscription').scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-    $('feedback').textContent = '订阅已生成，复制链接后即可导入。';
+    nextStep('remote', data.format);
+    $('feedback').textContent = '订阅已生成，尚未测试代理连通性。';
     if (previous) {
       try { await request(previous.path, { method: 'DELETE', headers: { 'X-GetToken-Clash-Manage': previous.manageToken } }); $('feedback').textContent += ' 本页的上一个链接已失效，请在客户端替换为新链接。'; }
       catch { $('feedback').textContent += ' 上一个链接未能撤销，将在到期后失效。'; }
@@ -96,7 +97,8 @@ $('download').addEventListener('click', () => {
   const link = document.createElement('a');
   link.href = url; link.download = output.result.format === 'shadowrocket' ? 'gettoken-shadowrocket.yaml' : 'gettoken-clash.yaml'; document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  $('feedback').textContent = output.result.format === 'shadowrocket' ? '小火箭节点配置已生成；远程订阅请使用“生成订阅链接”。' : 'YAML 文件已生成，请在 Clash Verge 中导入本地配置。';
+  nextStep('local', output.result.format);
+  $('feedback').textContent = output.result.format === 'shadowrocket' ? '小火箭节点配置已生成；远程订阅请使用“生成订阅链接”。' : 'YAML 文件已生成，尚未测试代理连通性。';
 });
 $('copy-yaml').addEventListener('click', () => copy(yaml, $('yaml')));
 $('copy-url').addEventListener('click', () => copy($('url').value, $('url')));
@@ -121,7 +123,27 @@ $('example').addEventListener('click', () => {
   $('feedback').textContent = '已填入文档保留地址，仅用于演示，不能用于实际连接。';
 });
 form.addEventListener('input', () => {
+  $('next-step').hidden = true;
   error(); $('source').removeAttribute('aria-invalid');
   $('feedback').textContent = subscription ? '输入已修改。重新生成会替换本页上一个订阅链接。' : '';
   if (yaml) { $('count').textContent = '输入已修改，需重新转换'; $('count').classList.remove('is-ready'); $('copy-yaml').disabled = true; }
 });
+
+function nextStep(method, format) {
+  $('next-step').hidden = false;
+  const local = method === 'local';
+  $('next-title').textContent = format === 'shadowrocket' ? '下一步：在小火箭中导入节点订阅' : local ? '下一步：在 Clash Verge 中新建本地配置' : '下一步：在 Clash Verge 中导入订阅';
+  $('next-detail').textContent = format === 'shadowrocket'
+    ? '使用“生成订阅链接”，在小火箭添加 Subscribe / 订阅并粘贴链接；选择节点后连接，路由沿用小火箭设置。'
+    : local
+      ? '订阅 → 新建 → Local（本地）→ 导入下载的 YAML → 保存并选中配置 → PROXY 选择节点 → 开启系统代理。'
+      : '复制上方 HTTPS 链接 → 订阅页粘贴并导入 → 选中配置 → PROXY 选择节点 → 开启系统代理。';
+}
+function updateClient() {
+  const shadowrocket = $('format').value === 'shadowrocket';
+  $('routing-options').hidden = shadowrocket;
+  $('routing').disabled = shadowrocket;
+  $('download').textContent = shadowrocket ? '下载节点 YAML' : '下载 YAML，本地导入';
+}
+$('format').addEventListener('change', updateClient);
+updateClient();

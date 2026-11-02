@@ -211,3 +211,16 @@ test('managed backups cannot resurrect revoked or expired subscription credentia
     finally { backup.close(); }
   } finally { store.close(); await rm(dir, { recursive: true, force: true }); }
 });
+
+
+test('Clash direct rules precede the proxy fallback and never replace Shadowrocket routing', () => {
+  const source = '203.0.113.10:1080:demo:password';
+  assert.equal(buildClashConfig({ source }).yaml.split('rules:\n')[1], '  - MATCH,PROXY\n');
+  const split = buildSubscription({ source, routing: 'bypass-cn', udp: true }).yaml;
+  assert.ok(split.indexOf('IP-CIDR,192.168.0.0/16,DIRECT,no-resolve') < split.indexOf('GEOIP,CN,DIRECT'));
+  assert.ok(split.indexOf('IP-CIDR6,fc00::/7,DIRECT,no-resolve') < split.indexOf('GEOIP,CN,DIRECT'));
+  assert.ok(split.indexOf('GEOIP,CN,DIRECT') < split.indexOf('MATCH,PROXY'));
+  assert.ok(split.includes('udp: true'));
+  assert.equal(buildSubscription({ source, format: 'shadowrocket', routing: 'bypass-cn' }).yaml, buildSubscription({ source, format: 'shadowrocket' }).yaml);
+  assert.throws(() => buildSubscription({ source, routing: 'invalid' }), /分流规则/);
+});

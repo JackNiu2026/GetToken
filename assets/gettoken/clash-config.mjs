@@ -113,9 +113,21 @@ export function parseProxies(source) {
   });
 }
 
-export function buildClashConfig({ source, name = 'SOCKS5 订阅', udp = false } = {}) {
+export function buildClashConfig({ source, name = 'SOCKS5 订阅', udp = false, routing = 'all' } = {}) {
   if (typeof name !== 'string' || !name.trim() || name.length > 60 || !cleanText(name)) throw new Error('订阅名称需为 1–60 字，不能包含换行');
   if (typeof udp !== 'boolean') throw new Error('UDP 选项不正确');
+  if (!['all', 'bypass-cn'].includes(routing)) throw new Error('请选择有效的 Clash 分流规则');
+  const directRules = routing === 'bypass-cn' ? [
+    'IP-CIDR,127.0.0.0/8,DIRECT,no-resolve',
+    'IP-CIDR,10.0.0.0/8,DIRECT,no-resolve',
+    'IP-CIDR,172.16.0.0/12,DIRECT,no-resolve',
+    'IP-CIDR,192.168.0.0/16,DIRECT,no-resolve',
+    'IP-CIDR,169.254.0.0/16,DIRECT,no-resolve',
+    'IP-CIDR6,::1/128,DIRECT,no-resolve',
+    'IP-CIDR6,fc00::/7,DIRECT,no-resolve',
+    'IP-CIDR6,fe80::/10,DIRECT,no-resolve',
+    'GEOIP,CN,DIRECT',
+  ] : [];
   const proxies = parseProxies(source);
   const yaml = [
     `# ${name.trim()}`, 'mixed-port: 7897', 'allow-lan: false', 'mode: rule', 'log-level: info', 'proxies:',
@@ -126,7 +138,7 @@ export function buildClashConfig({ source, name = 'SOCKS5 订阅', udp = false }
     ]),
     'proxy-groups:', '  - name: PROXY', '    type: select', '    proxies:',
     ...proxies.map(p => `      - ${quote(p.name)}`), '      - DIRECT',
-    'rules:', '  - MATCH,PROXY', '',
+    'rules:', ...directRules.map(rule => `  - ${rule}`), '  - MATCH,PROXY', '',
   ].join('\n');
   return { yaml, count: proxies.length, name: name.trim() };
 }

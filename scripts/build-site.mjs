@@ -16,6 +16,7 @@ import { PRODUCTS, PERIOD_NAMES, getQuote, formatMoney } from '../assets/gettoke
 import { inquiryState } from '../assets/gettoken/inquiry.mjs';
 import { VERIFY } from '../assets/gettoken/verify-rules.mjs';
 import { KEY_GUIDE_STEPS } from '../content/session-key-guide.mjs';
+import { CLASH_BODY } from '../content/clash-page.mjs';
 import { ROOT, loadArticles, validateLibrary, inline, esc, dateIsValid } from './content.mjs';
 
 export { ROOT };
@@ -37,7 +38,7 @@ for (const p of PRODUCT_PAGES) {
 export const PAGE_SIZE = 20;
 export const FEED_ROUTE = 'guides/feed.xml';
 // Generated output lives only in these directories; anything else in them is removed as stale.
-const MANAGED_DIRS = ['guides', 'navigation', 'verify', ...PRODUCT_PAGES.map(p => p.slug)];
+const MANAGED_DIRS = ['guides', 'navigation', 'verify', 'clash', ...PRODUCT_PAGES.map(p => p.slug)];
 
 const latest = dates => dates.filter(Boolean).sort().at(-1);
 const topicOf = slug => TOPICS.find(t => t.slug === slug);
@@ -64,6 +65,7 @@ export const PAGES = [
   { route: '', kind: 'home' },
   ...PRODUCT_PAGES.map(p => ({ route: productRoute(p), kind: 'product', modified: productModified(p), product: p.slug })),
   { route: VERIFY_ROUTE, kind: 'verify', modified: VERIFY_UPDATED },
+  { route: 'clash/', kind: 'tool', modified: '2026-11-02' },
   { route: 'guides/', kind: 'hub', modified: HUB_MODIFIED },
   ...TOPICS.flatMap(t => chunk(topicArticles(t), PAGE_SIZE).map((_, i) => ({ route: topicRoute(t, i + 1), kind: 'topic', modified: topicModified(t), topic: t.slug, page: i + 1 }))),
   ...ARTICLES.map(a => ({ route: articleRoute(a), kind: 'article', modified: a.updated, article: a })),
@@ -123,7 +125,7 @@ export function siteHeader({ route = null, current = 'home', product = null }) {
     ['首页', route === null ? '#top' : linkTo(route), current === 'home'],
     ...SUBSCRIPTIONS.map(slug => [`${PRODUCTS[slug].name}订阅`, linkTo(route, `${slug}/`), product?.slug === slug]),
     ['KYC审核', linkTo(route, VERIFY_ROUTE), current === 'verify'],
-    ['住宅IP', linkTo(route, 'ip/'), product?.slug === 'ip'],
+    ['订阅转换', linkTo(route, 'clash/'), current === 'tool'],
     ['AI新闻', linkTo(route, 'guides/'), current === 'guides'],
   ];
   const links = items.map(([label, to, active]) => `<a href="${to}"${active ? ' class="is-current" aria-current="page"' : ''}>${label}</a>`).join('\n        ');
@@ -154,7 +156,7 @@ export function siteFooter({ route = null, contact = 'dialog' }) {
       </div>
       <div class="footer-links">
         <div><span>产品</span>${SHOWCASE.map(p => `<a href="${linkTo(route, productRoute(p))}">${p.slug === 'ip' ? '住宅IP' : `${esc(PRODUCTS[p.slug].name)}订阅`}</a>`).join('')}</div>
-        <div><span>服务</span><a href="${linkTo(route, VERIFY_ROUTE)}">KYC审核</a><a href="${linkTo(route, VERIFY_ROUTE)}#query">KYC进度查询</a><a href="${anchor(route, 'pricing')}">价格速览</a><a href="${anchor(route, 'how')}">购买流程</a>${contactLink}</div>
+        <div><span>服务</span><a href="${linkTo(route, VERIFY_ROUTE)}">KYC审核</a><a href="${linkTo(route, VERIFY_ROUTE)}#query">KYC进度查询</a><a href="${linkTo(route, 'clash/')}">SOCKS5 订阅转换</a><a href="${anchor(route, 'pricing')}">价格速览</a><a href="${anchor(route, 'how')}">购买流程</a>${contactLink}</div>
         <div><span>AI新闻</span><a href="${linkTo(route, 'guides/')}">全部文章</a><a href="${linkTo(route, 'guides/basics/')}">选购基础</a><a href="${linkTo(route, FEED_ROUTE)}">RSS 订阅</a></div>
       </div>
     </div>
@@ -450,6 +452,7 @@ ${crumbNav(route, crumbs)}
 <div><p class="g-eyebrow">${esc(p.eyebrow)}</p><h1>${esc(p.h1)}</h1></div>
 </div>
 <p class="g-lead">${esc(p.lead)}</p>
+${p.slug === 'ip' ? '<p class="g-meta"><a href="../clash/">已有 SOCKS5 代理？转换为 Clash Verge 订阅</a></p>' : ''}
 <ul class="p-points">${p.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
 </div></div>
 <main id="main">
@@ -751,6 +754,7 @@ export function buildOutputs() {
   for (const p of PRODUCT_PAGES) outputs.set(`${productRoute(p)}index.html`, productPage(p));
   outputs.set(`${VERIFY_ROUTE}index.html`, verifyPage());
   outputs.set(`${VERIFY_ADMIN_ROUTE}index.html`, verifyAdminPage());
+  outputs.set('clash/index.html', layout({ route: 'clash/', title: 'SOCKS5 转 Clash Verge 订阅链接 - GetToken', description: '在线将 SOCKS5 代理转换为 Clash Verge 可导入的订阅链接，支持批量输入、账号密码认证、IPv6 与 YAML 配置下载。', body: CLASH_BODY, current: 'tool', head: '<meta name="referrer" content="no-referrer">\n<link rel="stylesheet" href="../assets/gettoken/clash.css">\n<script type="module" src="../assets/gettoken/clash.mjs"></script>\n', schema: [{ '@type': 'WebPage', name: 'SOCKS5 转 Clash Verge 订阅', url: url('clash/'), dateModified: '2026-11-02' }, crumbList([['首页', ''], ['住宅IP', 'ip/'], ['订阅转换', 'clash/']])] }));
   outputs.set('guides/index.html', hubPage());
   for (const t of TOPICS) {
     const pages = chunk(topicArticles(t), PAGE_SIZE);

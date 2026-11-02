@@ -10,6 +10,7 @@ import { createApp } from './app.mjs';
 import { createProviders } from './pay/index.mjs';
 import { maintainBackups } from './backup.mjs';
 import { assertAccessMigration } from './access.mjs';
+import { purgeClashSubscriptions } from './clash.mjs';
 
 const log = message => console.log(`[verify] ${message}`);
 const config = loadConfig();
@@ -27,6 +28,7 @@ async function tick() {
   if (busy) return;
   busy = true;
   try {
+    purgeClashSubscriptions(store);
     await service.tick();
     maintainBackups({ store, dataDir: config.dataDir });
   } catch (error) {

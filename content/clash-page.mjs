@@ -1,0 +1,40 @@
+import { MAX_PROXIES, MAX_SOURCE, SUBSCRIPTION_DAYS } from '../assets/gettoken/clash-config.mjs';
+
+export const CLASH_BODY = `<main id="main" class="c-main g-shell">
+<nav class="g-crumbs" aria-label="面包屑"><ol><li><a href="../">首页</a></li><li><a href="../ip/">住宅IP</a></li><li><span aria-current="page">订阅转换</span></li></ol></nav>
+<div class="c-intro"><div><h1>SOCKS5 转 Clash 订阅</h1><p>粘贴代理信息，生成 Clash Verge 可导入的订阅链接。<br>也可以直接下载 YAML 配置文件。</p></div><a class="c-help-link" href="#instructions">如何导入</a></div>
+<noscript><p class="c-error">请启用 JavaScript 后转换代理配置。</p></noscript>
+<div class="c-workspace">
+<section class="c-editor" aria-labelledby="input-title">
+<div class="c-panel-head"><h2 id="input-title">输入代理</h2><button type="button" class="c-text-button" id="clash-example">填入示例</button></div>
+<form id="clash-form">
+<fieldset id="clash-fields">
+<label for="clash-source">SOCKS5 代理信息 <span>每行一个，最多 ${MAX_PROXIES} 个</span></label>
+<textarea id="clash-source" name="source" rows="8" required maxlength="${MAX_SOURCE}" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="clash-formats" placeholder="socks5://user:password@203.0.113.10:1080#我的节点&#10;203.0.113.20:1080:user:password&#10;203.0.113.30:1080"></textarea>
+<p class="c-hint" id="clash-formats">支持 SOCKS5 链接、IP:端口:账号:密码、IP:端口。也支持域名和带方括号的 IPv6。链接中的特殊字符请使用百分号编码。</p>
+<div class="c-options"><div><label for="clash-name">订阅名称</label><input id="clash-name" name="name" value="SOCKS5 订阅" maxlength="60" required autocomplete="off"></div><label class="c-checkbox"><input type="checkbox" id="clash-udp" name="udp"><span>启用 UDP <small>需代理服务支持</small></span></label></div>
+<p class="c-privacy">生成订阅会将配置加密保存到本站 ${SUBSCRIPTION_DAYS} 天。持有链接的人可读取代理凭据，请妥善保管。下载 YAML 仅在本机处理。</p>
+<div class="c-actions"><button class="c-button c-button--primary" type="submit" id="clash-generate">生成订阅链接</button><button class="c-button" type="button" id="clash-download">下载 YAML</button></div>
+</fieldset>
+<p class="c-error" id="clash-error" role="alert" hidden></p>
+<p class="c-feedback" id="clash-feedback" role="status" aria-live="polite"></p>
+</form>
+</section>
+<section class="c-output" aria-labelledby="output-title">
+<div class="c-panel-head"><h2 id="output-title">Clash 配置</h2><span class="c-state" id="clash-count">等待转换</span></div>
+<div id="clash-subscription" class="c-subscription" hidden>
+<label for="clash-url">订阅链接</label><input id="clash-url" type="text" readonly spellcheck="false" autocomplete="off">
+<div class="c-actions"><button class="c-button c-button--small" type="button" id="clash-copy-url">复制链接</button><a class="c-button c-button--small" id="clash-import">导入 Clash Verge</a><button class="c-text-button c-revoke" id="clash-revoke" type="button">使链接失效</button></div>
+<p class="c-hint" id="clash-expiry"></p><p class="c-hint">这是生成时的配置快照。修改代理后需生成新链接；关闭页面后，原链接仍有效至到期。</p>
+</div>
+<div class="c-preview-head"><span>YAML 预览</span><button type="button" class="c-text-button" id="clash-copy-yaml" disabled>复制配置</button></div>
+<pre class="c-code" tabindex="0" aria-label="Clash YAML 配置预览"><code id="clash-yaml"># 在左侧填入 SOCKS5 代理信息
+# 生成订阅或下载文件后，将在这里预览配置
+# 预览包含代理凭据，请勿截图分享</code></pre>
+</section>
+</div>
+<section class="c-instructions" id="instructions" aria-labelledby="instructions-title"><div><h2 id="instructions-title">在 Clash Verge 中使用</h2><p>生成标准 Clash YAML，兼容 Clash Verge / Clash Verge Rev 的 Mihomo 内核。</p></div>
+<ol><li><strong>粘贴 SOCKS5 信息</strong><p>支持带账号密码或无需认证的代理。“填入示例”使用文档保留地址，仅用于演示格式。</p></li><li><strong>生成并复制订阅链接</strong><p>打开 Clash Verge 的“订阅”页面，将链接粘贴到订阅输入框后导入。也可以点击“导入 Clash Verge”唤起已安装的客户端。</p></li><li><strong>选中配置与代理节点</strong><p>启用新配置，在 PROXY 分组选择节点，再开启系统代理或 TUN。配置默认将流量交给所选节点；选择 DIRECT 则直连。</p></li></ol>
+</section>
+<div class="c-notes"><details><summary>只有 YAML 文件，怎么导入？</summary><p>在 Clash Verge 的“订阅”页面新建本地配置并选择下载的 YAML 文件。静态预览没有订阅 API 时，也可以这样使用。</p></details><details><summary>订阅链接和代理连接有什么区别？</summary><p>订阅链接用于下载代理配置。转换不会检测代理连通性、改变 IP 所属地区或延长代理有效期；实际连接和 UDP 转发取决于代理服务本身。</p></details><details><summary>如何更新或删除订阅？</summary><p>修改代理信息后重新生成链接，再导入客户端。当前页面可使用“使链接失效”立即删除对应订阅；配置会在 ${SUBSCRIPTION_DAYS} 天后自动失效。失效不会删除客户端已经下载的配置。</p></details></div>
+</main>`;

@@ -1,0 +1,59 @@
+/* Utility surface: inherits GetToken's shared palette, font and site chrome. */
+[hidden] { display: none !important; }
+.c-main { padding-bottom: 72px; }
+.c-intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin: 32px 0; }
+.c-intro h1 { font-size: clamp(28px, 3.4vw, 42px); line-height: 1.3; letter-spacing: -.025em; }
+.c-intro p { margin-top: 16px; color: var(--ink-2); font-size: 16px; line-height: 1.85; }
+.c-help-link { flex: none; padding-block: 10px; color: var(--link); text-decoration: underline; text-underline-offset: 4px; }
+.c-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden; }
+.c-editor, .c-output { min-width: 0; padding: 28px; background: var(--card); }
+.c-output { border-left: 1px solid var(--line-2); background: var(--bg-2); }
+.c-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+.c-panel-head h2 { font-size: 20px; line-height: 1.4; }
+.c-main button, .c-main input, .c-main textarea { font: inherit; }
+.c-main button { cursor: pointer; }
+.c-main button:disabled { cursor: not-allowed; opacity: .5; }
+.c-main fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.c-main label { display: block; margin-bottom: 10px; font-size: 14px; font-weight: 600; }
+.c-main label > span:not(:first-child) { margin-left: 8px; color: var(--muted); font-size: 12px; font-weight: 400; }
+.c-main textarea, .c-main input[type="text"], .c-main input:not([type]) { width: 100%; min-height: 44px; border: 1px solid var(--line-2); border-radius: 8px; padding: 11px 13px; background: var(--bg); color: var(--ink); caret-color: var(--link); }
+.c-main textarea { display: block; min-height: 214px; resize: vertical; font: 13px/1.8 var(--mono); overflow-wrap: anywhere; }
+.c-main textarea::placeholder { color: var(--muted); opacity: 1; }
+.c-main [aria-invalid="true"] { border-color: #fb7185; }
+.c-main :focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+.c-hint, .c-privacy { color: var(--muted); font-size: 13px; line-height: 1.8; }
+.c-hint { margin-top: 10px; }
+.c-options { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end; margin-top: 24px; }
+.c-main .c-checkbox { display: flex; align-items: center; gap: 10px; margin: 0; min-height: 46px; cursor: pointer; }
+.c-checkbox input { width: 18px; height: 18px; accent-color: var(--link); }
+.c-main .c-checkbox span { margin-left: 0; color: var(--ink-2); font-size: 14px; }
+.c-checkbox small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+.c-privacy { margin: 24px 0 18px; }
+.c-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.c-button { display: inline-flex; justify-content: center; align-items: center; min-height: 46px; padding: 10px 20px; border: 1px solid var(--line-2); border-radius: 999px; background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; text-decoration: none; }
+.c-main .c-button--primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.c-main .c-button--small { min-height: 40px; padding: 8px 14px; font-size: 13px; }
+.c-text-button { display: inline-flex; align-items: center; min-height: 40px; border: 0; padding: 0 2px; background: transparent; color: var(--link); font-size: 13px; }
+.c-state { color: var(--muted); font-size: 13px; }
+.c-state.is-ready { color: #4ee0b0; }
+.c-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
+.c-code { min-height: 350px; max-height: 480px; margin: 8px 0 0; padding: 18px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink-2); font: 13px/1.8 var(--mono); scrollbar-width: thin; scrollbar-color: var(--line-2) var(--bg); tab-size: 2; }
+.c-subscription { padding-bottom: 24px; margin-bottom: 20px; border-bottom: 1px solid var(--line-2); }
+.c-subscription input { margin-bottom: 12px; font-family: var(--mono) !important; font-size: 12px !important; }
+.c-error { margin-top: 16px; color: #fb7185; font-size: 14px; overflow-wrap: anywhere; }
+.c-feedback { margin-top: 12px; color: #4ee0b0; font-size: 13px; }
+.c-feedback:empty { display: none; }
+.c-instructions { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 64px; margin-top: 60px; padding-top: 36px; border-top: 1px solid var(--line); scroll-margin-top: 90px; }
+.c-instructions h2 { font-size: 23px; line-height: 1.5; }
+.c-instructions p, .c-notes p { margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.85; }
+.c-instructions ol { list-style: decimal; padding-left: 22px; }
+.c-instructions li { padding-left: 6px; margin-bottom: 24px; }
+.c-instructions li::marker { color: var(--link); font-variant-numeric: tabular-nums; }
+.c-instructions strong { font-size: 15px; }
+.c-notes { margin-top: 32px; }
+.c-notes details { padding: 20px 0; border-top: 1px solid var(--line); }
+.c-notes summary { cursor: pointer; color: var(--ink-2); font-size: 15px; }
+.c-notes p { max-width: 75ch; }
+@media (hover: hover) { .c-button:hover { border-color: var(--link); } .c-text-button:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; } }
+@media (max-width: 900px) { .c-workspace { grid-template-columns: minmax(0, 1fr); } .c-output { border-left: 0; border-top: 1px solid var(--line-2); } .c-code { min-height: 220px; } .c-instructions { gap: 32px; } }
+@media (max-width: 600px) { .c-intro { display: block; margin-top: 24px; } .c-intro p br { display: none; } .c-help-link { display: inline-block; margin-top: 8px; } .c-editor, .c-output { padding: 20px 16px; } .c-options { grid-template-columns: minmax(0, 1fr); gap: 14px; } .c-main label > span:not(:first-child) { display: block; margin: 4px 0 0; } .c-main .c-checkbox span { margin: 0; } .c-button { padding-inline: 16px; } .c-instructions { grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 40px; } }

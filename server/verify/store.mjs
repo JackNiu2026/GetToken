@@ -82,6 +82,13 @@ create table if not exists events (
 create index if not exists events_order on events(order_id, at);
 create table if not exists settings (key text primary key, value text not null);
 create table if not exists sessions (hash text primary key, expires_at integer not null);
+create table if not exists clash_subscriptions (
+  token_hash text primary key,
+  manage_hash text not null,
+  config_sealed text not null,
+  expires_at integer not null
+);
+create index if not exists clash_expiry on clash_subscriptions(expires_at);
 `;
 
 export function openStore(file) {

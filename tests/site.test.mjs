@@ -195,7 +195,7 @@ test('every page shares the homepage header and footer, styled by the same rules
   const labels = html => [...html.match(/<nav class="desktop-nav"[\s\S]*?<\/nav>/)[0].matchAll(/<(?:a|summary)\b[^>]*>([\s\S]*?)<\/(?:a|summary)>/g)]
     .map(m => m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ''));
   const expected = labels(await htmlFor(''));
-  assert.deepEqual(expected, ['首页', 'Claude订阅', 'Codex订阅', 'Gemini订阅', 'Grok订阅', 'KYC审核', '住宅IP', 'AI新闻']);
+  assert.deepEqual(expected, ['首页', 'Claude订阅', 'Codex订阅', 'Gemini订阅', 'Grok订阅', 'KYC审核', '订阅转换', 'AI新闻']);
   for (const route of ROUTES) {
     const html = await readFile(join(ROOT, route, 'index.html'), 'utf8');
     assert.deepEqual(labels(html), expected, `Header differs on /${route}`);
@@ -203,6 +203,7 @@ test('every page shares the homepage header and footer, styled by the same rules
     assert.ok(html.includes('id="mobile-nav"'), `Phone menu on /${route}`);
     const mobile = html.match(/<nav class="mobile-nav"[\s\S]*?<\/nav>/)[0];
     assert.deepEqual([...mobile.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(m => m[1]), expected);
+    assert.match(mobile, /href="[^"]*clash\/"[^>]*>订阅转换<\/a>/);
   }
   const admin = await readFile(join(ROOT, 'verify/admin/index.html'), 'utf8');
   assert.ok(admin.includes('site-header--admin') && !admin.includes('desktop-nav') && !admin.includes('site-footer'), 'The admin page has no storefront navigation');

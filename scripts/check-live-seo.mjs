@@ -116,7 +116,7 @@ export async function auditLive({baseURL=SITE.origin,fetcher=curlRequest,preview
       requireCheck(valid && graph.some(n=>n['@type']==='BreadcrumbList'),result.url,'schema','Structured data must parse and include breadcrumbs.');
       const page=PAGES.find(p=>p.route===route);
       const guide=page.article;
-      const node=graph.find(n=>n['@type']===(guide?(guide.type==='news'?'NewsArticle':'Article'):(page.kind==='product'||page.kind==='verify')?'WebPage':'CollectionPage'));
+      const node=graph.find(n=>n['@type']===(guide?(guide.type==='news'?'NewsArticle':'Article'):['product','verify','tool'].includes(page.kind)?'WebPage':'CollectionPage'));
       requireCheck(node?.dateModified===page.modified,result.url,'date','Structured modification date differs from the content source.');
       if (guide) {
         requireCheck(node?.headline===guide.title && node?.author?.['@id'] && node?.citation?.length===guide.sources.length,result.url,'article','Article title, author or source citations differ from the content source.');

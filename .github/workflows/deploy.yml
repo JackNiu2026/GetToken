@@ -85,3 +85,4 @@ jobs:
         run: |
           node scripts/check-live-seo.mjs --revision "$DEPLOY_REVISION" --output /tmp/gettoken-live-seo.json
           node scripts/check-live-intake.mjs
+          node scripts/check-live-clash.mjs

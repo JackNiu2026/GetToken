@@ -14,6 +14,7 @@ export function maintainBackups({ store, dataDir, now = Date.now() }) {
   const names = () => readdirSync(dir).filter(f => NAME.test(f)).sort();
   const purged = new Map(store.all('select id, purged_at from orders where purged_at is not null').map(o => [o.id, o.purged_at]));
   const cutoff = now - VERIFY.purgeDays * DAY;
+  const activeSubscriptions = new Set(store.all('select token_hash from clash_subscriptions where expires_at > ?', now).map(row => row.token_hash));
 
   // Scrub existing copies first, even if making today's backup subsequently fails.
   for (const name of names()) {
@@ -24,11 +25,17 @@ export function maintainBackups({ store, dataDir, now = Date.now() }) {
       db.exec('pragma busy_timeout = 5000; pragma secure_delete = on');
       const rows = db.prepare('select id, status, created_at, decided_at from orders where code_sealed is not null').all();
       const expired = rows.filter(o => purged.has(o.id) || (o.decided_at !== null && o.decided_at < cutoff) || (o.status === 'expired' && o.created_at < cutoff));
-      if (expired.length) {
+      const hasSubscriptions = db.prepare("select name from sqlite_master where type = 'table' and name = 'clash_subscriptions'").get();
+      const removedSubscriptions = hasSubscriptions ? db.prepare('select token_hash from clash_subscriptions').all().filter(row => !activeSubscriptions.has(row.token_hash)) : [];
+      if (expired.length || removedSubscriptions.length) {
         const update = db.prepare('update orders set code_sealed = null, purged_at = ? where id = ?');
         db.exec('begin immediate');
         try {
           for (const o of expired) update.run(purged.get(o.id) ?? now, o.id);
+          if (removedSubscriptions.length) {
+            const remove = db.prepare('delete from clash_subscriptions where token_hash = ?');
+            for (const row of removedSubscriptions) remove.run(row.token_hash);
+          }
           db.exec('commit');
         } catch (error) { db.exec('rollback'); throw error; }
         // Remove old ciphertext from freelists and any WAL, too.

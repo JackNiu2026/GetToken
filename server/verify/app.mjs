@@ -3,6 +3,7 @@ import { VERIFY, ORDER_PATTERN, SERVICE_CONTRACT } from '../../assets/gettoken/v
 import { UserError } from './service.mjs';
 import { checkPassword, sha256, token } from './secure.mjs';
 import { validOrderAccess } from './access.mjs';
+import { createClashHandler } from './clash.mjs';
 
 const PREFIX = '/api/verify';
 const SESSION_HOURS = 12;
@@ -42,6 +43,7 @@ function readBody(req, max) {
 
 export function createApp({ service, store, providers, config, now = () => Date.now(), log = () => {} }) {
   const allow = limiter(now);
+  const clash = createClashHandler({ store, config, now });
 
   const send = (res, status, data, headers = {}) => {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', ...headers });
@@ -217,6 +219,7 @@ export function createApp({ service, store, providers, config, now = () => Date.
 
   return async function handle(req, res) {
     const address = new URL(req.url, 'http://localhost');
+    if (address.pathname.startsWith('/api/clash/')) return clash(req, res);
     if (!address.pathname.startsWith(`${PREFIX}/`)) return send(res, 404, { error: '未找到' });
     const path = address.pathname.slice(PREFIX.length);
     try {

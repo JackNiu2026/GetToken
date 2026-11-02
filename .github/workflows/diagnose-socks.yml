@@ -1,8 +1,19 @@
-name: Diagnose authorized SOCKS5 subscription # handshake phase 2
+name: Diagnose authorized SOCKS5 subscription
 on:
-  push:
-    branches: [main]
-    paths: [.github/workflows/diagnose-socks.yml]
+  workflow_dispatch:
+    inputs:
+      subscription_hash:
+        description: SHA-256 of the explicitly authorized subscription access token
+        required: true
+        type: string
+      proxy_host:
+        description: Expected IPv4 address of the authorized proxy
+        required: true
+        type: string
+      proxy_port:
+        description: Expected proxy port
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -22,5 +33,7 @@ jobs:
           DEPLOY_PORT: ${{ vars.GETTOKEN_PORT || '22' }}
           DEPLOY_SSH_KEY: ${{ secrets.GETTOKEN_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.GETTOKEN_KNOWN_HOSTS }}
-          SUBSCRIPTION_HASH: 8337740faeff1aa067b5eaa720d5da8f0f2ddc4f69d7ab3320230aff8e2712f0
+          SUBSCRIPTION_HASH: ${{ inputs.subscription_hash }}
+          PROXY_HOST: ${{ inputs.proxy_host }}
+          PROXY_PORT: ${{ inputs.proxy_port }}
         run: bash scripts/diagnose-socks-ssh.sh

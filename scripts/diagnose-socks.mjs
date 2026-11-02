@@ -34,9 +34,17 @@ for (const line of lines.slice(start + 1)) {
 }
 if (nodes.length !== 1 || nodes[0].server !== expectedHost || nodes[0].port !== expectedPort || nodes[0].type !== 'socks5') throw new Error('Endpoint does not match the authorized diagnostic target');
 const node = nodes[0];
-function redact(text) {
-  for (const value of [node.username, node.password]) if (value) for (const form of [value, encodeURIComponent(value)]) text = text.split(form).join('[redacted]');
-  return text.slice(0, 400);
+function safeFailure(text, code) {
+  // Emit only allowlisted categories, never arbitrary stderr containing credentials.
+  for (const [pattern, category] of [
+    [/reset by peer/i, 'Connection reset by peer'],
+    [/rejected|authentication|auth failure/i, 'Proxy authentication rejected'],
+    [/timed? ?out/i, 'Connection timed out'],
+    [/refused/i, 'Connection refused'],
+    [/resolve/i, 'DNS resolution failed'],
+    [/certificate/i, 'TLS certificate validation failed'],
+  ]) if (pattern.test(text)) return category;
+  return code === 0 ? '' : `Connection failed (curl ${code})`;
 }
 function probe(url) {
   const auth = node.username ? `${encodeURIComponent(node.username)}:${encodeURIComponent(node.password)}@` : '';
@@ -50,7 +58,7 @@ function probe(url) {
   const [http, connect, total] = String(result.stdout || '').split('|');
   return { target: new URL(url).hostname, ok: result.status === 0 && Number(http) >= 200 && Number(http) < 400,
     curlExit: result.status, httpStatus: Number(http) || 0, connectSeconds: Number(connect) || 0,
-    totalSeconds: Number(total) || 0, error: redact(String(result.stderr || result.error?.code || '').trim()) };
+    totalSeconds: Number(total) || 0, error: safeFailure(String(result.stderr || result.error?.code || ''), result.status) };
 }
 async function readExact(socket, size) {
   const parts=[]; let count=0;

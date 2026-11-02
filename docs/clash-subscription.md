@@ -70,8 +70,8 @@ UDP 默认关闭，仅在供应商支持时启用；不是认证失败的修复�
 
 生成的 `proxy-providers.upstream` 由客户端直接下载，每小时更新，支持当前 Mihomo 可解析的节点订阅；推荐含 `proxies` 的 Clash YAML。仅含 provider 引用、不含节点的完整配置不可直接用。网站不请求该 URL，不提供代理探测或订阅内容验证。首次下载要求客户端能直接访问该地址，不通过住宅节点，避免循环依赖。
 
-前置节点统一添加“前置 · ”前缀，并覆盖原节点的 dialer-proxy 为 DIRECT；只导入独立出站节点，排除 direct/reject/dns/compatible。住宅节点统一添加“住宅 · ”前缀，使用 `dialer-proxy: PRE-PROXY`；两个命名空间避免源节点与分组重名。PRE-PROXY 是使用 upstream 的手动选择组，初始为 REJECT，用户需改选可用前置；PROXY 只列住宅节点，没有 DIRECT 选项。已加载前置失效时不自动直连住宅入口。显式选择的局域网/中国大陆 IP 直连规则仍生效。
+前置节点统一添加“前置 · ”前缀，并覆盖原节点的 dialer-proxy 为 DIRECT；只导入独立出站节点，排除 direct/reject/dns/compatible。住宅节点统一添加“住宅 · ”前缀，使用 `dialer-proxy: UPSTREAM-AUTO`；两个命名空间避免源节点与分组重名。UPSTREAM-AUTO 是使用 upstream 的隐藏 fallback 自动组，每 300 秒检测，lazy=false，按订阅顺序选择可用前置，并用 empty-fallback: REJECT 阻止空订阅时的流量。“链式出口”是唯一可见的选择组，只列住宅节点，没有 DIRECT 或前置单节点选项。无需手动切换两个组。已加载前置失效时不自动直连住宅入口。显式选择的局域网/中国大陆 IP 直连规则仍生效。
 
-实际链路：电脑 → PRE-PROXY 中选中的前置节点 → PROXY 中选中的住宅 SOCKS5 → 网站。前置测速只验证前半段；住宅节点测速才验证完整链路。UDP 需两段同时支持。前置更新后节点消失时可能需要重新选择，住宅凭据变化则重新生成配置。生成链接会将含前置订阅令牌的完整 YAML 加密存储 30 天；链接持有人仍能读取全部内容，仅下载文件不上传本站。
+实际链路：电脑 → 后台自动选择的前置节点 → “链式出口”中选中的住宅 SOCKS5 → 网站。前置测速只验证前半段；住宅节点测速才验证完整链路。UDP 需两段同时支持。前置更新后由自动组重新选择，选择缓存可能短暂保留旧节点；住宅凭据变化则重新生成配置。隐藏组需要客户端支持 hidden 字段，建议使用新版 Clash Verge Rev。测速地址为 https://www.gstatic.com/generate_204，可达性影响自动选择；前置测速快不保证它到住宅入口也快。生成链接会将含前置订阅令牌的完整 YAML 加密存储 30 天；链接持有人仍能读取全部内容，仅下载文件不上传本站。
 
-可选真实内核集成检查：`node tests/helpers/mihomo-chain.mjs /path/to/mihomo`。该检查只使用本地可信测试证书、HTTPS 订阅及两段认证 SOCKS5，验证链路顺序、远程更新、命名冲突覆盖和前置失败无直连回退，需要 openssl 和 Mihomo 二进制。
+可选真实内核集成检查：`node tests/helpers/mihomo-chain.mjs /path/to/mihomo`。该检查只使用本地可信测试证书、HTTPS 订阅及两段认证 SOCKS5，验证自动选择、隐藏组 API 状态、切换住宅出口仍经前置、链路顺序、远程更新、命名冲突覆盖和前置失败无直连回退，需要 openssl 和 Mihomo 二进制。

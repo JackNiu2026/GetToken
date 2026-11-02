@@ -1,4 +1,4 @@
-import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=chain-20261103';
+import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=chain-auto-20261103';
 
 const $ = id => document.getElementById(`clash-${id}`);
 const form = $('form');
@@ -139,7 +139,7 @@ function nextStep(method, format, connection) {
     : local
       ? '订阅 → 新建 → Local（本地）→ 导入下载的 YAML → 保存并选中配置 → PROXY 选择节点 → 开启系统代理。'
       : '复制上方 HTTPS 链接 → 订阅页粘贴并导入 → 选中配置 → PROXY 选择节点 → 开启系统代理。';
-  if (connection === 'chain') $('next-detail').textContent += ' 链式配置：等待前置订阅加载，在 PRE-PROXY 将 REJECT 切换为可用前置节点，再在 PROXY 选择住宅节点；如前置列表为空，请检查客户端的 provider 下载日志。';
+  if (connection === 'chain') $('next-detail').textContent = (local ? '订阅 → 新建 Local（本地）→ 导入下载的 YAML 并选中配置。' : '复制上方 HTTPS 链接 → 订阅页粘贴并导入 → 选中配置。') + ' 等待前置订阅加载，在“链式出口”组选择住宅节点，再开启系统代理并使用规则模式。前置在后台自动选择，无需切换分组或另一份订阅。';
 }
 function updateClient() {
   const shadowrocket = $('format').value === 'shadowrocket';

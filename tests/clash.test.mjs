@@ -233,12 +233,16 @@ test('chain mode builds a provider-backed upstream group and isolates residentia
   assert.ok(yaml.includes('interval: 3600\n    proxy: DIRECT'));
   assert.ok(yaml.includes('additional-prefix: "前置 · "\n      dialer-proxy: DIRECT'));
   assert.ok(yaml.includes('exclude-type: direct|reject|dns|compatible'));
-  assert.equal((yaml.match(/dialer-proxy: PRE-PROXY/g) || []).length, 2);
+  assert.equal((yaml.match(/dialer-proxy: UPSTREAM-AUTO/g) || []).length, 2);
   assert.ok(yaml.includes('name: "住宅 · PRE-PROXY"'));
   assert.ok(yaml.includes('name: "住宅 · 前置 · demo"'));
-  assert.ok(yaml.includes('name: PRE-PROXY\n    type: select\n    proxies:\n      - REJECT\n    use:\n      - upstream'));
+  assert.ok(yaml.includes('name: UPSTREAM-AUTO\n    type: fallback\n    hidden: true'));
   assert.ok(!yaml.includes('      - DIRECT'));
   assert.ok(!yaml.includes('type: relay'));
+  assert.ok(yaml.includes('    lazy: false'));
+  assert.ok(yaml.includes('    empty-fallback: REJECT'));
+  assert.ok(yaml.includes('  - name: 链式出口\n    type: select'));
+  assert.ok(yaml.endsWith('  - MATCH,链式出口\n'));
 });
 
 test('chain URL validation rejects malformed inputs without reflecting tokens', () => {

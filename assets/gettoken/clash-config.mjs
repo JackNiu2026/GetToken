@@ -149,13 +149,13 @@ export function buildClashConfig({ source, name = 'SOCKS5 订阅', udp = false, 
     ...proxies.flatMap(p => [
       `  - name: ${quote(p.name)}`, '    type: socks5', `    server: ${quote(p.host)}`, `    port: ${p.port}`,
       ...(p.username ? [`    username: ${quote(p.username)}`, `    password: ${quote(p.password)}`] : []),
-      `    udp: ${udp}`, ...(chained ? ['    dialer-proxy: PRE-PROXY'] : []),
+      `    udp: ${udp}`, ...(chained ? ['    dialer-proxy: UPSTREAM-AUTO'] : []),
     ]),
     'proxy-groups:',
-    ...(chained ? ['  - name: PRE-PROXY', '    type: select', '    proxies:', '      - REJECT', '    use:', '      - upstream'] : []),
-    '  - name: PROXY', '    type: select', '    proxies:',
+    ...(chained ? ['  - name: UPSTREAM-AUTO', '    type: fallback', '    hidden: true', '    url: https://www.gstatic.com/generate_204', '    interval: 300', '    lazy: false', '    use:', '      - upstream', '    empty-fallback: REJECT'] : []),
+    `  - name: ${chained ? '链式出口' : 'PROXY'}`, '    type: select', '    proxies:',
     ...proxies.map(p => `      - ${quote(p.name)}`), ...(chained ? [] : ['      - DIRECT']),
-    'rules:', ...directRules.map(rule => `  - ${rule}`), '  - MATCH,PROXY', '',
+    'rules:', ...directRules.map(rule => `  - ${rule}`), `  - MATCH,${chained ? '链式出口' : 'PROXY'}`, '',
   ].join('\n');
   return { yaml, count: proxies.length, name: name.trim(), connection };
 }

@@ -1,0 +1,29 @@
+name: Check requested IP reachability
+on:
+  push:
+    branches: [diagnostics/ip-reachability-20261102]
+permissions:
+  contents: read
+jobs:
+  network-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: ICMP echo to the requested IP
+        run: |
+          date --iso-8601=seconds
+          ping -n -c 4 -W 2 202.52.109.196 || true
+      - name: TCP reachability of the previously supplied port
+        run: |
+          python3 - <<'PY'
+          import socket,time,json,datetime
+          rows=[]
+          for attempt in range(1,4):
+              start=time.monotonic()
+              try:
+                  with socket.create_connection(('202.52.109.196',7058),timeout=5):
+                      rows.append({'attempt':attempt,'connected':True,'elapsed_ms':round((time.monotonic()-start)*1000,1)})
+              except OSError as error:
+                  rows.append({'attempt':attempt,'connected':False,'error':type(error).__name__,'errno':error.errno,'elapsed_ms':round((time.monotonic()-start)*1000,1)})
+          print('IP_REACHABILITY_REPORT='+json.dumps({'source':'GitHub-hosted Ubuntu runner','target':'202.52.109.196','port':7058,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'tcp_attempts':rows}))
+          PY

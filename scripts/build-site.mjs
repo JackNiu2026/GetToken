@@ -452,7 +452,7 @@ ${crumbNav(route, crumbs)}
 <div><p class="g-eyebrow">${esc(p.eyebrow)}</p><h1>${esc(p.h1)}</h1></div>
 </div>
 <p class="g-lead">${esc(p.lead)}</p>
-${p.slug === 'ip' ? '<p class="g-meta"><a href="../clash/">已有 SOCKS5 代理？转换为 Clash Verge 订阅</a></p>' : ''}
+${p.slug === 'ip' ? '<p class="g-meta"><a href="../clash/">已有 SOCKS5 代理？转换为 Clash / 小火箭订阅</a></p>' : ''}
 <ul class="p-points">${p.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
 </div></div>
 <main id="main">
@@ -754,7 +754,7 @@ export function buildOutputs() {
   for (const p of PRODUCT_PAGES) outputs.set(`${productRoute(p)}index.html`, productPage(p));
   outputs.set(`${VERIFY_ROUTE}index.html`, verifyPage());
   outputs.set(`${VERIFY_ADMIN_ROUTE}index.html`, verifyAdminPage());
-  outputs.set('clash/index.html', layout({ route: 'clash/', title: 'SOCKS5 转 Clash Verge 订阅链接 - GetToken', description: '在线将 SOCKS5 代理转换为 Clash Verge 可导入的订阅链接，支持批量输入、账号密码认证、IPv6 与 YAML 配置下载。', body: CLASH_BODY, current: 'tool', head: '<meta name="referrer" content="no-referrer">\n<link rel="stylesheet" href="../assets/gettoken/clash.css">\n<script type="module" src="../assets/gettoken/clash.mjs"></script>\n', schema: [{ '@type': 'WebPage', name: 'SOCKS5 转 Clash Verge 订阅', url: url('clash/'), dateModified: '2026-11-02' }, crumbList([['首页', ''], ['住宅IP', 'ip/'], ['订阅转换', 'clash/']])] }));
+  outputs.set('clash/index.html', layout({ route: 'clash/', title: 'SOCKS5 转 Clash / 小火箭订阅链接 - GetToken', description: '在线将多种 SOCKS5 格式转换为 Clash 或小火箭 Shadowrocket 订阅链接，支持 Base64 分享链接、IPv6、批量转换与 YAML 下载。', body: CLASH_BODY, current: 'tool', head: '<meta name="referrer" content="no-referrer">\n<link rel="stylesheet" href="../assets/gettoken/clash.css?v=clients-20261102">\n<script type="module" src="../assets/gettoken/clash.mjs?v=clients-20261102"></script>\n', schema: [{ '@type': 'WebPage', name: 'SOCKS5 转 Clash / 小火箭订阅', url: url('clash/'), dateModified: '2026-11-02' }, crumbList([['首页', ''], ['住宅IP', 'ip/'], ['订阅转换', 'clash/']])] }));
   outputs.set('guides/index.html', hubPage());
   for (const t of TOPICS) {
     const pages = chunk(topicArticles(t), PAGE_SIZE);

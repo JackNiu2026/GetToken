@@ -10,13 +10,14 @@
 .c-output { border-left: 1px solid var(--line-2); background: var(--bg-2); }
 .c-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
 .c-panel-head h2 { font-size: 20px; line-height: 1.4; }
-.c-main button, .c-main input, .c-main textarea { font: inherit; }
+.c-main button, .c-main input, .c-main textarea, .c-main select { font: inherit; }
 .c-main button { cursor: pointer; }
 .c-main button:disabled { cursor: not-allowed; opacity: .5; }
 .c-main fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .c-main label { display: block; margin-bottom: 10px; font-size: 14px; font-weight: 600; }
 .c-main label > span:not(:first-child) { margin-left: 8px; color: var(--muted); font-size: 12px; font-weight: 400; }
-.c-main textarea, .c-main input[type="text"], .c-main input:not([type]) { width: 100%; min-height: 44px; border: 1px solid var(--line-2); border-radius: 8px; padding: 11px 13px; background: var(--bg); color: var(--ink); caret-color: var(--link); }
+.c-main textarea, .c-main input[type="text"], .c-main input:not([type]), .c-main select { width: 100%; min-height: 44px; border: 1px solid var(--line-2); border-radius: 8px; padding: 11px 13px; background: var(--bg); color: var(--ink); caret-color: var(--link); }
+.c-target { margin-top: 24px; }
 .c-main textarea { display: block; min-height: 214px; resize: vertical; font: 13px/1.8 var(--mono); overflow-wrap: anywhere; }
 .c-main textarea::placeholder { color: var(--muted); opacity: 1; }
 .c-main [aria-invalid="true"] { border-color: #fb7185; }

@@ -1,5 +1,5 @@
 // Short, revocable bearer URLs. Payloads are encrypted; no external converter is involved.
-import { buildClashConfig, SUBSCRIPTION_DAYS } from '../../assets/gettoken/clash-config.mjs';
+import { buildSubscription, SUBSCRIPTION_DAYS } from '../../assets/gettoken/clash-config.mjs';
 import { sealCode, openCode, token, sha256 } from './secure.mjs';
 
 const PREFIX = '/api/clash/subscriptions';
@@ -52,20 +52,21 @@ export function createClashHandler({ store, config, now = () => Date.now() }) {
         if (++hit.count > 20 || hits.size > 20000) return send(res, 429, { error: '生成过于频繁，请稍后重试；仍可下载本地配置' }, { 'Retry-After': '3600' });
         const data = await readJSON(req);
         let result;
-        try { result = buildClashConfig(data); } catch (error) { return send(res, 400, { error: error.message }); }
+        try { result = buildSubscription(data); } catch (error) { return send(res, 400, { error: error.message }); }
         purgeClashSubscriptions(store, time);
         if (store.get('select count(*) as n from clash_subscriptions').n >= 5000) return send(res, 503, { error: '订阅服务暂满，请先下载 YAML 配置' });
         const access = token(), manage = token();
         const expiresAt = time + TTL;
-        store.run('insert into clash_subscriptions(token_hash, manage_hash, config_sealed, expires_at) values(?, ?, ?, ?)', sha256(access), sha256(manage), sealCode(config.secret, result.yaml), expiresAt);
-        return send(res, 201, { path: `${PREFIX}/${access}`, manageToken: manage, expiresAt, count: result.count });
+        store.run('insert into clash_subscriptions(token_hash, manage_hash, config_sealed, expires_at, format) values(?, ?, ?, ?, ?)', sha256(access), sha256(manage), sealCode(config.secret, result.yaml), expiresAt, result.format);
+        return send(res, 201, { path: `${PREFIX}/${access}`, manageToken: manage, expiresAt, count: result.count, format: result.format });
       }
       if (!TOKEN.test(key)) return send(res, 404, { error: '订阅不存在或已失效，请重新生成' });
       const row = store.get('select * from clash_subscriptions where token_hash = ? and expires_at > ?', sha256(key), now());
       if (!row) return send(res, 404, { error: '订阅不存在或已失效，请重新生成' });
       if (req.method === 'GET' || req.method === 'HEAD') {
         const yaml = openCode(config.secret, row.config_sealed);
-        return send(res, 200, req.method === 'HEAD' ? '' : yaml, { 'Content-Type': 'text/yaml; charset=utf-8', 'Content-Disposition': 'attachment; filename="gettoken-clash.yaml"', 'Profile-Update-Interval': '24' });
+        const filename = row.format === 'shadowrocket' ? 'gettoken-shadowrocket.yaml' : 'gettoken-clash.yaml';
+        return send(res, 200, req.method === 'HEAD' ? '' : yaml, { 'Content-Type': 'text/yaml; charset=utf-8', 'Content-Disposition': `attachment; filename="${filename}"`, 'Profile-Update-Interval': '24' });
       }
       if (req.method === 'DELETE') {
         const manage = String(req.headers['x-gettoken-clash-manage'] || '');

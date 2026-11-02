@@ -86,7 +86,8 @@ create table if not exists clash_subscriptions (
   token_hash text primary key,
   manage_hash text not null,
   config_sealed text not null,
-  expires_at integer not null
+  expires_at integer not null,
+  format text not null default 'clash'
 );
 create index if not exists clash_expiry on clash_subscriptions(expires_at);
 `;
@@ -103,6 +104,9 @@ export function openStore(file) {
     }
     if (!db.prepare('pragma table_info(payments)').all().some(column => column.name === 'reconciled_at')) {
       db.exec('alter table payments add column reconciled_at integer');
+    }
+    if (!db.prepare('pragma table_info(clash_subscriptions)').all().some(column => column.name === 'format')) {
+      db.exec("alter table clash_subscriptions add column format text not null default 'clash'");
     }
     db.exec('commit');
   } catch (error) { db.exec('rollback'); db.close(); throw error; }

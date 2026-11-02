@@ -5,11 +5,57 @@ import { randomBytes } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { parseProxies, buildClashConfig, MAX_PROXIES, SUBSCRIPTION_DAYS } from '../assets/gettoken/clash-config.mjs';
+import { parseProxies, buildClashConfig, buildSubscription, encodeBase64, subscriptionImportLink, MAX_PROXIES, SUBSCRIPTION_DAYS } from '../assets/gettoken/clash-config.mjs';
 import { openStore } from '../server/verify/store.mjs';
 import { createApp } from '../server/verify/app.mjs';
 import { purgeClashSubscriptions } from '../server/verify/clash.mjs';
 import { maintainBackups } from '../server/verify/backup.mjs';
+import { SOCKS_CASES } from './helpers/socks-cases.mjs';
+import { DatabaseSync } from 'node:sqlite';
+import { sealCode, sha256 } from '../server/verify/secure.mjs';
+
+for (const [name, source, expected] of SOCKS_CASES) {
+  test(`SOCKS5 compatibility: ${name}`, () => {
+    const { host, port, username, password } = parseProxies(source)[0];
+    assert.deepEqual({ host, port, username, password }, expected);
+    const result = buildSubscription({ source, format: 'shadowrocket' });
+    const proxy = JSON.parse(result.yaml.split('\n').find(line => line.startsWith('  - ')).slice(4));
+    assert.deepEqual({ host: proxy.server, port: proxy.port, username: proxy.username || '', password: proxy.password || '' }, expected);
+    assert.equal(proxy.type, 'socks5');
+  });
+}
+
+test('CRLF, CR, BOM, indentation, mixed formats and terminal password spaces preserve their meaning', () => {
+  const mixed = '\ufeff 203.0.113.10:1080:u:pass  \r\nsocks5h://proxy.example:1081\r[2001:db8::1]:1082\n\n';
+  const rows = parseProxies(mixed);
+  assert.equal(rows.length, 3);
+  assert.equal(rows[0].password, 'pass  ');
+  assert.equal(rows[2].name, '[2001:db8::1]:1082');
+});
+
+test('UTF-8 SOCKS authentication limits, malformed encodings and transport flags are rejected', () => {
+  assert.doesNotThrow(() => parseProxies(`203.0.113.1:1080:u:${'字'.repeat(85)}`));
+  for (const source of [`203.0.113.1:1080:u:${'字'.repeat(86)}`, 'socks://a@203.0.113.1:1080', 'socks:///w==@203.0.113.1:1080', 'socks5+tls://u:p@proxy.example:1080', 'socks5://u:p@proxy.example:1080?tls=1', 'socks5://u:p@proxy.example:1080?udp=1', 'socks5://u:p@proxy.example:1080/path', 'socks4://proxy.example:1080']) assert.throws(() => parseProxies(source), /第 1 行/);
+  assert.throws(() => buildSubscription({ source: 'proxy.example:1080', format: 'typo' }), /订阅格式/);
+});
+
+test('ambiguous bare strings fail explicitly instead of silently selecting another server', () => {
+  for (const source of ['demo:1234:part:tail@203.0.113.10:1080', '203.0.113.10:1080:user:pass@proxy.example:80']) {
+    for (const format of ['clash', 'shadowrocket']) assert.throws(() => buildSubscription({ source, format }), /第 1 行：格式存在歧义/);
+  }
+});
+
+test('client imports preserve the entire HTTP subscription URL and name', () => {
+  const url = 'https://gettoken.cc/api/clash/subscriptions/abc?foo=bar&test=1';
+  const link = subscriptionImportLink(url, '香港 节点🙂', 'shadowrocket');
+  const [path, query] = link.split('?');
+  assert.equal(Buffer.from(path.slice('shadowrocket://add/sub://'.length), 'base64').toString(), url);
+  assert.equal(new URLSearchParams(query).get('remark'), '香港 节点🙂');
+  const clash = new URL(subscriptionImportLink(url, '香港 节点🙂'));
+  assert.equal(clash.searchParams.get('url'), url);
+  assert.equal(clash.searchParams.get('name'), '香港 节点🙂');
+  assert.equal(encodeBase64('密码🙂'), Buffer.from('密码🙂').toString('base64'));
+});
 
 test('SOCKS5 formats, percent-encoded credentials, IPv6 and duplicate names convert without credential loss', () => {
   const rows = parseProxies('socks5://a%40b:p%3Aa%23%25@proxy.example:1080#香港\n[2001:db8::1]:1081:demo:pass:word\nsocks5://203.0.113.2:1080#香港\nuser:pass@203.0.113.3:1080\n203.0.113.4:1080');
@@ -82,6 +128,45 @@ test('subscription HTTP URL serves actual YAML, HEAD metadata and management-tok
   assert.equal(f.store.get('select count(*) as n from clash_subscriptions').n, 0);
 });
 
+test('Shadowrocket endpoint preserves a mixed-format batch and serves an independent node list', async t => {
+  const f = await fixture(t);
+  const input = { source: SOCKS_CASES.map(row => row[1]).join('\n'), name: '小火箭测试', format: 'shadowrocket', udp: true };
+  const created = await f.create(input);
+  assert.equal(created.status, 201);
+  const data = await created.json();
+  assert.equal(data.format, 'shadowrocket');
+  assert.equal(data.count, SOCKS_CASES.length);
+  const loaded = await fetch(f.base + data.path);
+  assert.equal(loaded.status, 200);
+  assert.match(loaded.headers.get('content-disposition'), /gettoken-shadowrocket\.yaml/);
+  const yaml = await loaded.text();
+  assert.ok(!yaml.includes('mixed-port:') && !yaml.includes('proxy-groups:') && !yaml.includes('rules:'));
+  const proxies = yaml.split('\n').filter(line => line.startsWith('  - ')).map(line => JSON.parse(line.slice(4)));
+  assert.equal(proxies.length, SOCKS_CASES.length);
+  proxies.forEach((proxy, index) => {
+    assert.deepEqual({ host: proxy.server, port: proxy.port, username: proxy.username || '', password: proxy.password || '' }, SOCKS_CASES[index][2]);
+    assert.equal(proxy.udp, true);
+  });
+  assert.equal((await fetch(f.base + data.path, { method: 'DELETE', headers: { 'X-GetToken-Clash-Manage': data.manageToken } })).status, 200);
+  assert.equal((await fetch(f.base + data.path)).status, 404);
+});
+
+test('existing encrypted Clash subscriptions survive the client-format schema migration', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'gettoken-clash-migration-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const file = join(dir, 'verify.db'), secret = randomBytes(32), access = randomBytes(32).toString('base64url');
+  const yaml = buildClashConfig({ source: '203.0.113.1:1080' }).yaml;
+  const db = new DatabaseSync(file);
+  db.exec('create table clash_subscriptions(token_hash text primary key, manage_hash text not null, config_sealed text not null, expires_at integer not null)');
+  db.prepare('insert into clash_subscriptions values (?, ?, ?, ?)').run(sha256(access), 'unused', sealCode(secret, yaml), Date.UTC(2027, 0, 1));
+  db.close();
+  const f = await fixture(t, file, secret);
+  assert.equal(f.store.get('select format from clash_subscriptions').format, 'clash');
+  const loaded = await fetch(`${f.base}/api/clash/subscriptions/${access}`);
+  assert.equal(loaded.status, 200);
+  assert.equal(await loaded.text(), yaml);
+});
+
 test('expired links stop serving and encrypted records survive service restarts with the same key', async t => {
   const dir = await mkdtemp(join(tmpdir(), 'gettoken-clash-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -116,8 +201,8 @@ test('managed backups cannot resurrect revoked or expired subscription credentia
   const store = openStore(join(dir, 'verify.db'));
   const now = Date.UTC(2026, 10, 2);
   try {
-    store.run('insert into clash_subscriptions values (?, ?, ?, ?)', 'revoked', 'manage', 'ciphertext', now + 86400_000);
-    store.run('insert into clash_subscriptions values (?, ?, ?, ?)', 'expired', 'manage', 'ciphertext', now + 1000);
+    store.run('insert into clash_subscriptions(token_hash, manage_hash, config_sealed, expires_at) values (?, ?, ?, ?)', 'revoked', 'manage', 'ciphertext', now + 86400_000);
+    store.run('insert into clash_subscriptions(token_hash, manage_hash, config_sealed, expires_at) values (?, ?, ?, ?)', 'expired', 'manage', 'ciphertext', now + 1000);
     maintainBackups({ store, dataDir: dir, now });
     store.run('delete from clash_subscriptions where token_hash = ?', 'revoked');
     maintainBackups({ store, dataDir: dir, now: now + 2000 });

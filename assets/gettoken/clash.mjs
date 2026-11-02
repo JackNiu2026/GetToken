@@ -1,4 +1,4 @@
-import { buildClashConfig } from './clash-config.mjs';
+import { buildSubscription, subscriptionImportLink } from './clash-config.mjs?v=clients-20261102';
 
 const $ = id => document.getElementById(`clash-${id}`);
 const form = $('form');
@@ -11,16 +11,17 @@ function error(message = '') {
   $('error').hidden = !message;
   if (message) $('feedback').textContent = '';
 }
-function values() { return { source: $('source').value, name: $('name').value, udp: $('udp').checked }; }
+function values() { return { source: $('source').value, name: $('name').value, udp: $('udp').checked, format: $('format').value }; }
 function render() {
   error();
   $('feedback').textContent = '';
   if (!form.reportValidity()) return null;
   try {
     const data = values();
-    const result = buildClashConfig(data);
+    const result = buildSubscription(data);
     yaml = result.yaml;
     $('yaml').textContent = yaml;
+    $('output-title').textContent = result.format === 'shadowrocket' ? '小火箭配置' : 'Clash 配置';
     $('copy-yaml').disabled = false;
     $('count').textContent = `${result.count} 个节点`;
     $('count').classList.add('is-ready');
@@ -74,7 +75,9 @@ form.addEventListener('submit', async event => {
     subscription = data;
     const url = new URL(data.path, location.origin).href;
     $('url').value = url;
-    $('import').href = `clash://install-config?url=${encodeURIComponent(url)}&name=${encodeURIComponent(output.result.name)}`;
+    $('url-label').textContent = data.format === 'shadowrocket' ? '小火箭订阅链接' : 'Clash 订阅链接';
+    $('import').href = subscriptionImportLink(url, output.result.name, data.format);
+    $('import').textContent = data.format === 'shadowrocket' ? '导入小火箭' : '导入 Clash Verge';
     $('expiry').textContent = `有效期至 ${new Date(data.expiresAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}（北京时间）。`;
     $('subscription').hidden = false;
     if (matchMedia('(max-width: 900px)').matches) $('subscription').scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
@@ -91,9 +94,9 @@ $('download').addEventListener('click', () => {
   if (!output) return;
   const url = URL.createObjectURL(new Blob([output.result.yaml], { type: 'text/yaml;charset=utf-8' }));
   const link = document.createElement('a');
-  link.href = url; link.download = 'gettoken-clash.yaml'; document.body.append(link); link.click(); link.remove();
+  link.href = url; link.download = output.result.format === 'shadowrocket' ? 'gettoken-shadowrocket.yaml' : 'gettoken-clash.yaml'; document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  $('feedback').textContent = 'YAML 文件已生成，请在 Clash Verge 中导入本地配置。';
+  $('feedback').textContent = output.result.format === 'shadowrocket' ? '小火箭节点配置已生成；远程订阅请使用“生成订阅链接”。' : 'YAML 文件已生成，请在 Clash Verge 中导入本地配置。';
 });
 $('copy-yaml').addEventListener('click', () => copy(yaml, $('yaml')));
 $('copy-url').addEventListener('click', () => copy($('url').value, $('url')));

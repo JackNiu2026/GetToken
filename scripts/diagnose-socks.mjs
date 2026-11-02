@@ -1,6 +1,8 @@
 // Operator-only, read-only diagnosis. This program never returns proxy credentials.
 import { DatabaseSync } from 'node:sqlite';
 import { spawnSync } from 'node:child_process';
+import { createConnection } from 'node:net';
+import { once } from 'node:events';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -50,8 +52,48 @@ function probe(url) {
     curlExit: result.status, httpStatus: Number(http) || 0, connectSeconds: Number(connect) || 0,
     totalSeconds: Number(total) || 0, error: redact(String(result.stderr || result.error?.code || '').trim()) };
 }
+async function readExact(socket, size) {
+  const parts=[]; let count=0;
+  while(count<size) {
+    const part=socket.read(size-count);
+    if(part) { parts.push(part); count+=part.length; continue; }
+    if(socket.destroyed || socket.readableEnded) throw Object.assign(new Error('closed'),{code:'CLOSED'});
+    await new Promise((resolve,reject)=>{
+      const cleanup=()=>{socket.off('readable',ready);socket.off('error',failed);socket.off('end',closed);};
+      const ready=()=>{cleanup();resolve();};const failed=e=>{cleanup();reject(e);};const closed=()=>{cleanup();reject(Object.assign(new Error('closed'),{code:'CLOSED'}));};
+      socket.once('readable',ready);socket.once('error',failed);socket.once('end',closed);
+    });
+  }
+  return Buffer.concat(parts);
+}
+async function handshake(methods) {
+  let stage='tcp'; const started=Date.now();
+  const socket=createConnection({host:node.server,port:node.port});socket.on('error',()=>{});
+  socket.setTimeout(6000,()=>socket.destroy(Object.assign(new Error('timeout'),{code:'TIMEOUT'})));
+  try {
+    await once(socket,'connect');stage='greeting';socket.write(Buffer.from([5,methods.length,...methods]));
+    const reply=await readExact(socket,2);
+    if(reply[0]!==5)return {methods,stage,result:'not_socks5',prefix:reply.toString('hex')};
+    if(reply[1]===255)return {methods,stage,result:'no_accepted_auth_method'};
+    if(reply[1]===2) {
+      stage='authentication';const u=Buffer.from(node.username||''),p=Buffer.from(node.password||'');
+      socket.write(Buffer.concat([Buffer.from([1,u.length]),u,Buffer.from([p.length]),p]));
+      const auth=await readExact(socket,2);if(auth[0]!==1 || auth[1]!==0)return {methods,stage,result:'authentication_rejected',status:auth[1]};
+    } else if(reply[1]!==0)return {methods,stage,result:'unknown_auth_method',method:reply[1]};
+    stage='connect';const host=Buffer.from('example.com');socket.write(Buffer.concat([Buffer.from([5,1,0,3,host.length]),host,Buffer.from([1,187])]));
+    const connected=await readExact(socket,4);return {methods,stage,result:connected[1]===0?'connected':'connect_rejected',status:connected[1]};
+  } catch(e) {return {methods,stage,result:'connection_failed',error:e.code||e.name,elapsedMs:Date.now()-started};}
+  finally {socket.destroy();}
+}
+async function httpGreeting() {
+  const socket=createConnection({host:node.server,port:node.port});socket.on('error',()=>{});socket.setTimeout(6000,()=>socket.destroy(Object.assign(new Error('timeout'),{code:'TIMEOUT'})));
+  try {await once(socket,'connect');socket.write('HEAD http://example.com/ HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n');const prefix=(await readExact(socket,5)).toString('ascii');return {result:prefix==='HTTP/'?'http_proxy_response':'other_protocol'};}
+  catch(e){return {result:'no_http_response',error:e.code||e.name};}finally{socket.destroy();}
+}
+const handshakes=[await handshake([0,2]),await handshake([2])];
+const httpProtocol=await httpGreeting();
 const report = { subscriptionFound: true, expired: row.expires_at <= Date.now(), format: row.format,
   configuration: { nodes: nodes.length, endpointMatches: true, host: node.server, port: node.port, udp: node.udp,
     usernameBytes: Buffer.byteLength(node.username || ''), passwordBytes: Buffer.byteLength(node.password || '') },
-  probes: [probe('https://example.com/'), probe('https://www.gstatic.com/generate_204')] };
+  handshakes, httpProtocol, probes: [probe('https://example.com/'), probe('https://www.gstatic.com/generate_204')] };
 console.log('GETTOKEN_SOCKS_DIAGNOSTIC=' + JSON.stringify(report));

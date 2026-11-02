@@ -1,4 +1,4 @@
-name: Diagnose authorized SOCKS5 subscription
+name: Diagnose authorized SOCKS5 subscription # handshake phase 2
 on:
   push:
     branches: [main]

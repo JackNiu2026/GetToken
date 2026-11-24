@@ -19,6 +19,12 @@ The contact-specific contract stays in `.impeccable/surfaces/contact-pages.md`. 
 
 ## Release boundary
 
-The public site currently contains newer support/delivery pages that are absent from this repository revision. Do not publish the whole repository over the live site for this change. The pages and assets require a targeted release after the production source and deployment boundary are confirmed. No production workflow, server snapshot/export, credential setup, navigation or deployment settings are included in this change. No release was performed.
+The public site contains newer support/delivery pages that are absent from this repository revision. Do not publish the whole repository over the live site for this change. On 2026-11-24 the user explicitly confirmed “上线” after reviewing the two pages and the proposed contact-only release scope.
 
-Copying this change into a later full release requires adding these two independent routes to that release's package or generator after production source reconciliation. Avoid treating the old general deployment workflow as a safe way to publish them by itself.
+The isolated `.github/workflows/contact-pages.yml` workflow publishes only the two HTML files, contact.css, two extracted QR PNGs and an independent contact release checksum record. It uses the established production environment, concurrency group, SSH identity and strict host-key verification. It does not read server templates into logs or modify existing navigation, home/support/delivery pages, API service, Nginx configuration or the site's general deployment revision.
+
+The archive installer rejects unexpected paths, symlinks and checksum mismatches before writing. Each approved file is installed atomically, failures roll back the approved files, and hashes of existing public pages are checked in memory before and after. Public acceptance compares the two HTTPS responses and QR bytes with the release manifest. No existing server file contents are exported.
+
+Main commits whose title begins `[contact-pages]` use the isolated publisher; the old general workflow still runs tests but skips its full-site deployment for these explicitly marked releases. Use that title for contact-only merge commits to preserve newer live content. The publisher can also be run manually on main. Other full-site releases retain their existing behavior and require source reconciliation before use.
+
+Package command: `python3 scripts/package-contact-pages.py contact-pages.tar.gz COMMIT_SHA`. Installer tests: `python3 -m unittest discover -s tests -p 'test_contact_release.py'`. The production publisher and public verifier are `scripts/deploy-contact-pages.sh` and `scripts/check-contact-pages.py`.

@@ -1,0 +1,48 @@
+name: Publish independent contact pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/contact-pages.yml'
+      - 'scripts/*contact-pages*'
+      - 'content/contact-pages.json'
+      - 'support/hukaiyue/**'
+      - 'support/huliyun/**'
+      - 'assets/contacts/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, '[contact-pages]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/build-contact-pages.mjs --check
+      - run: python3 -m unittest discover -s tests -p 'test_contact_release.py'
+      - run: bash -n scripts/deploy-contact-pages.sh
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: gettoken-production
+      cancel-in-progress: false
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package the five approved public files
+        run: python3 scripts/package-contact-pages.py contact-pages.tar.gz "$GITHUB_SHA"
+      - name: Publish only the independent contact pages
+        env:
+          DEPLOY_HOST: ${{ vars.GETTOKEN_HOST || '39.97.40.89' }}
+          DEPLOY_USER: ${{ vars.GETTOKEN_USER || 'root' }}
+          DEPLOY_PORT: ${{ vars.GETTOKEN_PORT || '22' }}
+          DEPLOY_SSH_KEY: ${{ secrets.GETTOKEN_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.GETTOKEN_KNOWN_HOSTS }}
+        run: bash scripts/deploy-contact-pages.sh
+      - name: Verify the public routes and original QR bytes
+        run: python3 scripts/check-contact-pages.py "$GITHUB_SHA"

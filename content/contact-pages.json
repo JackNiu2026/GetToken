@@ -1,0 +1,18 @@
+[
+  {
+    "name": "胡凯月",
+    "slug": "hukaiyue",
+    "route": "/support/hukaiyue/",
+    "qr": "/assets/contacts/hukaiyue-wechat.png",
+    "width": 188,
+    "height": 188
+  },
+  {
+    "name": "胡莉云",
+    "slug": "huliyun",
+    "route": "/support/huliyun/",
+    "qr": "/assets/contacts/huliyun-wechat.png",
+    "width": 170,
+    "height": 170
+  }
+]
